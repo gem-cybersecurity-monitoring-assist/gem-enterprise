@@ -5,12 +5,15 @@ import { getIntakeSubmission } from "@/lib/intake/repository";
 import { handoffEnterpriseInquiry } from "@/lib/enterpriseInquiryHandoff";
 import { db } from "@/lib/db";
 import { hasDirectDatabaseConfiguration } from "@/lib/supabase-gateway";
+import { isSameOriginWorkspaceRequest } from "@/lib/organizationWorkspace";
 const input = z.object({ id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/), confirmation: z.literal("CAPTURE_INQUIRY_FOR_REVIEW") }).strict();
 const json = (data: unknown, status = 200) => NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
 export async function POST(request: NextRequest) {
   const gate = await requireAdmin();
   if (!gate.ok) return gate.response;
-  if (request.headers.get("origin") && request.headers.get("origin") !== request.nextUrl.origin) return json({ error: "Cross-site request rejected" }, 403);
+  if (!isSameOriginWorkspaceRequest(request.headers.get("origin"), request.nextUrl.origin)) {
+    return json({ error: "An explicit same-origin request is required", code: "SAME_ORIGIN_REQUIRED" }, 403);
+  }
   const key = process.env.GEM_ENTERPRISE_INQUIRY_HMAC_KEY || "";
   const sitesToken = process.env.GEM_LEAD_SITES_SERVICE_TOKEN || "";
   if (key.length < 32 || !sitesToken || !hasDirectDatabaseConfiguration()) return json({ error: "Inquiry handoff is not configured", code: "HANDOFF_NOT_CONFIGURED" }, 503);

@@ -35,8 +35,47 @@ describe("signed inquiry handoff", () => {
   const response = await POST(new NextRequest("https://enterprise.test/api/admin/intake/handoff", { method: "POST" }));
   expect(response.status).toBe(status); expect(mocks.lookup).not.toHaveBeenCalled();
  });
+ it.each([
+  ["missing Origin", undefined],
+  ["cross-origin", "https://attacker.example.invalid"],
+  ["opaque Origin", "null"],
+ ])("rejects %s before sensitive inquiry lookup, audit or handoff", async (_name, origin) => {
+  vi.stubEnv("GEM_ENTERPRISE_INQUIRY_HMAC_KEY", key);
+  vi.stubEnv("GEM_LEAD_SITES_SERVICE_TOKEN", "test-only");
+  const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+  const request = new NextRequest("https://enterprise.test/api/admin/intake/handoff", {
+    method: "POST",
+    ...(origin ? { headers: { origin } } : {}),
+    body: JSON.stringify({ id: submission.id, confirmation: "CAPTURE_INQUIRY_FOR_REVIEW" }),
+  });
+  const response = await POST(request);
+  expect(response.status).toBe(403);
+  await expect(response.json()).resolves.toMatchObject({ code: "SAME_ORIGIN_REQUIRED" });
+  expect(mocks.lookup).not.toHaveBeenCalled();
+  expect(mocks.audit).not.toHaveBeenCalled();
+  expect(fetcher).not.toHaveBeenCalled();
+ });
+ it("permits explicit same-origin reviewed capture with a verified receipt", async () => {
+  vi.stubEnv("GEM_ENTERPRISE_INQUIRY_HMAC_KEY", key);
+  vi.stubEnv("GEM_LEAD_SITES_SERVICE_TOKEN", "test-only");
+  const fetcher = vi.fn(async () => Response.json({ captured: true, leadId: "lead-test", status: "AWAITING_APPROVAL", requestKey: "enterprise-inquiry-intake-test-0001" }));
+  vi.stubGlobal("fetch", fetcher);
+  const request = new NextRequest("https://enterprise.test/api/admin/intake/handoff", {
+    method: "POST",
+    headers: { origin: "https://enterprise.test" },
+    body: JSON.stringify({ id: submission.id, confirmation: "CAPTURE_INQUIRY_FOR_REVIEW" }),
+  });
+  const response = await POST(request);
+  expect(response.status).toBe(200);
+  await expect(response.json()).resolves.toMatchObject({
+    captured: true,
+    receipt: { leadId: "lead-test", status: "AWAITING_APPROVAL", requestKey: "enterprise-inquiry-intake-test-0001" },
+  });
+  expect(mocks.audit).toHaveBeenCalledTimes(2);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+ });
  it("fails closed without mandatory audit and service configuration", async () => {
-  const request = () => new NextRequest("https://enterprise.test/api/admin/intake/handoff", { method: "POST", body: JSON.stringify({ id: submission.id, confirmation: "CAPTURE_INQUIRY_FOR_REVIEW" }) });
+  const request = () => new NextRequest("https://enterprise.test/api/admin/intake/handoff", { method: "POST", headers: { origin: "https://enterprise.test" }, body: JSON.stringify({ id: submission.id, confirmation: "CAPTURE_INQUIRY_FOR_REVIEW" }) });
   expect((await POST(request())).status).toBe(503); expect(mocks.lookup).not.toHaveBeenCalled();
   vi.stubEnv("GEM_ENTERPRISE_INQUIRY_HMAC_KEY", key); vi.stubEnv("GEM_LEAD_SITES_SERVICE_TOKEN", "test-only");
   const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher); mocks.audit.mockRejectedValue(new Error("test-only audit failure"));
