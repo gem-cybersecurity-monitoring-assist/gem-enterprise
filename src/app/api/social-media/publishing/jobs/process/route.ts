@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { processSocialPublishingBatch } from "@/lib/social-media/publishing/worker";
+import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 
 function authorized(request: NextRequest) {
   const configured = process.env.CRON_SECRET?.trim();
@@ -40,6 +41,9 @@ async function run(request: NextRequest) {
       { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
+
+  const gatewayBlock = socialCronGatewayBlock();
+  if (gatewayBlock) return gatewayBlock;
 
   try {
     const result = await processSocialPublishingBatch(10);

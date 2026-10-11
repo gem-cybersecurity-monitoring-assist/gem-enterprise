@@ -23,6 +23,10 @@
       "schedule": "10 5 * * *"
     },
     {
+      "path": "/api/social-media/analytics/sync",
+      "schedule": "0 2 * * *"
+    },
+    {
       "path": "/api/social-media/publishing/jobs/process/07",
       "schedule": "0 7 * * *"
     },

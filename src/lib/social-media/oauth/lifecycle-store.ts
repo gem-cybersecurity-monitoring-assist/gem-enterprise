@@ -193,6 +193,12 @@ export async function recordSocialConnectorLifecycle(input: {
   refreshAttempted: boolean;
   refreshSucceeded: boolean;
   concurrentRotationObserved?: boolean;
+  liveProbe?: {
+    probeOk: boolean;
+    probedAt: string;
+    accountName: string | null;
+    latencyMs: number;
+  };
 }) {
   const now = new Date();
   const metadata = {
@@ -205,7 +211,15 @@ export async function recordSocialConnectorLifecycle(input: {
     tokenRefreshAttempted: input.refreshAttempted,
     tokenRefreshSucceeded: input.refreshSucceeded,
     concurrentRotationObserved: Boolean(input.concurrentRotationObserved),
-    providerProbePerformed: false,
+    providerProbePerformed: Boolean(input.liveProbe),
+    ...(input.liveProbe
+      ? {
+          liveProbeAt: input.liveProbe.probedAt,
+          liveProbeOk: input.liveProbe.probeOk,
+          liveProbeAccountName: input.liveProbe.accountName,
+          liveProbeLatencyMs: input.liveProbe.latencyMs,
+        }
+      : {}),
     externalPublishingEnabled: false,
   };
   const metadataJson = JSON.stringify(metadata);

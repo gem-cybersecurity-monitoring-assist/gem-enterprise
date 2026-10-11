@@ -23,6 +23,7 @@ describe("GEM cross-platform social media command center", () => {
       "INDEED_EMPLOYER",
       "LINKEDIN_COMPANY",
       "YOUTUBE",
+      "TELEGRAM",
     ]);
     expect(readiness.every((provider) => provider.externalWriteAllowed === false)).toBe(true);
     expect(readiness.every((provider) => provider.configurationReady === false)).toBe(true);

@@ -13,6 +13,7 @@ import {
   tokMetricErrorResponse,
   withIdempotency,
 } from "@/lib/tokmetric/security";
+import { assertSocialAutopilotKillSwitchClear } from "@/lib/social-media/autopilot/health";
 
 type ProviderId = (typeof socialMediaProviderIds)[number];
 type SignalPayload = {
@@ -175,6 +176,10 @@ export async function POST(request: NextRequest) {
     if (input.requestApprovals) {
       requirePermission(membership, "request", "approvals");
     }
+
+    // Global emergency stop: no new content plans while the workspace is
+    // locked for publishing.
+    await assertSocialAutopilotKillSwitchClear(input.workspaceId);
 
     const idempotencyKey = request.headers.get("idempotency-key")?.trim();
     if (!idempotencyKey) {
