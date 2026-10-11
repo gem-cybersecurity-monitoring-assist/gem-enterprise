@@ -20,6 +20,7 @@ import {
   type TikTokVideoSource,
 } from "@/lib/tokmetric/publishing/types";
 import { GemVideoPlayer } from "@/components/video/GemVideoPlayer";
+import { explainTokMetricPublishingContextError } from "@/lib/tokmetric/publishing/readiness";
 
 type WorkspaceContext = {
   id: string;
@@ -74,6 +75,13 @@ type ApiEnvelope<T> = {
   error?: { code?: string; message?: string };
 };
 
+class VideoPublishingRequestError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+    this.name = "VideoPublishingRequestError";
+  }
+}
+
 const MUSIC_CONFIRMATION_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
 const BRANDED_CONTENT_POLICY_URL = "https://www.tiktok.com/legal/page/global/bc-policy/en";
 const FOUR_GIB = 4 * 1024 * 1024 * 1024;
@@ -121,7 +129,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   });
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || !payload?.ok || payload.data === undefined) {
-    throw new Error(payload?.error?.message ?? "The request could not be completed.");
+    throw new VideoPublishingRequestError(payload?.error?.code ?? "PUBLISHING_REQUEST_FAILED", payload?.error?.message ?? "The request could not be completed.");
   }
   return payload.data;
 }
@@ -230,6 +238,7 @@ export function TokMetricVideoPublisherV3() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [contextErrorCode, setContextErrorCode] = useState<string | null>(null);
 
   const workspace = useMemo(
     () => context?.workspaces.find((item) => item.id === workspaceId) ?? null,
@@ -247,6 +256,7 @@ export function TokMetricVideoPublisherV3() {
   const loadContext = useCallback(async () => {
     setLoading(true);
     setError("");
+    setContextErrorCode(null);
     try {
       const data = await api<PublishingContext>("/api/tokmetric/publishing/context");
       setContext(data);
@@ -260,6 +270,8 @@ export function TokMetricVideoPublisherV3() {
         setTitle(approvedCaption(initialContent));
       }
     } catch (requestError) {
+      setContext(null);
+      setContextErrorCode(requestError instanceof VideoPublishingRequestError ? requestError.code : "PUBLISHING_REQUEST_FAILED");
       setError(requestError instanceof Error ? requestError.message : "Publishing context could not be loaded.");
     } finally {
       setLoading(false);
@@ -598,9 +610,17 @@ export function TokMetricVideoPublisherV3() {
   }
 
   if (!context) {
+    const guidance = explainTokMetricPublishingContextError(contextErrorCode, error);
     return (
-      <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-6 text-amber-100">
-        Sign in with an authorized GEM Enterprise account to use publishing.
+      <div role="status" className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-6 text-amber-100">
+        <h3 className="font-semibold">{guidance.title}</h3>
+        <p className="mt-2 text-sm leading-6">{guidance.detail}</p>
+        <p className="mt-3 text-xs text-amber-100/70">No video was uploaded or published. The governed recipe and private preview stages remain separate from provider publishing.</p>
+        {guidance.retryable ? (
+          <button type="button" onClick={() => void loadContext()} className="mt-4 rounded-xl border border-amber-100/30 px-3 py-2 text-sm font-medium">
+            Recheck Video Studio readiness
+          </button>
+        ) : null}
       </div>
     );
   }
