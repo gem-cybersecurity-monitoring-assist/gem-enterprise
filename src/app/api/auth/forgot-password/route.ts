@@ -66,12 +66,12 @@ async function waitForMinimumRecoveryDuration(startedAt: number) {
 
 export async function POST(request: NextRequest) {
   const { ipAddress, userAgent } = getRequestContext(request);
-  const ipLimit = rateLimit(ipAddress, {
+  const ipLimit = await rateLimit(ipAddress, {
     key: "auth:forgot-password:ip",
     windowMs: 15 * 60_000,
     max: 5,
   });
-  if (!ipLimit.ok) return rateLimitedResponse(ipLimit.retryAfterSeconds);
+  if (!ipLimit.ok) return rateLimitedResponse(ipLimit.retryAfterSeconds, ipLimit.unavailable);
 
   let body: unknown;
   try {
@@ -89,12 +89,13 @@ export async function POST(request: NextRequest) {
   }
 
   const email = parsed.data.email.toLowerCase();
-  const addressLimit = rateLimit(emailBucket(email), {
+  const addressLimit = await rateLimit(emailBucket(email), {
     key: "auth:forgot-password:email",
     windowMs: 60 * 60_000,
     max: 3,
   });
   if (!addressLimit.ok) {
+    if (addressLimit.unavailable) return rateLimitedResponse(addressLimit.retryAfterSeconds, true);
     return NextResponse.json(RATE_LIMIT_SAFE_RESPONSE, {
       headers: { "Cache-Control": "no-store" },
     });

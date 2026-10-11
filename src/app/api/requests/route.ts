@@ -107,12 +107,12 @@ export async function POST(request: NextRequest) {
   if (originFailure) return originFailure;
 
   const context = getRequestContext(request);
-  const limit = rateLimit(`${gate.session.userId}:${context.ipAddress}`, {
+  const limit = await rateLimit(`${gate.session.userId}:${context.ipAddress}`, {
     key: "service-requests:create",
     windowMs: 10 * 60_000,
     max: 8,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {
