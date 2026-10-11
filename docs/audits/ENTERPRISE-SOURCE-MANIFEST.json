@@ -1,0 +1,229 @@
+{
+  "deployment-provenance.json": [
+    {
+      "project_id": "appgprj_6abe3a0ec6bc8191af5b93c125cdd9ed",
+      "deployment_id": "appgdep_6abf696410a881918c456ad36635b504",
+      "status": "succeeded",
+      "url": "https://tokmetric.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 4,
+      "version_id": "appgprj_6abe3a0ec6bc8191af5b93c125cdd9ed~appgver_98e34aeb221c8191bff40cc9b605e251",
+      "version": 5,
+      "source_sha": "bef62ccedfc1c1f7973f0c638d2b1a7210539023"
+    },
+    {
+      "project_id": "appgprj_6a658989be8c81918933fab5a2284e51",
+      "deployment_id": "appgdep_6abf0d124b388191b9866529de0008ef",
+      "status": "succeeded",
+      "url": "https://gem-community-operations.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 1,
+      "version_id": "appgprj_6a658989be8c81918933fab5a2284e51~appgver_e97b14e826bc819182ec65bc90b4898d",
+      "version": 11,
+      "source_sha": "824b10207a1525e98007ea6717fad635ad6d9bf7"
+    },
+    {
+      "project_id": "appgprj_6a52b9d665ec8191bc65f8a5faa1c709",
+      "deployment_id": "appgdep_6a541894203881918433f4be5415ee0c",
+      "status": "succeeded",
+      "url": "https://gem-enterprise-command-center.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 1,
+      "version_id": "appgprj_6a52b9d665ec8191bc65f8a5faa1c709~appgver_3648f3e5059481919f175adf82e92399",
+      "version": 21,
+      "source_sha": "6a1987c2419cac9c0930ca0caba5f229982989ad"
+    },
+    {
+      "project_id": "appgprj_6abdc57f5f1481918bf4774efa997c0f",
+      "deployment_id": "appgdep_6abe416d9c908191a2a06a9f19d5d85d",
+      "status": "succeeded",
+      "url": "https://gem-social-command-center.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 1,
+      "version_id": "appgprj_6abdc57f5f1481918bf4774efa997c0f~appgver_be6ff416ad508191bdb7999c9128c786",
+      "version": 6,
+      "source_sha": "3d5ef7572a889767a549cae5a3b43ac249a7bdea"
+    },
+    {
+      "project_id": "appgprj_6a935cd8ba0081919e5535351845f8c9",
+      "deployment_id": "appgdep_6a93e74ddef081919cbc9214da9b85ee",
+      "status": "succeeded",
+      "url": "https://gem-market-operations-workspace.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 0,
+      "version_id": "appgprj_6a935cd8ba0081919e5535351845f8c9~appgver_7a990d29c9ac8191919e2a654d5eacb2",
+      "version": 4,
+      "source_sha": "2b324dd2f6e204fe45d4ab72b953faf259a8fbae"
+    },
+    {
+      "project_id": "appgprj_6a545baaa6a88191abeb51bb93abf8d8",
+      "deployment_id": "appgdep_6a545cfd8ba88191b3e61b3920a153b7",
+      "status": "succeeded",
+      "url": "https://gem-secure-recovery.p6kwdvjbpp.chatgpt.site",
+      "env_revision": 0,
+      "version_id": "appgprj_6a545baaa6a88191abeb51bb93abf8d8~appgver_fe7fd4dd2104819186b4c6f7d07612e3",
+      "version": 1,
+      "source_sha": "149e40adf8b8ef057843ad581c6d892bbb36ce2c"
+    }
+  ],
+  "site-repair-commits.json": [
+    {
+      "site": "gem-market-operations-workspace",
+      "branch": "codex/enterprise-audit-repair-20261002",
+      "repair_sha": "299861343e66bd8091b992717695190475ec79f5",
+      "files": [
+        "ENTERPRISE-REPAIR.md",
+        "app/api/agent-runs/route.ts",
+        "app/api/clients/route.ts",
+        "app/api/team-members/route.ts",
+        "app/api/work-items/route.ts",
+        "app/mcp/route.ts",
+        "app/page.tsx",
+        "app/workspace-shell.tsx",
+        "cloudflare-env.d.ts",
+        "lib/workspace-access.ts",
+        "lib/workspace-input.ts",
+        "lib/workspace-policy.mjs",
+        "lib/workspace-records.ts",
+        "package-lock.json",
+        "package.json",
+        "tests/routes-authorization.test.mjs",
+        "tests/workspace-authorization.test.mjs",
+        "tsconfig.json"
+      ]
+    },
+    {
+      "site": "gem-social-command-center",
+      "branch": "codex/enterprise-audit-repair-20261002",
+      "repair_sha": "3ca550be8656c362704c5ba4f5b8025884371c89",
+      "files": [
+        "ENTERPRISE-REPAIR.md",
+        "app/api/internal/enterprise-inquiry/route.ts",
+        "app/api/leads/route.ts",
+        "app/mcp/route.ts",
+        "lib/access-policy.mjs",
+        "lib/inquiry-auth.mjs",
+        "lib/lead-workflow.mjs",
+        "lib/leads.ts",
+        "tests/access.test.mjs",
+        "tests/automation.test.mjs",
+        "tests/lead-workflow.test.mjs",
+        "tsconfig.tsbuildinfo"
+      ]
+    },
+    {
+      "site": "gem-enterprise-command-center",
+      "branch": "codex/enterprise-audit-repair-20261002",
+      "repair_sha": "d250b4a22158cd80c8ac0b4d22d15bb198aa2547",
+      "files": [
+        "ENTERPRISE-REPAIR.md",
+        "dist/lib/identity.js",
+        "dist/server/index.js",
+        "lib/identity.js",
+        "scripts/build.sh",
+        "tests/identity.test.mjs",
+        "worker/index.js"
+      ]
+    },
+    {
+      "site": "gem-secure-recovery",
+      "branch": "codex/enterprise-audit-repair-20261002",
+      "repair_sha": "af7b67253ce4833af493012947566ddd2ece372d",
+      "files": [
+        "ENTERPRISE-REPAIR.md",
+        "app/api/complete/route.ts",
+        "cloudflare-env.d.ts",
+        "package-lock.json",
+        "package.json",
+        "tests/recovery-proxy.test.mjs",
+        "tsconfig.json"
+      ]
+    },
+    {
+      "site": "gem-community-operations",
+      "branch": "codex/enterprise-audit-repair-20261002",
+      "repair_sha": "c76f7899e93285d9e59742f31a0e6a6ad91dc13c",
+      "files": [
+        "ENTERPRISE-REPAIR.md",
+        "app/company-brochure/page.tsx",
+        "tests/rendered-html.test.mjs"
+      ]
+    }
+  ],
+  "build-artifacts.json": [
+    {
+      "site": "gem-market-operations-workspace",
+      "sha": "299861343e66bd8091b992717695190475ec79f5",
+      "build": "passed",
+      "archive": "/workspace/enterprise-audit-artifacts/gem-market-operations-workspace-299861343e66.tar.gz",
+      "bytes": 682264
+    },
+    {
+      "site": "gem-social-command-center",
+      "sha": "3ca550be8656c362704c5ba4f5b8025884371c89",
+      "build": "passed",
+      "archive": "/workspace/enterprise-audit-artifacts/gem-social-command-center-3ca550be8656.tar.gz",
+      "bytes": 606718
+    },
+    {
+      "site": "gem-enterprise-command-center",
+      "sha": "d250b4a22158cd80c8ac0b4d22d15bb198aa2547",
+      "build": "passed",
+      "archive": "/workspace/enterprise-audit-artifacts/gem-enterprise-command-center-d250b4a22158.tar.gz",
+      "bytes": 41706
+    },
+    {
+      "site": "gem-secure-recovery",
+      "sha": "af7b67253ce4833af493012947566ddd2ece372d",
+      "build": "passed",
+      "archive": "/workspace/enterprise-audit-artifacts/gem-secure-recovery-af7b67253ce4.tar.gz",
+      "bytes": 519060
+    },
+    {
+      "site": "gem-community-operations",
+      "sha": "c76f7899e93285d9e59742f31a0e6a6ad91dc13c",
+      "build": "passed",
+      "archive": "/workspace/enterprise-audit-artifacts/gem-community-operations-c76f7899e932.tar.gz",
+      "bytes": 1125991
+    }
+  ],
+  "anonymous-http-checks.json": [
+    {
+      "url": "https://www.gemcybersecurityassist.com/",
+      "error": "URLError"
+    },
+    {
+      "url": "https://www.gemcybersecurityassist.com/client-login",
+      "error": "URLError"
+    },
+    {
+      "url": "https://gem-market-operations-workspace.p6kwdvjbpp.chatgpt.site/api/work-items",
+      "error": "URLError"
+    },
+    {
+      "url": "https://admin.gemcybersecurityassist.com/api/whoami",
+      "error": "URLError"
+    }
+  ],
+  "validation": {
+    "enterprise_focused_pass": 40,
+    "enterprise_full_pass": 936,
+    "enterprise_full_fail": 6,
+    "base_same_failures": 6,
+    "generated_route_errors": 5,
+    "command_security_pass": 59,
+    "command_identity_pass": 3,
+    "market_policy_pass": 5,
+    "market_route_pass": 5,
+    "recovery_pass": 4,
+    "community_pass": 11,
+    "lead_pass": 19,
+    "lead_skip": 1,
+    "code_deployment": "not performed",
+    "merge": "not performed",
+    "live_access_changes": [
+      "Market custom revision 3, grants preserved",
+      "Command Center custom revision 3, grants preserved"
+    ]
+  },
+  "review": {
+    "url": "https://github.com/support371/gem-enterprise/pull/391",
+    "draft": true,
+    "implementation_sha": "7842ca97995ea12ed93e88e7ac2fccde9f6a27d8"
+  }
+}
