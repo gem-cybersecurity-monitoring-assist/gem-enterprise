@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { ProductionDisclosure } from "@/components/ProductionDisclosure";
+import { WhatsAppQuickContact } from "@/components/WhatsAppQuickContact";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -89,6 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main id="main-content" className={isPortal ? undefined : "min-h-screen"}>
             {children}
           </main>
+          {!isPortal && !isProtected && <WhatsAppQuickContact />}
           {!isPortal && <Footer />}
         </Providers>
         {metricoolEnabled && <script src="/metricool-init.js" defer />}
