@@ -19,6 +19,10 @@ const routes = [
     workload: "await runSocialMetricsSync(limit)",
   },
   {
+    path: "src/app/api/social-media/publishing/jobs/process/route.ts",
+    workload: "await processSocialPublishingBatch(10)",
+  },
+  {
     path: "src/app/api/social-media/publishing/jobs/process/[slot]/route.ts",
     workload: "await processSocialPublishingBatch(10, { slotHour })",
   },
