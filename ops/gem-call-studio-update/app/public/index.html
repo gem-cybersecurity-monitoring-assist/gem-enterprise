@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GEM Call Studio — Trusted Transformation</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <span class="eyebrow">GEM ENTERPRISE</span>
+    <h1>GEM Call Studio</h1>
+    <p>Choose a virtual team member for customer calls. Your live speech and full-body performance drive the selected character, custom voice and independent background.</p>
+  </div>
+  <div class="header-status">
+    <span class="version">v2.4 preview · Virtual Team</span>
+    <div id="serviceBadge" class="badge neutral">Starting</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="studio">Transformation</button>
+  <button data-tab="output">OBS Output</button>
+  <button data-tab="system">Readiness & Logs</button>
+</nav>
+
+<main>
+  <section id="tab-studio" class="tab active">
+    <article class="panel">
+<h2>Your virtual team</h2>
+<p>Reference assets are saved privately in this browser on this computer. These previews are static references; the caller output stays closed until a live renderer and custom voice are verified.</p>
+<label>Saved team member<select id="teamProfile"></select></label>
+<label>New team member name<input id="teamName" maxlength="80" placeholder="Customer support representative"></label>
+<label>Full-body reference images (1–8)<input id="teamImages" type="file" multiple accept="image/png,image/jpeg,image/webp"></label>
+<label>Independent background<input id="teamBackground" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>Custom voice reference<input id="teamVoice" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/flac"></label>
+<label class="checkbox"><input id="teamFullBody" type="checkbox"> At least one reference shows the full body.</label>
+<label class="checkbox"><input id="teamAuthorized" type="checkbox"> I am authorized to use these images and voice as a disclosed virtual team member.</label>
+<div class="actions"><button id="saveTeam">Save new team member</button><button id="deleteTeam">Delete selected member</button></div>
+<div id="teamPreview"></div><p id="teamStatus" role="status"></p>
+<div class="notice">Your performance controls the conversation. Uploading a voice sample stores a reference; it does not install voice conversion.</div>
+</article>
+<div class="two-col">
+      <article class="panel">
+        <h2>1. Trusted engine and authorized character</h2>
+        <label>Transformation engine
+          <select id="engineMode">
+            <option value="fullbody" selected>Virtual Team · Full-body live performance</option>
+<option value="auto">Legacy demonstration · Automatic</option>
+            <option value="local">Legacy demonstration · Decorated camera</option>
+            <option value="avatar">Legacy demonstration · Face portrait overlay</option>
+            <option value="lucy">Lucy experiment · Explicit cloud use</option>
+          </select>
+        </label>
+        <label class="checkbox"><input id="allowLocalFallback" type="checkbox"> If Lucy or Local Avatar cannot start, fail over to a fresh verified local processed stream.</label>
+        <div class="notice">Full-body mode requires a verified motion renderer and custom voice. Legacy demonstration modes do not fulfill the virtual team call requirement.</div>
+        <label>Reference portrait <span class="muted">(required for Local Avatar or Lucy)</span>
+          <input id="referenceImage" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+        <div id="imagePreviewWrap" class="image-preview hidden">
+          <img id="imagePreview" alt="Selected authorized reference portrait">
+        </div>
+        <label>Transformation instruction
+          <textarea id="prompt" rows="4">Transform me into the person shown in the authorized reference portrait. Preserve the reference identity, facial features, hair, clothing style and overall appearance while following my live head movement, expression and speech naturally.</textarea>
+        </label>
+        <label class="checkbox"><input id="enhance" type="checkbox" checked> Enable Decart prompt enhancement when Lucy is selected</label>
+        <label class="checkbox consent"><input id="consent" type="checkbox"> I confirm that I am authorized to use this camera, image, and voice.</label>
+      </article>
+
+      <article class="panel">
+        <h2>2. Camera and connection</h2>
+        <label>Camera<select id="cameraDevice"></select></label>
+        <label>Microphone<select id="audioDevice"></select></label>
+        <label class="checkbox"><input id="sendAudio" type="checkbox"> Include microphone audio in the selected trusted output</label>
+        <label>Maximum test duration
+          <select id="maxDuration">
+            <option value="60">60 seconds</option>
+            <option value="180">3 minutes</option>
+            <option value="300">5 minutes</option>
+            <option value="0">No automatic stop</option>
+          </select>
+        </label>
+        <div class="actions">
+          <button id="refreshDevices">Refresh devices</button>
+          <button id="networkTest">Run network preflight</button>
+        </div>
+        <div class="status-grid">
+          <div><span>Network</span><strong id="networkQuality">Not tested</strong></div>
+          <div><span>Transport</span><strong id="networkTransport">—</strong></div>
+          <div><span>RTT</span><strong id="networkRtt">—</strong></div>
+          <div><span>Model capture</span><strong id="modelCapture">1280×720</strong></div>
+        </div>
+        <div id="networkNotice" class="notice">Free engines run on-device. Local Avatar uses the self-hosted MediaPipe face tracker; Lucy network preflight is enabled only when Lucy is explicitly selected.</div>
+      </article>
+    </div>
+
+    <article class="panel control-panel">
+      <div>
+        <h2>3. Start verified transformation</h2>
+        <p id="sessionMessage">Select a saved team member. Full-body live processing is currently awaiting engine connection.</p>
+      </div>
+      <div class="actions">
+        <button id="connect" class="primary">Start transformation</button>
+        <button id="apply" disabled>Apply portrait/prompt update</button>
+        <button id="disconnect" disabled>Stop</button>
+      </div>
+    </article>
+
+    <article class="panel stage">
+      <div class="stage-grid">
+        <div class="video-card">
+          <div class="video-label">Driving camera <span class="mini-badge neutral">LOCAL</span></div>
+          <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+        <div class="video-card output-card">
+          <div class="video-label">Verified trusted output <span id="outputBadge" class="mini-badge neutral">WAITING</span></div>
+          <video id="remoteVideo" autoplay muted playsinline></video>
+          <div id="outputPlaceholder" class="placeholder">No verified engine output is being broadcast. The physical camera is never substituted here.</div>
+        </div>
+      </div>
+      <div class="status-grid wide">
+        <div><span>Session</span><strong id="sessionState">Idle</strong></div>
+        <div><span>Engine</span><strong id="engineState">Standby</strong></div>
+        <div><span>SDK state</span><strong id="sdkState">Disconnected</strong></div>
+        <div><span>Frame validation</span><strong id="frameValidation">Waiting</strong></div>
+        <div><span>Output bridge</span><strong id="bridgeState">Stopped</strong></div>
+        <div><span>Latency</span><strong id="latencyMetric">—</strong></div>
+        <div><span>Timer</span><strong id="sessionTimer">00:00:00</strong></div>
+      </div>
+    </article>
+  </section>
+
+  <section id="tab-output" class="tab">
+    <div class="two-col">
+      <article class="panel">
+        <h2>OBS Studio and Virtual Camera</h2>
+        <div id="obsDiagnostics" class="status-list">Checking OBS…</div>
+        <div class="actions">
+          <button id="prepareObs">Prepare OBS output</button>
+          <button data-launch="obs">Open OBS</button>
+          <button id="repairVirtualCamera">Repair Virtual Camera</button>
+          <button data-launch="obsDownload">Official OBS download</button>
+        </div>
+        <div class="notice">OBS receives only a verified engine stream: Trusted Local, Local Avatar, or Lucy. Local Avatar must have active face tracking before it can be bridged. Raw physical camera is never substituted.</div>
+      </article>
+      <article class="panel">
+        <h2>OBS control state</h2>
+        <div class="status-grid">
+          <div><span>WebSocket</span><strong id="obsConnectionState">Disconnected</strong></div>
+          <div><span>Scene</span><strong id="obsSceneState">Not prepared</strong></div>
+          <div><span>Virtual Camera</span><strong id="obsCameraState">Unknown</strong></div>
+          <div><span>Browser bridge</span><strong id="obsBridgeState">Waiting</strong></div>
+        </div>
+        <label>WebSocket address<input id="obsAddress" value="ws://127.0.0.1:4455"></label>
+        <label>WebSocket password<input id="obsPassword" type="password" autocomplete="off"></label>
+      </article>
+    </div>
+    <article class="panel">
+      <h2>Call application selection</h2>
+      <dl>
+        <dt>Camera</dt><dd>OBS Virtual Camera</dd>
+        <dt>Microphone</dt><dd>Select the verified custom-voice virtual microphone in the calling app. A physical microphone exposes your original voice.</dd>
+        <dt>Speakers</dt><dd>Physical headphones</dd>
+      </dl>
+      <div class="actions"><button data-launch="whatsapp">Open WhatsApp Web</button><button data-launch="zoom">Open Zoom</button></div>
+    </article>
+  </section>
+
+  <section id="tab-system" class="tab">
+    <div class="two-col">
+      <article class="panel">
+        <h2>Acceptance gates</h2>
+        <div id="gateList" class="gate-list"></div>
+        <div class="notice">Broadcast-ready requires a healthy backend, a selected trusted engine, advancing processed frames, separation from raw camera, frame-difference validation, and a live OBS bridge. Local Avatar additionally requires active face tracking; Lucy requires its protected credential and network preflight.</div>
+      </article>
+      <article class="panel">
+        <h2>Session event log</h2>
+        <div id="eventLog" class="event-log"></div>
+        <div class="actions"><button id="downloadLog">Download diagnostics</button><button id="clearLog">Clear log</button></div>
+      </article>
+    </div>
+    <article class="panel">
+      <h2>Local infrastructure</h2>
+      <div id="orchestratorStatus" class="notice">Checking supervisor…</div>
+      <div id="toolGrid" class="tool-grid"></div>
+      <button id="refreshSystem">Refresh system status</button>
+    </article>
+  </section>
+</main>
+
+<div id="toast"></div>
+<script type="module" src="/assets/studio.js"></script>
+</body>
+</html>
