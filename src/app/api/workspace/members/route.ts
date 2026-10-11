@@ -11,7 +11,7 @@ const schema=z.object({workspaceId:z.string().min(1).max(128),email:z.string().t
 export async function POST(request:NextRequest){
   const gate=await requireSession();if(!gate.ok)return gate.response;
   if(!isSameOriginWorkspaceRequest(request.headers.get("origin"),request.nextUrl.origin))return NextResponse.json({error:"A same-origin request is required.",code:"SAME_ORIGIN_REQUIRED"},{status:403});
-  const context=getRequestContext(request);const limit=rateLimit(`${gate.session.userId}:${context.ipAddress}`,{key:"workspace:members",windowMs:60_000,max:10});if(!limit.ok)return rateLimitedResponse(limit.retryAfterSeconds);
+  const context=getRequestContext(request);const limit=await rateLimit(`${gate.session.userId}:${context.ipAddress}`,{key:"workspace:members",windowMs:60_000,max:10});if(!limit.ok)return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
   const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return NextResponse.json({error:"Validation failed",details:parsed.error.flatten()},{status:400});
   try{
     if(gate.session.authSource==="supabase_gateway"){const token=await getGatewaySessionToken();if(!token)return NextResponse.json({error:"Gateway session required"},{status:401});return NextResponse.json(await workspaceGateway("add_member",token,parsed.data),{status:201})}

@@ -99,7 +99,9 @@ export async function GET(_request: NextRequest) {
     }
   }
 
-  const healthy = database === "ok" || database === "gateway_ok";
+  const databaseHealthy = database === "ok" || database === "gateway_ok";
+  const authenticationConfigured = gatewaySelected || (process.env.JWT_SECRET?.trim().length ?? 0) >= 32;
+  const healthy = databaseHealthy && authenticationConfigured;
 
   return NextResponse.json(
     {
@@ -109,9 +111,10 @@ export async function GET(_request: NextRequest) {
       deployment: deploymentMetadata(),
       services: {
         backend,
-        database: healthy ? "ok" : "error",
+        database: databaseHealthy ? "ok" : "error",
         databaseDiagnostic: database,
-        authentication: healthy ? "ok" : "degraded",
+        authentication: !authenticationConfigured ? "not_configured" : databaseHealthy ? "configured" : "degraded",
+        authenticationVerified: false,
         administratorConfigured,
       },
     },
