@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Film, HardDriveUpload, ShieldCheck, WandSparkles } from "lucide-react";
 import { GovernedVideoPreviewPanel } from "@/components/social-media/GovernedVideoPreviewPanel";
+import { TokMetricVideoPublisher } from "@/components/tokmetric/TokMetricVideoPublisher";
 
 const stages = [
   ["1", "Recipe", "Use an approved content version with scenes, narration, captions, and rendering inputs."],
@@ -64,6 +65,17 @@ export default function SocialMediaVideoPage() {
           <h2 className="text-lg font-bold text-white">Verified video preview</h2>
         </div>
         <GovernedVideoPreviewPanel />
+      </section>
+
+      <section id="tiktok-publishing" className="scroll-mt-24 rounded-2xl border border-fuchsia-500/15 bg-card/75 p-5 sm:p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <HardDriveUpload className="h-5 w-5 text-fuchsia-200" />
+          <h2 className="text-lg font-bold text-white">Approved video distribution</h2>
+        </div>
+        <p className="mb-5 max-w-4xl text-sm leading-6 text-slate-400">
+          Select an exact approved media asset, preview it, confirm its checksum when using a local file, and send it through TikTok&apos;s governed Content Posting workflow. Provider authorization and live publishing gates remain fail-closed until they are approved.
+        </p>
+        <TokMetricVideoPublisher />
       </section>
     </div>
   );

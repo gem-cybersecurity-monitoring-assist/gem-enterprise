@@ -99,6 +99,30 @@ export async function requireActiveTokMetricSession(
   return session;
 }
 
+export function requireSameOriginRequest(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (!origin) {
+    throw new TokMetricError(
+      403,
+      "ORIGIN_REQUIRED",
+      "An explicit same-origin browser request is required.",
+    );
+  }
+  let requestOrigin: string;
+  try {
+    requestOrigin = new URL(origin).origin;
+  } catch {
+    throw new TokMetricError(403, "ORIGIN_INVALID", "The request origin is invalid.");
+  }
+  if (requestOrigin !== request.nextUrl.origin) {
+    throw new TokMetricError(
+      403,
+      "SAME_ORIGIN_REQUIRED",
+      "Cross-origin TokMetric operations are not allowed.",
+    );
+  }
+}
+
 export async function requireWorkspaceAccess(workspaceId: string, session: SessionPayload) {
   assertTokMetricPersistenceAuthority(session);
   const membership = await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: session.userId } }, include: { role: { include: { permissions: true } } } });
