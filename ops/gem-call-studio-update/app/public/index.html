@@ -33,13 +33,32 @@
 <label>Saved team member<select id="teamProfile"></select></label>
 <label>New team member name<input id="teamName" maxlength="80" placeholder="Customer support representative"></label>
 <label>Full-body reference images (1–8)<input id="teamImages" type="file" multiple accept="image/png,image/jpeg,image/webp"></label>
-<label>Independent background<input id="teamBackground" type="file" accept="image/png,image/jpeg,image/webp"></label>
-<label>Custom voice reference<input id="teamVoice" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/flac"></label>
+<label>Optional profile background — scene library below<input id="teamBackground" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>Optional voice reference — use a live voice app below<input id="teamVoice" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/flac"></label>
 <label class="checkbox"><input id="teamFullBody" type="checkbox"> At least one reference shows the full body.</label>
 <label class="checkbox"><input id="teamAuthorized" type="checkbox"> I am authorized to use these images and voice as a disclosed virtual team member.</label>
 <div class="actions"><button id="saveTeam">Save new team member</button><button id="deleteTeam">Delete selected member</button></div>
 <div id="teamPreview"></div><p id="teamStatus" role="status"></p>
 <div class="notice">Your performance controls the conversation. Uploading a voice sample stores a reference; it does not install voice conversion.</div>
+</article>
+<article class="panel">
+<h2>Reference source, background changer and live voice</h2>
+<label>Notion reference page<input id="notionSource" type="url" placeholder="https://www.notion.so/..."></label>
+<a id="notionPageLink" target="_blank" rel="noopener noreferrer">Open Notion profile gallery</a>
+<p id="notionStatus" role="status"></p>
+<label>Scene category<select id="backgroundCategory"><option value="home">Home</option><option value="office">Office</option><option value="bedroom">Bedroom</option><option value="pool">Swimming pool</option><option value="custom">Other space</option></select></label>
+<label>Upload multiple scene images or moving backgrounds<input id="uploadBackgrounds" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"></label>
+<label>Choose background<select id="backgroundChoice"></select></label>
+<button id="deleteBackground">Delete selected background</button>
+<div id="backgroundPreview"></div>
+<label>Live voice application<select id="voiceProvider"><option value="voicemod">Voicemod</option><option value="voicemeeter">VoiceMeeter routing</option><option value="other">Other voice application</option></select></label>
+<p>Select the voice or preset inside your voice app. Studio selects its audio device; it does not control that app's preset library.</p>
+<label>Converted voice input<select id="voiceDevice"><option value="">Scan for the voice app virtual microphone</option></select></label>
+<button id="scanVoiceDevices">Detect voice devices</button>
+<button data-launch="voicemod">Open Voicemod</button>
+<button data-launch="voicemeeter">Open VoiceMeeter</button>
+<p id="voiceStatus" role="status">Voice conversion has not been verified.</p>
+<p id="sceneStatus" role="status"></p>
 </article>
 <div class="two-col">
       <article class="panel">
@@ -190,6 +209,6 @@
 </main>
 
 <div id="toast"></div>
-<script type="module" src="/assets/studio.js"></script>
+<script type="module" src="/assets/studio.js?v=scene-voice-20261011"></script>
 </body>
 </html>

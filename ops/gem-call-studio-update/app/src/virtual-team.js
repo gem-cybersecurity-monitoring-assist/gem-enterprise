@@ -2,13 +2,13 @@ const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export function validateProfile(p) {
   if (!p || typeof p.name !== "string" || !p.name.trim() || p.name.length > 80) throw new Error("Enter a team member name (up to 80 characters).");
   if (!Array.isArray(p.images) || p.images.length < 1 || p.images.length > 8) throw new Error("Choose 1–8 full-body reference images.");
-  for (const image of [...p.images, p.background]) {
+  for (const image of [...p.images, ...(p.background ? [p.background] : [])]) {
     if (!image || !TYPES.has(image.type) || image.size <= 0 || image.size > 5 * 1024 * 1024) throw new Error("Images must be JPEG, PNG or WebP, each under 5 MB.");
   }
-  if (!p.voiceSample || !["audio/wav","audio/x-wav","audio/mpeg","audio/mp4","audio/ogg","audio/webm","audio/flac"].includes(p.voiceSample.type) ||
-      p.voiceSample.size <= 0 || p.voiceSample.size > 15 * 1024 * 1024) throw new Error("Choose a voice reference (WAV, MP3, M4A, OGG, WebM or FLAC, under 15 MB).");
+  if (p.voiceSample && (!["audio/wav","audio/x-wav","audio/mpeg","audio/mp4","audio/ogg","audio/webm","audio/flac"].includes(p.voiceSample.type) ||
+      p.voiceSample.size <= 0 || p.voiceSample.size > 15 * 1024 * 1024)) throw new Error("Voice reference must be a supported audio file under 15 MB.");
   if (p.authorized !== true || p.fullBodyConfirmed !== true) throw new Error("Confirm asset authorization and a full-body reference.");
-  if ([...p.images, p.background, p.voiceSample].reduce((n, f) => n + f.size, 0) > 40 * 1024 * 1024) throw new Error("Keep each team profile under 40 MB.");
+  if ([...p.images, ...(p.background ? [p.background] : []), ...(p.voiceSample ? [p.voiceSample] : [])].reduce((n, f) => n + f.size, 0) > 40 * 1024 * 1024) throw new Error("Keep each team profile under 40 MB.");
   return p;
 }
 export function assessFullBodyReadiness(profile, caps = {}) {
@@ -57,7 +57,7 @@ export function initVirtualTeam({ onSelect = () => {}, isBusy = () => false } = 
     revoke(); selected = p;
     const preview = $("teamPreview"); preview.replaceChildren();
     if (p) {
-      for (const file of [...p.images, p.background]) {
+      for (const file of [...p.images, ...(p.background ? [p.background] : [])]) {
         const img = document.createElement("img");
         img.src = URL.createObjectURL(file); urls.push(img.src);
         img.alt = "Saved reference — static asset, not live output";
@@ -87,7 +87,7 @@ export function initVirtualTeam({ onSelect = () => {}, isBusy = () => false } = 
         voiceSample: $("teamVoice").files[0], authorized: $("teamAuthorized").checked,
         fullBodyConfirmed: $("teamFullBody").checked, createdAt: new Date().toISOString() });
       if (profiles.length >= 20) throw new Error("Maximum 20 team profiles. Delete an unused profile first.");
-      for (const file of [...p.images, p.background]) {
+      for (const file of [...p.images, ...(p.background ? [p.background] : [])]) {
         const bitmap = await createImageBitmap(file);
         const oversized = bitmap.width * bitmap.height > 24000000;
         bitmap.close(); if (oversized) throw new Error("Use images below 24 megapixels.");

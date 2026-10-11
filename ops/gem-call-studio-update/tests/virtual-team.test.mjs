@@ -4,8 +4,8 @@ import { validateProfile, assessFullBodyReadiness } from "../app/src/virtual-tea
 const img = { type: "image/png", size: 10 };
 const p = () => ({ name:"Support", images:[img,img], background:img, voiceSample:{type:"audio/wav",size:10}, authorized:true,fullBodyConfirmed:true });
 test("accepts multiple full-body references and independent background/voice",()=> assert.equal(validateProfile(p()).images.length,2));
-test("rejects missing authorization, voice or full-body reference",()=> {
-  for(const change of [{authorized:false},{fullBodyConfirmed:false},{voiceSample:null},{background:null},{images:[]}]) assert.throws(()=>validateProfile({...p(),...change}));
+test("rejects missing authorization or full-body references",()=> {
+  for(const change of [{authorized:false},{fullBodyConfirmed:false},{images:[]}]) assert.throws(()=>validateProfile({...p(),...change}));
 });
 test("rejects excessive files and unsupported image types",()=> {
   assert.throws(()=>validateProfile({...p(),images:Array(9).fill(img)}));
@@ -21,3 +21,5 @@ test("all independently verified capabilities are required",()=> {
  assert.equal(assessFullBodyReadiness(p(),caps).ready,true);
  for(const key of Object.keys(caps)) assert.equal(assessFullBodyReadiness(p(),{...caps,[key]:false}).ready,false);
 });
+
+test("live voice app and independent scene can be chosen without profile audio/background uploads",()=>assert.equal(validateProfile({...p(),voiceSample:null,background:null}).name,"Support"));

@@ -1,3 +1,4 @@
+import { initSceneControls } from "./scene-controls.js";
 import { singleFlight, pollSequential } from "./fast-flow.js";
 const readOnce = singleFlight();
 const refreshOnce = singleFlight();
@@ -1164,6 +1165,7 @@ function bind() {
   });
 }
 
+initSceneControls({ isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream) });
 virtualTeam = initVirtualTeam({
   isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream),
   onSelect: (profile) => { if ($("#engineMode").value === "fullbody") $("#sessionMessage").textContent = profile ? profile.name + " selected. Full-body renderer and custom voice connection pending." : "Select or create a virtual team member."; }
