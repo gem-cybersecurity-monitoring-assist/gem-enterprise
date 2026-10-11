@@ -1040,16 +1040,28 @@ async function refreshObs() {
       <div><span>OBS process</span><strong>${diagnostics.running ? "Running" : "Stopped"}</strong></div>
       <div><span>Virtual Camera device</span><strong>${diagnostics.virtualCameraDetected ? escapeHtml(diagnostics.virtualCameraName) : "Not detected"}</strong></div>
       <div><span>Supervisor ownership</span><strong>${diagnostics.managed ? "Managed" : "Manual/existing"}</strong></div>`;
-    if (!diagnostics.virtualCameraDetected) setGate("virtualCamera", "wait", "Device not detected");
-  } catch {}
+    if (diagnostics.virtualCameraActive === true) {
+      $("#obsCameraState").textContent = "Running";
+      setGate("virtualCamera", "pass", "Running · verified automatically");
+    } else {
+      $("#obsCameraState").textContent = diagnostics.virtualCameraActive === false ? "Stopped" : "Not verified";
+      setGate("virtualCamera", "wait", diagnostics.virtualCameraActive === false ? "Camera stopped" : "Activation not verified");
+    }
+  } catch {
+    $("#obsCameraState").textContent = "Status unavailable";
+    setGate("virtualCamera", "wait", "Status unavailable");
+  }
 
     })(),
     (async () => {
   try {
     const bridge = await api("/api/bridge/status");
     $("#obsBridgeState").textContent = `${bridge.publisherState} / ${bridge.viewerState}`;
-    if (bridge.viewerState === "streaming") setGate("bridge", "pass", "OBS receiving");
-  } catch {}
+    if (bridge.viewerState === "streaming" && frameValidationPassed && remoteStream) setGate("bridge", "pass", "OBS receiving transformed video");
+    else setGate("bridge", "wait", "Waiting for transformed video");
+  } catch {
+    setGate("bridge", "wait", "Bridge status unavailable");
+  }
 
     })()
   ]));

@@ -31,7 +31,8 @@ try {
  if(save.count!==3)throw new Error("Multiple image/background preview failed");
  console.log("PROFILE_SAVED="+JSON.stringify(save));
  await send("Page.reload",{ignoreCache:true});await wait(1800);
- const persisted=await evaluate("Array.from(document.querySelector('#teamProfile').options).some(o=>o.textContent==='TEST virtual team validation')");
+ let persisted=false;
+ for(let n=0;n<60;n++){persisted=await evaluate("Array.from(document.querySelector('#teamProfile')?.options||[]).some(o=>o.textContent==='TEST virtual team validation')");if(persisted)break;await wait(250);}
  if(!persisted)throw new Error("Profile persistence failed");
  await evaluate("document.querySelector('#teamProfile').value="+JSON.stringify(save.id)+";document.querySelector('#teamProfile').dispatchEvent(new Event('change'));document.querySelector('#consent').checked=true;document.querySelector('#connect').click();true");
  await wait(1500);
@@ -64,4 +65,9 @@ try {
  const layout=await evaluate("({cards:Array.from(document.querySelectorAll('.simple-choices > article')).map(e=>e.querySelector('h2').textContent),openAdvanced:document.querySelector('.advanced-settings').open,duplicates:Array.from(document.querySelectorAll('[id]')).map(e=>e.id).filter((x,i,a)=>a.indexOf(x)!==i)})");
  if(layout.cards.length!==3||layout.openAdvanced||layout.duplicates.length)throw new Error("Simple layout failed");
  console.log("SIMPLE_LAYOUT="+JSON.stringify(layout));
+
+ let ready=false;
+ for(let n=0;n<40;n++){await wait(500);if(await evaluate("document.querySelector('#gateList').textContent.includes('Running · verified automatically')")){ready=true;break;}}
+ if(!ready)throw new Error("Automatic OBS Virtual Camera gate did not turn green");
+ console.log("AUTO_OBS_GATE_PASS");
 }finally{ws.close();}
