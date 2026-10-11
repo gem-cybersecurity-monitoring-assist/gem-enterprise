@@ -36,7 +36,7 @@ import {
   markSocialPublishingJobFailed,
   markSocialPublishingJobPublished,
 } from "./store";
-import { providerPauseState } from "./pause";
+import { providerPauseState, persistentProviderPauseState } from "./pause";
 import { verifySocialPublication } from "./verification";
 import { slotWindowUtc } from "./slots";
 import type { SocialPublishingJobRecord } from "./types";
@@ -259,6 +259,21 @@ async function processJob(job: SocialPublishingJobRecord) {
       "SOCIAL_PROVIDER_PAUSED",
       pause.reason ??
         "Publishing for this provider is paused by an operator.",
+      { connectorId: job.connectorId },
+    );
+  }
+
+  // Provider-wide persisted pauses apply to already queued jobs as well as
+  // new schedules. A missing or unreachable pause store fails closed.
+  const persistedPause = await persistentProviderPauseState(
+    job.workspaceId,
+    job.provider,
+  );
+  if (persistedPause.paused) {
+    return block(
+      job,
+      "SOCIAL_PROVIDER_PAUSED",
+      persistedPause.reason ?? "Publishing is paused for this provider.",
       { connectorId: job.connectorId },
     );
   }
