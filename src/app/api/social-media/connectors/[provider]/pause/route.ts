@@ -10,9 +10,10 @@ import {
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
-import { parseSocialOAuthProvider } from "@/lib/social-media/oauth/config";
+
 import {
   assertSocialProviderPauseAdmin,
+  parseSocialPauseProvider,
   pauseSocialProvider,
   unpauseSocialProvider,
 } from "@/lib/social-media/oauth/provider-pause";
@@ -64,7 +65,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     requireSameOrigin(request);
     const session = await requireActiveTokMetricSession(request);
     const { provider: rawProvider } = await context.params;
-    provider = parseSocialOAuthProvider(rawProvider);
+    provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, pauseSchema);
     workspaceId = parsed.workspaceId!;
     const membership = await requireWorkspaceAccess(workspaceId, session);
@@ -123,7 +124,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     requireSameOrigin(request);
     const session = await requireActiveTokMetricSession(request);
     const { provider: rawProvider } = await context.params;
-    provider = parseSocialOAuthProvider(rawProvider);
+    provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, unpauseSchema);
     workspaceId = parsed.workspaceId!;
     const membership = await requireWorkspaceAccess(workspaceId, session);
