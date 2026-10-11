@@ -26,6 +26,8 @@ import { clientWorkspaceModules } from "@/lib/clientWorkspaceCatalog";
 export interface WorkspaceConnectorSignal {
   provider: string;
   state: string;
+  /** Service mappings supplied by a trusted backend, never by a browser. */
+  moduleIds?: readonly string[];
 }
 
 export interface WorkspaceModuleReadinessContext {
@@ -68,8 +70,13 @@ function hasConnectedConnector(ctx: WorkspaceModuleReadinessContext): boolean {
   return ctx.connectors.some((connector) => connector.state === "CONNECTED");
 }
 
-function hasConfiguredConnector(ctx: WorkspaceModuleReadinessContext): boolean {
-  return ctx.connectors.some((connector) => CONFIGURED_CONNECTOR_STATES.has(connector.state));
+const SOCIAL_PROVIDERS = new Set(["META", "FACEBOOK_PAGE", "INSTAGRAM_PROFESSIONAL", "X", "LINKEDIN", "LINKEDIN_COMPANY", "YOUTUBE", "NEXTDOOR", "TIKTOK", "TIKTOK_CONTENT_POSTING_API", "TIKTOK_BUSINESS_API"]);
+
+function moduleConnectors(moduleId: string, ctx: WorkspaceModuleReadinessContext) {
+  return ctx.connectors.filter((connector) =>
+    connector.moduleIds?.includes(moduleId) ||
+    (moduleId === "social_media" && SOCIAL_PROVIDERS.has(connector.provider.toUpperCase())),
+  );
 }
 
 const MODULE_RULES: Record<string, ModuleCapabilityRule> = {
@@ -125,10 +132,11 @@ export function resolveWorkspaceModuleReadiness(
   const entitled = entitlementSlug ? ctx.entitlements.includes(entitlementSlug) : true;
   const providerNeeded = rule.providerNeeded ?? catalogModule?.providerNeeded ?? false;
   const kycRequired = rule.kycRequired ?? false;
-  const providerConfigured = providerNeeded ? hasConfiguredConnector(ctx) : false;
+  const connectors = moduleConnectors(moduleId, ctx);
+  const providerConfigured = providerNeeded && connectors.some((connector) => CONFIGURED_CONNECTOR_STATES.has(connector.state));
   const providerHealthy = providerNeeded
     ? providerConfigured
-      ? hasConnectedConnector(ctx)
+      ? connectors.some((connector) => connector.state === "CONNECTED")
       : null
     : null;
   const setupNeeded =
