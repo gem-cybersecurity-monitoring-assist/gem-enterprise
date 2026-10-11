@@ -7,6 +7,7 @@ import {
   Lock,
   MessageSquare,
   ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,12 @@ const communicationPaths = [
     description: "Request a portfolio review, compliance review, cyber briefing, or trust consultation.",
     href: "/app/meetings",
     icon: CalendarClock,
+  },
+  {
+    title: "WhatsApp Operations",
+    description: "Use the connected WhatsApp Business channel for permitted support, reminders, case updates, and service handoffs.",
+    href: "/app/whatsapp",
+    icon: Smartphone,
   },
 ];
 

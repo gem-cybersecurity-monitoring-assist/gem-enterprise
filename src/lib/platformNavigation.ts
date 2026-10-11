@@ -243,6 +243,12 @@ export const clientPortalNavGroups: PlatformNavGroup[] = [
         description: "Secure messaging and conversation threads.",
       },
       {
+        href: "/app/whatsapp",
+        icon: "MessageSquare",
+        label: "WhatsApp Operations",
+        description: "Coordinate WhatsApp-supported service, case, appointment, and document handoffs.",
+      },
+      {
         href: "/app/notifications",
         icon: "Bell",
         label: "Notifications",
