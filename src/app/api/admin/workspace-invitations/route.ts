@@ -89,12 +89,12 @@ export async function POST(request: NextRequest) {
   const originFailure = sameOriginFailure(request);
   if (originFailure) return originFailure;
   const { ipAddress } = getRequestContext(request);
-  const limit = rateLimit(`${authorization.userId}:${ipAddress}`, {
+  const limit = await rateLimit(`${authorization.userId}:${ipAddress}`, {
     key: "admin:workspace-owner-invitations:write",
     windowMs: 5 * 60_000,
     max: 10,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {
@@ -124,12 +124,12 @@ export async function DELETE(request: NextRequest) {
   const originFailure = sameOriginFailure(request);
   if (originFailure) return originFailure;
   const { ipAddress } = getRequestContext(request);
-  const limit = rateLimit(`${authorization.userId}:${ipAddress}`, {
+  const limit = await rateLimit(`${authorization.userId}:${ipAddress}`, {
     key: "admin:workspace-owner-invitations:write",
     windowMs: 5 * 60_000,
     max: 10,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {

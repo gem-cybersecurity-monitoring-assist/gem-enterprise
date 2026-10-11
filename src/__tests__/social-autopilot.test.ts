@@ -115,6 +115,26 @@ describe("social autopilot scheduler", () => {
     });
     expect(slots.length).toBeLessThanOrEqual(6);
   });
+
+  it.each(["X", "FACEBOOK_PAGE", "LINKEDIN_COMPANY"] as const)(
+    "fills the available %s capacity without jitter exceeding the window",
+    (provider) => {
+      const policy = getSocialAutopilotProviderPolicy(provider, {});
+      for (let day = 1; day <= 31; day += 1) {
+        const planDate = new Date(Date.UTC(2026, 9, day));
+        const slots = buildSocialAutopilotSlots({
+          provider, planDate, count: policy.hardDailyCap,
+          now: new Date("2026-09-30T00:00:00.000Z"), env: {},
+        });
+        expect(slots).toHaveLength(Math.min(policy.hardDailyCap, Math.floor(14 * 60 / policy.minSpacingMinutes) + 1));
+        expect(slots[0].getTime()).toBeGreaterThanOrEqual(planDate.getTime() + 8 * 60 * 60_000);
+        expect(slots.at(-1)!.getTime()).toBeLessThanOrEqual(planDate.getTime() + 22 * 60 * 60_000);
+        for (let index = 1; index < slots.length; index += 1) {
+          expect(slots[index].getTime() - slots[index - 1].getTime()).toBeGreaterThanOrEqual(policy.minSpacingMinutes * 60_000);
+        }
+      }
+    },
+  );
 });
 
 

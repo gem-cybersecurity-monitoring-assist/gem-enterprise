@@ -96,12 +96,12 @@ function scoreRisk(body: IntakeBody): RiskScore {
 export async function POST(req: NextRequest) {
   const requestId = `INT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   const { ipAddress, userAgent } = getRequestContext(req);
-  const limit = rateLimit(ipAddress, {
+  const limit = await rateLimit(ipAddress, {
     key: "intake:submit",
     windowMs: 60 * 60_000,
     max: 12,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {
