@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { rateLimit, rateLimitedResponse } from "@/lib/api/rate-limit";
+import { isSameOriginWorkspaceRequest } from "@/lib/organizationWorkspace";
 import {
   forbidden,
   getRequestContext,
@@ -85,6 +87,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
   if (!isStaffRole(gate.session.role)) return forbidden();
 
+  if (!isSameOriginWorkspaceRequest(request.headers.get("origin"), request.nextUrl.origin)) {
+    return forbidden("An explicit same-origin request is required.", "SAME_ORIGIN_REQUIRED");
+  }
+  const requestContext = getRequestContext(request);
+  const limit = await rateLimit(`${gate.session.userId}:${requestContext.ipAddress}`, {
+    key: "admin:service-requests:write", windowMs: 60_000, max: 20,
+  });
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
+
   const { id } = await context.params;
 
   let body: unknown;
@@ -105,7 +116,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const requestContext = getRequestContext(request);
   const actor = actorFromGate(gate);
 
   try {

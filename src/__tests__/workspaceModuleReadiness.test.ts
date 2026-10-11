@@ -33,9 +33,32 @@ function ctx(
   };
 }
 
-const connected = [{ provider: "plaid", state: "CONNECTED" }];
-const staleConnector = [{ provider: "plaid", state: "DISCONNECTED" }];
-const expiredConnector = [{ provider: "plaid", state: "TOKEN_EXPIRED" }];
+const moduleIds = ["finance", "portfolio", "savings", "digital_finance"];
+const connected = [{ provider: "plaid", state: "CONNECTED", moduleIds }];
+const staleConnector = [{ provider: "plaid", state: "DISCONNECTED", moduleIds }];
+const expiredConnector = [{ provider: "plaid", state: "TOKEN_EXPIRED", moduleIds }];
+
+describe("service-specific connector readiness", () => {
+  it("does not count a social connection as a finance provider", () => {
+    const signals = ctx({ connectors: [{ provider: "META", state: "CONNECTED" }] });
+    expect(resolveWorkspaceModuleState("finance", signals).state).toBe("PROVIDER_NOT_CONFIGURED");
+    expect(resolveWorkspaceModuleState("social_media", signals).state).toBe("SURFACE_AVAILABLE");
+  });
+
+  it("does not count an unrelated healthy connection as health for the selected service", () => {
+    const input = resolveWorkspaceModuleReadiness("finance", ctx({ connectors: [
+      ...expiredConnector, { provider: "META", state: "CONNECTED" },
+    ] }));
+    expect(input.providerConfigured).toBe(true);
+    expect(input.providerHealthy).toBe(false);
+  });
+
+  it("requires an explicit trusted mapping for an unknown provider", () => {
+    expect(resolveWorkspaceModuleState("finance", ctx({ connectors: [
+      { provider: "unknown", state: "CONNECTED" },
+    ] })).state).toBe("PROVIDER_NOT_CONFIGURED");
+  });
+});
 
 describe("finance / portfolio / savings fail closed without a usable connector", () => {
   it.each(["finance", "portfolio", "savings"])(
@@ -187,7 +210,7 @@ describe("a route existing never means LIVE", () => {
     for (const catalogModule of clientWorkspaceModules) {
       const result = resolveWorkspaceModuleState(catalogModule.id, generous);
       if (result.state === "LIVE") live.push(catalogModule.id);
-      expect(["SURFACE_AVAILABLE", "SETUP_REQUIRED", "UNAVAILABLE"]).toContain(result.state);
+      expect(["SURFACE_AVAILABLE", "SETUP_REQUIRED", "UNAVAILABLE", "PROVIDER_NOT_CONFIGURED"]).toContain(result.state);
     }
     expect(live).toEqual([]);
   });
