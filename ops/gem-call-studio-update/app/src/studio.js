@@ -1,3 +1,6 @@
+import { singleFlight, pollSequential } from "./fast-flow.js";
+const readOnce = singleFlight();
+const refreshOnce = singleFlight();
 import { initVirtualTeam, assessFullBodyReadiness } from "./virtual-team.js";
 import { createDecartClient, models } from "@decartai/sdk";
 import OBSWebSocket from "obs-websocket-js";
@@ -80,7 +83,12 @@ function toast(message) {
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && typeof options.body === "string" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-  const response = await fetch(path, { cache: "no-store", ...options, headers });
+  const request = () => fetch(path, {
+    cache: "no-store", ...options, headers,
+    signal: options.signal || AbortSignal.timeout(path === "/api/obs/diagnostics" ? 20000 : 10000)
+  });
+  const readOnly = !options.method || options.method.toUpperCase() === "GET";
+  const response = readOnly ? (await readOnce(path, request)).clone() : await request();
   if (response.status === 204) return null;
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || response.statusText);
@@ -1022,6 +1030,8 @@ async function refreshTools() {
 }
 
 async function refreshObs() {
+  return refreshOnce("obs", () => Promise.allSettled([
+    (async () => {
   try {
     const diagnostics = await api("/api/obs/diagnostics");
     $("#obsDiagnostics").innerHTML = `
@@ -1032,11 +1042,16 @@ async function refreshObs() {
     if (!diagnostics.virtualCameraDetected) setGate("virtualCamera", "wait", "Device not detected");
   } catch {}
 
+    })(),
+    (async () => {
   try {
     const bridge = await api("/api/bridge/status");
     $("#obsBridgeState").textContent = `${bridge.publisherState} / ${bridge.viewerState}`;
     if (bridge.viewerState === "streaming") setGate("bridge", "pass", "OBS receiving");
   } catch {}
+
+    })()
+  ]));
 }
 
 async function launch(target) {
@@ -1156,9 +1171,9 @@ virtualTeam = initVirtualTeam({
 bind();
 renderGates();
 updateControls();
-refreshHealth();
 refreshTools();
-refreshObs();
 refreshDevices();
-setInterval(refreshHealth, 5000);
-setInterval(refreshObs, 5000);
+const pollOptions = { isHidden: () => document.hidden };
+const stopHealthPolling = pollSequential(() => refreshOnce("health", refreshHealth), pollOptions);
+const stopObsPolling = pollSequential(refreshObs, pollOptions);
+window.addEventListener("beforeunload", () => { stopHealthPolling(); stopObsPolling(); });
