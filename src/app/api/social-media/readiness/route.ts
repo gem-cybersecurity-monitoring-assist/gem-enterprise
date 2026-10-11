@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/auth-helpers";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
+import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
+import { getSocialBackendReadiness } from "@/lib/social-media/backend-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,7 @@ export async function GET() {
       livePublishingEnabled: process.env.SOCIAL_MEDIA_LIVE_PUBLISHING_ENABLED === "true",
       externalActionTaken: false,
       providers,
+      workflowBackend: getSocialBackendReadiness(shouldUseSupabaseGateway()),
     },
     {
       status: 200,
