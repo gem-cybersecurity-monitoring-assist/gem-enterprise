@@ -27,6 +27,7 @@ describe("production health respects selected persistence authority", () => {
         checkedSuccessfully: true,
         transactionalWorkflowsTested: false,
         providerPublishingTested: false,
+        explanation: expect.stringContaining("reachable"),
       },
     });
     expect(database.raw).not.toHaveBeenCalled();
@@ -44,6 +45,7 @@ describe("production health respects selected persistence authority", () => {
         checkedSuccessfully: false,
         transactionalWorkflowsTested: false,
         providerPublishingTested: false,
+        explanation: expect.stringContaining("unavailable or unconfigured"),
       },
     });
     expect(database.raw).not.toHaveBeenCalled();
@@ -54,6 +56,7 @@ describe("production health respects selected persistence authority", () => {
     gateway.status.mockResolvedValue({ configured: false });
     const response = await GET();
     expect(response.status).toBe(503);
+    expect((await response.json()).verificationScope.explanation).toContain("unavailable or unconfigured");
   });
 
   it("preserves a direct database check when Prisma is selected", async () => {
@@ -77,6 +80,10 @@ describe("production health respects selected persistence authority", () => {
   it("reports degraded when a selected direct database fails", async () => {
     gateway.selected.mockReturnValue(false);
     database.raw.mockRejectedValue(new Error("db offline"));
-    expect((await GET()).status).toBe(503);
+    const response = await GET();
+    expect(response.status).toBe(503);
+    const body = await response.json();
+    expect(body.verificationScope.explanation).toContain("probe failed");
+    expect(body.verificationScope.checkedSuccessfully).toBe(false);
   });
 });

@@ -28,9 +28,13 @@ export async function GET() {
         checkedSuccessfully: healthy,
         transactionalWorkflowsTested: false,
         providerPublishingTested: false,
-        explanation: databaseBackend === "supabase_gateway"
-          ? "Gateway bootstrap is reachable; this does not verify Prisma-backed workflows, publisher transactions, or provider authorization."
-          : "A direct database SELECT 1 confirms connectivity only; workflow reads, writes, and provider transactions have not been exercised.",
+        explanation: !healthy
+          ? databaseBackend === "supabase_gateway"
+            ? "Gateway bootstrap is unavailable or unconfigured. Prisma-backed and provider workflows were not tested."
+            : "The direct database connection probe failed. Workflow reads, writes, and provider transactions were not tested."
+          : databaseBackend === "supabase_gateway"
+            ? "Gateway bootstrap is reachable; this does not verify Prisma-backed workflows, publisher transactions, or provider authorization."
+            : "A direct database SELECT 1 confirms connectivity only; workflow reads, writes, and provider transactions have not been exercised.",
       },
       services: [
         { name: "application", status: "healthy" },

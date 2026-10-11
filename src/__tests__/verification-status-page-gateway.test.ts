@@ -28,12 +28,36 @@ describe("KYC status page gateway safety", () => {
       userId: "gateway-client",
       role: "client",
       authSource: "supabase_gateway",
+      kycStatus: "in_progress",
+      kycApplicationId: "case-1",
     });
     const response = await VerificationStatusPage();
     expect(mocks.latestApplication).not.toHaveBeenCalled();
     expect(mocks.toView).not.toHaveBeenCalled();
-    expect(response.props.children[0].props.children).toBe("Verification status temporarily unavailable");
-    expect(response.props.children[1].props.children).toContain("Signing in again will not resolve");
+    expect(response.props.children[0].props.children).toBe("Application status");
+    expect(response.props.children[1].props.children).toBe("Submitted for review");
+    expect(response.props.children[2].props.children).toContain("not a completed identity verification");
+  });
+
+  it.each([
+    ["not_started", "No submitted verification status on file"],
+    ["documents_uploaded", "Documents received — verification unconfirmed"],
+    ["under_review", "Review in progress"],
+    ["manual_review", "Manual attention required"],
+    ["approved", "Application approved"],
+    ["rejected", "Application not approved"],
+    ["expired", "Application expired or closed"],
+    ["unknown_status", "Verification status not classified"],
+  ])("uses the refreshed gateway status %s without Prisma", async (kycStatus, label) => {
+    mocks.getSession.mockResolvedValue({
+      userId: "gateway-client",
+      role: "client",
+      authSource: "supabase_gateway",
+      kycStatus,
+    });
+    const response = await VerificationStatusPage();
+    expect(response.props.children[1].props.children).toBe(label);
+    expect(mocks.latestApplication).not.toHaveBeenCalled();
   });
 
   it("retains direct-database status lookup for authorized local sessions", async () => {
