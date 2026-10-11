@@ -38,6 +38,7 @@
   "exclude": [
     "node_modules",
     "_legacy",
-    "supabase"
+    "supabase",
+    "src/__tests__"
   ]
 }
