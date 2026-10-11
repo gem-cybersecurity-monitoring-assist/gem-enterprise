@@ -145,3 +145,18 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | BLOCKER CLASS | SOURCE |
 | LAST VERIFIED HEAD | Old PR head `3699dd5135acee4b5b1dc2c5c39674a195a5c666`; 41 commits behind current `main` |
 | NEXT SAFE ACTION | Compare old intent with current main and reimplement only behavior still missing; do not rebase blindly. |
+
+## Enterprise repository and connected-workspace audit
+
+| Field | Value |
+|---|---|
+| TASK | [ENTERPRISE-AUDIT-REPAIR](tasks/ENTERPRISE-AUDIT-REPAIR.md) |
+| OWNER | Codex / Enterprise audit repair |
+| SOURCE | Owner repository audit and repair mandate, 2026-10-02 |
+| BASE SHA | `7175341a328b522fdf181bf4f5ee78d6c3376f41` |
+| WORKING BRANCH | `codex/enterprise-audit-repair-20261002` |
+| OWNED FILES | Product registry; platform configuration routes/evidence; password-reset transaction; focused tests; audit documentation |
+| FORBIDDEN OVERLAP | Active social/provider, workspace OS, intake-routing, credential scan, database migration execution; merge |
+| STATUS | Local repairs validated; live Market and Command Center hosting made private; application code deployment pending |
+| BLOCKERS | Production identity/provider/database evidence; six reproduced base test failures; build errors in existing routes |
+| NEXT SAFE ACTION | Review isolated repair commits and coordinate existing build lanes before merge; verify configured stable Sites owner IDs |
