@@ -2,72 +2,40 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { orchestrateDailyContent } from "@/lib/social-media/orchestration/orchestrator";
 import {
+  isAuthorizedSocialCronRequest,
+  cronSecretMisconfigured,
+} from "@/lib/social-media/autopilot/cron-auth";import {
+  assertSocialAutopilotKillSwitchClear,
+  getWorkspacePausedProviders,
+  isKillSwitchError,
+} from "@/lib/social-media/autopilot/health";
+import { applyAutopilotLearning } from "@/lib/social-media/autopilot/learning";
+import {
   getSocialAutopilotProviderTargets,
   getSocialAutopilotProviders,
   getSocialAutopilotReserveDays,
+  isSocialAutopilotProviderPausedByConfig,
   socialAutopilotEnabled,
 } from "@/lib/social-media/autopilot/policy";
 import { reservePlanDates } from "@/lib/social-media/autopilot/scheduler";
+import { loadAutopilotSignalSelection } from "@/lib/social-media/autopilot/signals";
 import { materializeSocialAutopilotJobs } from "@/lib/social-media/autopilot/service";
 import {
   socialMediaProviderIds,
   type SocialMediaProviderId,
 } from "@/lib/social-media/providers";
+import { TokMetricError } from "@/lib/tokmetric/security";
 
-function configuredSecret() {
-  return (
-    process.env.CONTENT_ORCHESTRATOR_CRON_SECRET?.trim() ||
-    process.env.CRON_SECRET?.trim()
-  );
-}
-
+/**
+ * Scheduled-run authentication. The bearer secret (CONTENT_ORCHESTRATOR_CRON_SECRET,
+ * falling back to CRON_SECRET) is compared with crypto.timingSafeEqual inside
+ * isAuthorizedSocialCronRequest; a missing secret never authorizes (fail closed).
+ */
 function authorized(request: NextRequest) {
-  const configured = configuredSecret();
-  const header = request.headers.get("authorization")?.trim();
-  if (!configured || !header?.startsWith("Bearer ")) return false;
-  const supplied = header.slice("Bearer ".length);
-  const expectedBuffer = Buffer.from(configured);
-  const suppliedBuffer = Buffer.from(supplied);
-  return (
-    expectedBuffer.length === suppliedBuffer.length &&
-    crypto.timingSafeEqual(expectedBuffer, suppliedBuffer)
-  );
+  return isAuthorizedSocialCronRequest(request);
 }
 
-const evergreenThemes = [
-  ["Access ownership and MFA hygiene", "Review who owns critical accounts, whether MFA is enforced, and whether recovery paths still work."],
-  ["Backup and recovery readiness", "Test whether important business data can actually be restored and whether recovery responsibilities are clear."],
-  ["Vendor and third-party dependency risk", "Review critical external services, administrator access, fallback options, and dependency ownership."],
-  ["Payment-change verification", "Use an independent verification path before acting on payment, banking, or supplier-detail changes."],
-  ["Phishing reporting and escalation", "Make suspicious-message reporting simple and ensure staff know where urgent security concerns should go."],
-  ["Endpoint and patch readiness", "Keep supported devices current and track systems that cannot receive normal security updates."],
-  ["Joiner, mover, and leaver access", "Remove stale access quickly and review privileges when people change responsibilities."],
-  ["Recovery-code and privileged access hygiene", "Protect recovery methods and privileged credentials with the same care as primary sign-in credentials."],
-  ["Incident escalation readiness", "Define who can make containment decisions and how the business communicates during an incident."],
-  ["Cloud and SaaS access review", "Review administrators, integrations, stale accounts, and recovery contacts across business cloud services."],
-  ["Business continuity dependencies", "Identify the systems and people the business cannot operate without and maintain practical fallback plans."],
-  ["Security awareness through routine operations", "Turn common business actions into repeatable habits that reduce avoidable security mistakes."],
-] as const;
-
-function evergreenSignals(planDate: Date) {
-  const dayIndex = Math.floor(planDate.getTime() / (24 * 60 * 60 * 1000));
-  return Array.from({ length: 4 }, (_, offset) => {
-    const [topic, summary] =
-      evergreenThemes[(dayIndex + offset) % evergreenThemes.length];
-    return {
-      id: `gem-evergreen:${(dayIndex + offset) % evergreenThemes.length}`,
-      topic,
-      summary,
-      relevance: 0.58,
-      momentum: 0.32,
-      observedAt: planDate,
-      sourceReference: `gem-approved-evergreen:${(dayIndex + offset) % evergreenThemes.length}`,
-    };
-  });
-}
-
-const defaultProviders: SocialMediaProviderId[] = [
-  "TIKTOK",
+const defaultProviders: SocialMediaProviderId[] = [  "TIKTOK",
   "FACEBOOK_PAGE",
   "INSTAGRAM_PROFESSIONAL",
   "X",
@@ -93,11 +61,25 @@ function boundedInteger(value: string | undefined, fallback: number, min: number
   return Math.min(max, Math.max(min, parsed));
 }
 
+function killSwitchResponse() {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: {
+        code: "TOKMETRIC_LOCKED",
+        message:
+          "Workspace emergency controls block content orchestration; the run was stopped.",
+      },
+    },
+    { status: 423, headers: { "Cache-Control": "no-store, max-age=0" } },
+  );
+}
+
 async function run(request: NextRequest) {
-  const secret = configuredSecret();
+  const secretMisconfigured = cronSecretMisconfigured();
   const workspaceId = process.env.CONTENT_ORCHESTRATOR_WORKSPACE_ID?.trim();
   const actorId = process.env.CONTENT_ORCHESTRATOR_ACTOR_ID?.trim();
-  if (!secret || !workspaceId || !actorId) {
+  if (secretMisconfigured || !workspaceId || !actorId) {
     return NextResponse.json(
       {
         ok: false,
@@ -123,6 +105,15 @@ async function run(request: NextRequest) {
     );
   }
 
+  // Global emergency stop (globalEmergencyLock / publishingDisabled): fail
+  // closed before any orchestration or scheduling decision.
+  try {
+    await assertSocialAutopilotKillSwitchClear(workspaceId);
+  } catch (error) {
+    if (isKillSwitchError(error)) return killSwitchResponse();
+    throw error;
+  }
+
   try {
     const runStartedAt = new Date();
 
@@ -131,20 +122,49 @@ async function run(request: NextRequest) {
         now: runStartedAt,
         reserveDays: getSocialAutopilotReserveDays(),
       });
-      const providers = getSocialAutopilotProviders();
+      // WS-A provider pause contract: paused providers are excluded from
+      // daily content plans and slot assignments (surfaced as paused, not
+      // failed). The materializer re-checks at scheduling time as well.
+      const pausedProviders = await getWorkspacePausedProviders(workspaceId);
+      const providers = getSocialAutopilotProviders().filter(
+        (provider) =>
+          !pausedProviders.includes(provider) &&
+          !isSocialAutopilotProviderPausedByConfig(provider),
+      );
       const providerTargets = getSocialAutopilotProviderTargets();
       const cycles = [];
 
       for (const planDate of reserveDates) {
         const correlationId =
           `social-autopilot:${planDate.toISOString()}:${crypto.randomUUID()}`;
+
+        // Live signal ingestion: fresh approved news signals feed the
+        // AUTO_POLICY path. Honest fallback to GEM-approved evergreen themes
+        // when no fresh signals exist; provenance is recorded, never faked.
+        const selection = await loadAutopilotSignalSelection({
+          planDate,
+          env: process.env,
+        });
+        const learning = await applyAutopilotLearning({
+          workspaceId,
+          planDate,
+          signals: selection.signals,
+          env: process.env,
+        });
+
         const result = await orchestrateDailyContent({
           workspaceId,
           actorId,
           correlationId,
           planDate,
           enabledProviders: providers,
-          marketSignals: evergreenSignals(planDate),
+          marketSignals: learning.signals,
+          signalProvenance: selection.provenance,
+          signalMetadata: {
+            freshSignalCount: selection.freshSignalCount,
+            fallbackApplied: selection.fallbackApplied,
+            learningApplied: learning.learningApplied,
+          },
           useGemCatalog: true,
           localContext:
             process.env.CONTENT_ORCHESTRATOR_NEXTDOOR_LOCAL_CONTEXT?.trim(),
@@ -171,6 +191,10 @@ async function run(request: NextRequest) {
           skipped: materialized.skipped,
           blockedReasons: materialized.blockedReasons,
           rejectedReasons: result.plan.rejectedReasons,
+          signalProvenance: selection.provenance,
+          freshSignalCount: selection.freshSignalCount,
+          evergreenFallbackApplied: selection.fallbackApplied,
+          learningApplied: learning.learningApplied,
         });
       }
 
@@ -179,6 +203,7 @@ async function run(request: NextRequest) {
           ok: true,
           mode: "AUTO_POLICY",
           reserveDays: reserveDates.length,
+          pausedProviders: [...pausedProviders],
           cycles,
           externalActionTaken: false,
         },
@@ -225,7 +250,17 @@ async function run(request: NextRequest) {
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
     );
-  } catch {
+  } catch (error) {
+    if (isKillSwitchError(error)) return killSwitchResponse();
+    if (error instanceof TokMetricError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.status, headers: { "Cache-Control": "no-store, max-age=0" } },
+      );
+    }
     return NextResponse.json(
       {
         ok: false,

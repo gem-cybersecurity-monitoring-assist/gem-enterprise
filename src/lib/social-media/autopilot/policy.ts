@@ -11,6 +11,33 @@ export interface SocialAutopilotProviderPolicy {
   minSpacingMinutes: number;
   reserveDays: number;
   autoApprovalEligible: boolean;
+  /** Maximum PENDING/CLAIMED/RETRYING publishing jobs queued for this provider. */
+  maxQueueDepth: number;
+  /**
+   * Cooldown between autopilot materializations for this provider: no new
+   * jobs are scheduled when the previous materialization created jobs more
+   * recently than this many minutes ago. Prevents burst pile-ups from
+   * overlapping or repeated cron runs.
+   */
+  cooldownMinutes: number;
+  /** Consecutive-window failure threshold that pauses new scheduling. */
+  failurePauseThreshold: number;
+  /** Lookback window (minutes) for counting failed publishing jobs. */
+  failureWindowMinutes: number;
+  /** Base backoff minutes applied once failurePauseThreshold is reached. */
+  failureBackoffBaseMinutes: number;
+  /** Exponential multiplier applied per additional failure beyond threshold. */
+  failureBackoffMultiplier: number;
+  /** Fixed backoff minutes after a rate-limit failure in the window. */
+  rateLimitBackoffMinutes: number;
+  /** Lookback window (minutes) for counting rate-limit failures. */
+  rateLimitWindowMinutes: number;
+  /** Maximum age (hours) for a news signal to count as "live". */
+  signalFreshnessHours: number;
+  /** Minimum fresh live signals before evergreen fallback is declared. */
+  minLiveSignals: number;
+  /** Duplicate-content protection lookback for fingerprints (days). */
+  duplicateContentWindowDays: number;
 }
 
 const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPolicy> = {
@@ -21,6 +48,17 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 150,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 12,
+    cooldownMinutes: 90,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
   INSTAGRAM_PROFESSIONAL: {
     provider: "INSTAGRAM_PROFESSIONAL",
@@ -29,6 +67,17 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 180,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 12,
+    cooldownMinutes: 90,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
   X: {
     provider: "X",
@@ -37,6 +86,17 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 60,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 24,
+    cooldownMinutes: 30,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
   LINKEDIN_COMPANY: {
     provider: "LINKEDIN_COMPANY",
@@ -45,6 +105,17 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 240,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 8,
+    cooldownMinutes: 120,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
   YOUTUBE: {
     provider: "YOUTUBE",
@@ -53,6 +124,17 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 360,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 8,
+    cooldownMinutes: 180,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
   NEXTDOOR: {
     provider: "NEXTDOOR",
@@ -61,6 +143,36 @@ const defaults: Record<SharedSocialPublishingProvider, SocialAutopilotProviderPo
     minSpacingMinutes: 480,
     reserveDays: 3,
     autoApprovalEligible: true,
+    maxQueueDepth: 6,
+    cooldownMinutes: 240,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
+  },
+  TELEGRAM: {
+    provider: "TELEGRAM",
+    dailyTarget: 5,
+    hardDailyCap: 10,
+    minSpacingMinutes: 90,
+    reserveDays: 3,
+    autoApprovalEligible: true,
+    maxQueueDepth: 16,
+    cooldownMinutes: 60,
+    failurePauseThreshold: 3,
+    failureWindowMinutes: 360,
+    failureBackoffBaseMinutes: 60,
+    failureBackoffMultiplier: 2,
+    rateLimitBackoffMinutes: 240,
+    rateLimitWindowMinutes: 360,
+    signalFreshnessHours: 72,
+    minLiveSignals: 1,
+    duplicateContentWindowDays: 30,
   },
 };
 
@@ -77,6 +189,17 @@ function boundedInteger(
   maximum: number,
 ) {
   const parsed = raw ? Number.parseInt(raw, 10) : fallback;
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(maximum, Math.max(minimum, parsed));
+}
+
+function boundedNumber(
+  raw: string | undefined,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+) {
+  const parsed = raw ? Number.parseFloat(raw) : fallback;
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(maximum, Math.max(minimum, parsed));
 }
@@ -118,7 +241,89 @@ export function getSocialAutopilotProviderPolicy(
       1,
       7,
     ),
+    maxQueueDepth: boundedInteger(
+      env[`${prefix}_MAX_QUEUE_DEPTH`],
+      base.maxQueueDepth,
+      0,
+      100,
+    ),
+    cooldownMinutes: boundedInteger(
+      env[`${prefix}_COOLDOWN_MINUTES`],
+      base.cooldownMinutes,
+      0,
+      1440,
+    ),
+    failurePauseThreshold: boundedInteger(
+      env[`${prefix}_FAILURE_PAUSE_THRESHOLD`],
+      base.failurePauseThreshold,
+      1,
+      20,
+    ),
+    failureWindowMinutes: boundedInteger(
+      env[`${prefix}_FAILURE_WINDOW_MINUTES`],
+      base.failureWindowMinutes,
+      15,
+      10080,
+    ),
+    failureBackoffBaseMinutes: boundedInteger(
+      env[`${prefix}_FAILURE_BACKOFF_BASE_MINUTES`],
+      base.failureBackoffBaseMinutes,
+      5,
+      1440,
+    ),
+    failureBackoffMultiplier: boundedNumber(
+      env[`${prefix}_FAILURE_BACKOFF_MULTIPLIER`],
+      base.failureBackoffMultiplier,
+      1,
+      8,
+    ),
+    rateLimitBackoffMinutes: boundedInteger(
+      env[`${prefix}_RATE_LIMIT_BACKOFF_MINUTES`],
+      base.rateLimitBackoffMinutes,
+      5,
+      2880,
+    ),
+    rateLimitWindowMinutes: boundedInteger(
+      env[`${prefix}_RATE_LIMIT_WINDOW_MINUTES`],
+      base.rateLimitWindowMinutes,
+      15,
+      10080,
+    ),
+    signalFreshnessHours: boundedInteger(
+      env.SOCIAL_AUTOPILOT_SIGNAL_FRESHNESS_HOURS,
+      base.signalFreshnessHours,
+      1,
+      720,
+    ),
+    minLiveSignals: boundedInteger(
+      env.SOCIAL_AUTOPILOT_MIN_LIVE_SIGNALS,
+      base.minLiveSignals,
+      0,
+      20,
+    ),
+    duplicateContentWindowDays: boundedInteger(
+      env[`${prefix}_DUPLICATE_CONTENT_WINDOW_DAYS`],
+      base.duplicateContentWindowDays,
+      1,
+      365,
+    ),
   };
+}
+
+/**
+ * Workspace/operator pause for a provider. Env-owned knobs:
+ * - `SOCIAL_AUTOPILOT_<PROVIDER>_PAUSED=true` pauses one provider.
+ * - `SOCIAL_AUTOPILOT_PAUSE_ALL=true` pauses every provider.
+ */
+export function isSocialAutopilotProviderPausedByConfig(
+  provider: SharedSocialPublishingProvider,
+  env: SocialEnvSource = process.env,
+) {
+  const prefix = `SOCIAL_AUTOPILOT_${providerEnvName(provider)}`;
+  return (
+    env[`${prefix}_PAUSED`]?.trim() === "true" ||
+    env.SOCIAL_AUTOPILOT_PAUSE_ALL?.trim() === "true"
+  );
 }
 
 export function getSocialAutopilotProviderPolicies(

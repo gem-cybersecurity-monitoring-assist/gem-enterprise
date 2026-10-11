@@ -34,10 +34,17 @@ export function evaluateSocialCredentialLifecycle(
   const expiresAt = timestamp(credential.expiresAt);
   const refreshExpiresAt = timestamp(credential.refreshExpiresAt);
   const refreshTokenPresent = Boolean(credential.refreshToken);
-  const refreshSupported = config.refreshMode === "STANDARD";
+  const refreshSupported =
+    config.refreshMode === "STANDARD" || config.refreshMode === "LONG_LIVED_EXCHANGE";
+  // Meta-style long-lived exchange uses the current access token as the
+  // exchange credential; there is no separate refresh token.
+  const refreshCredentialPresent =
+    config.refreshMode === "LONG_LIVED_EXCHANGE"
+      ? Boolean(credential.accessToken)
+      : refreshTokenPresent;
   const refreshUsable =
     refreshSupported &&
-    refreshTokenPresent &&
+    refreshCredentialPresent &&
     (refreshExpiresAt === undefined || refreshExpiresAt > now);
 
   if (expiresAt === undefined) {

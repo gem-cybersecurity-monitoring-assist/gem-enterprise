@@ -1,4 +1,3 @@
-import type { SocialOAuthProvider } from "@/lib/social-media/oauth/config";
 import type { SharedSocialPublishingProvider } from "./types";
 import type { SocialEnvSource } from "@/lib/social-media/autopilot/policy";
 
@@ -9,15 +8,22 @@ const providerLiveGate: Record<SharedSocialPublishingProvider, string> = {
   LINKEDIN_COMPANY: "LINKEDIN_SOCIAL_PUBLISHING_ENABLED",
   YOUTUBE: "YOUTUBE_PUBLISHING_ENABLED",
   NEXTDOOR: "NEXTDOOR_PUBLISHING_ENABLED",
+  TELEGRAM: "TELEGRAM_SOCIAL_PUBLISHING_ENABLED",
 };
 
-const connectorProvider: Record<SharedSocialPublishingProvider, SocialOAuthProvider> = {
+/**
+ * Connector provider match. Telegram authenticates with a bot token rather
+ * than OAuth, so the stored connector provider value ("TELEGRAM") is compared
+ * as a plain string instead of forcing it into the OAuth provider union.
+ */
+const connectorProvider: Record<SharedSocialPublishingProvider, string> = {
   FACEBOOK_PAGE: "META",
   INSTAGRAM_PROFESSIONAL: "META",
   X: "X",
   LINKEDIN_COMPANY: "LINKEDIN",
   YOUTUBE: "YOUTUBE",
   NEXTDOOR: "NEXTDOOR",
+  TELEGRAM: "TELEGRAM",
 };
 
 function enabled(name: string, env: SocialEnvSource = process.env) {
@@ -39,7 +45,7 @@ export function providerSocialPublishingEnabled(
 
 export function connectorProviderMatches(
   provider: SharedSocialPublishingProvider,
-  actual: SocialOAuthProvider,
+  actual: string,
 ) {
   return connectorProvider[provider] === actual;
 }

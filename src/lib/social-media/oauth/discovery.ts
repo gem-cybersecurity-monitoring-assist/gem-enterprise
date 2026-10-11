@@ -450,6 +450,41 @@ async function discoverNextdoorProfiles(
   return accounts;
 }
 
+function mapTikTokUser(
+  entry: unknown,
+  credential: StoredSocialCredential,
+): DiscoveredSocialAccount[] {
+  const user = object(entry);
+  const openId = stringValue(user?.open_id);
+  const displayName = stringValue(user?.display_name) || stringValue(user?.username);
+  if (!openId || !displayName) return [];
+  return [
+    {
+      externalAccountId: openId,
+      displayName,
+      accountType: "TIKTOK_ACCOUNT",
+      username: stringValue(user?.username),
+      safeMetadata: {
+        openId,
+        username: stringValue(user?.username) || null,
+        avatarUrlPresent: Boolean(stringValue(user?.avatar_url)),
+      },
+      credential: accountCredential(credential, openId),
+    },
+  ];
+}
+
+async function discoverTikTokAccount(
+  config: SocialOAuthProviderConfig,
+  credential: StoredSocialCredential,
+): Promise<DiscoveredSocialAccount[]> {
+  const url = new URL(config.accountDiscoveryUrl);
+  url.searchParams.set("fields", "open_id,display_name,username,avatar_url");
+  const payload = object(await fetchDiscoveryJson(config, credential, url));
+  const data = object(payload?.data);
+  return mapTikTokUser(data?.user, credential);
+}
+
 function deduplicateAccounts(accounts: DiscoveredSocialAccount[]) {
   const unique = new Map<string, DiscoveredSocialAccount>();
   for (const account of accounts) {
@@ -481,6 +516,9 @@ export async function discoverSocialAccounts(input: {
       break;
     case "NEXTDOOR":
       accounts = await discoverNextdoorProfiles(config, credential);
+      break;
+    case "TIKTOK":
+      accounts = await discoverTikTokAccount(config, credential);
       break;
   }
 
