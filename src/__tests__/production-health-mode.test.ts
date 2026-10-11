@@ -22,6 +22,12 @@ describe("production health respects selected persistence authority", () => {
     await expect(response.json()).resolves.toMatchObject({
       status: "healthy",
       databaseBackend: "supabase_gateway",
+      verificationScope: {
+        checked: "gateway_bootstrap",
+        checkedSuccessfully: true,
+        transactionalWorkflowsTested: false,
+        providerPublishingTested: false,
+      },
     });
     expect(database.raw).not.toHaveBeenCalled();
   });
@@ -31,7 +37,15 @@ describe("production health respects selected persistence authority", () => {
     gateway.status.mockRejectedValue(new Error("gateway unavailable"));
     const response = await GET();
     expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toMatchObject({ status: "degraded" });
+    await expect(response.json()).resolves.toMatchObject({
+      status: "degraded",
+      verificationScope: {
+        checked: "gateway_bootstrap",
+        checkedSuccessfully: false,
+        transactionalWorkflowsTested: false,
+        providerPublishingTested: false,
+      },
+    });
     expect(database.raw).not.toHaveBeenCalled();
   });
 
@@ -47,7 +61,15 @@ describe("production health respects selected persistence authority", () => {
     database.raw.mockResolvedValue([{ "?column?": 1 }]);
     const response = await GET();
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ databaseBackend: "prisma" });
+    await expect(response.json()).resolves.toMatchObject({
+      databaseBackend: "prisma",
+      verificationScope: {
+        checked: "direct_database_connection",
+        checkedSuccessfully: true,
+        transactionalWorkflowsTested: false,
+        providerPublishingTested: false,
+      },
+    });
     expect(database.raw).toHaveBeenCalledOnce();
     expect(gateway.status).not.toHaveBeenCalled();
   });
