@@ -13,6 +13,7 @@ import {
 import {
   chunkByteRange,
   type TikTokChunkPlan,
+  type TikTokApprovedVideoAsset,
   type TikTokCreatorInfo,
   type TikTokPrivacyLevel,
   type TikTokPublishStatus,
@@ -31,7 +32,14 @@ type WorkspaceContext = {
     externalAccountId: string | null;
     grantedScopes: string[];
   }>;
-  contents: Array<{ id: string; title: string }>;
+  contents: Array<{
+    id: string;
+    title: string;
+    caption: string | null;
+    script: string | null;
+    hashtags: string[];
+    mediaAssets: TikTokApprovedVideoAsset[];
+  }>;
 };
 
 type PublishingContext = {
@@ -69,6 +77,39 @@ type ApiEnvelope<T> = {
 const MUSIC_CONFIRMATION_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
 const BRANDED_CONTENT_POLICY_URL = "https://www.tiktok.com/legal/page/global/bc-policy/en";
 const FOUR_GIB = 4 * 1024 * 1024 * 1024;
+
+function approvedCaption(content: WorkspaceContext["contents"][number] | undefined) {
+  if (!content) return "";
+  const hashtags = content.hashtags
+    .map((tag) => tag.startsWith("#") ? tag : `#${tag}`)
+    .join(" ");
+  return [content.caption?.trim() || content.script?.trim(), hashtags]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 2200);
+}
+
+function isManagedAssetOnVerifiedHost(
+  asset: TikTokApprovedVideoAsset | null,
+  verifiedHosts: string[],
+) {
+  if (!asset) return false;
+  try {
+    const hostname = new URL(asset.storageRef).hostname.toLowerCase();
+    return verifiedHosts.some((entry) => {
+      const approved = entry.trim().toLowerCase();
+      return Boolean(approved) &&
+        (hostname === approved || hostname.endsWith(`.${approved}`));
+    });
+  } catch {
+    return false;
+  }
+}
+
+async function sha256File(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -158,14 +199,17 @@ export function TokMetricVideoPublisherV3() {
   const [workspaceId, setWorkspaceId] = useState("");
   const [connectorId, setConnectorId] = useState("");
   const [contentId, setContentId] = useState("");
+  const [mediaAssetId, setMediaAssetId] = useState("");
   const [creator, setCreator] = useState<TikTokCreatorInfo | null>(null);
   const [source, setSource] = useState<TikTokVideoSource>("FILE_UPLOAD");
   const [file, setFile] = useState<File | null>(null);
+  const [fileChecksum, setFileChecksum] = useState("");
+  const [fileVerificationMessage, setFileVerificationMessage] = useState("");
+  const [verifyingFile, setVerifyingFile] = useState(false);
   const [localPreviewUrl, setLocalPreviewUrl] = useState("");
   const [durationSec, setDurationSec] = useState<number | undefined>();
   const [videoWidth, setVideoWidth] = useState<number | undefined>();
   const [videoHeight, setVideoHeight] = useState<number | undefined>();
-  const [videoUrl, setVideoUrl] = useState("");
   const [title, setTitle] = useState("");
   const [privacyLevel, setPrivacyLevel] = useState<TikTokPrivacyLevel | "">("");
   const [allowComment, setAllowComment] = useState(false);
@@ -191,6 +235,14 @@ export function TokMetricVideoPublisherV3() {
     () => context?.workspaces.find((item) => item.id === workspaceId) ?? null,
     [context, workspaceId],
   );
+  const content = useMemo(
+    () => workspace?.contents.find((item) => item.id === contentId) ?? null,
+    [contentId, workspace],
+  );
+  const mediaAsset = useMemo(
+    () => content?.mediaAssets.find((item) => item.id === mediaAssetId) ?? null,
+    [content, mediaAssetId],
+  );
 
   const loadContext = useCallback(async () => {
     setLoading(true);
@@ -202,7 +254,10 @@ export function TokMetricVideoPublisherV3() {
       if (initial) {
         setWorkspaceId(initial.id);
         setConnectorId(initial.connectors[0]?.id ?? "");
-        setContentId(initial.contents[0]?.id ?? "");
+        const initialContent = initial.contents[0];
+        setContentId(initialContent?.id ?? "");
+        setMediaAssetId(initialContent?.mediaAssets[0]?.id ?? "");
+        setTitle(approvedCaption(initialContent));
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Publishing context could not be loaded.");
@@ -233,10 +288,28 @@ export function TokMetricVideoPublisherV3() {
     creator && durationSec && durationSec > creator.maxVideoPostDurationSec,
   );
   const fileSizeInvalid = Boolean(file && file.size > FOUR_GIB);
+  const fileMatchesApprovedAsset = Boolean(
+    file &&
+    mediaAsset &&
+    fileChecksum &&
+    fileChecksum.toLowerCase() === mediaAsset.checksum.toLowerCase() &&
+    file.size === mediaAsset.fileSize &&
+    file.type === mediaAsset.mimeType,
+  );
+  const fileVersionMismatch = Boolean(
+    source === "FILE_UPLOAD" && file && !verifyingFile && !fileMatchesApprovedAsset,
+  );
   const dimensionsInvalid = Boolean(
     videoWidth && videoHeight &&
     (videoWidth < 360 || videoHeight < 360 || videoWidth > 4096 || videoHeight > 4096),
   );
+  const managedUrlEligible = isManagedAssetOnVerifiedHost(
+    mediaAsset,
+    context?.verifiedMediaHosts ?? [],
+  );
+  const sourceReady = source === "FILE_UPLOAD"
+    ? fileMatchesApprovedAsset
+    : managedUrlEligible;
   const confirmationsComplete =
     consentToUpload &&
     rightsConfirmed &&
@@ -244,7 +317,9 @@ export function TokMetricVideoPublisherV3() {
     processingNoticeAccepted;
   const canPublish =
     !busy &&
+    !verifyingFile &&
     !blocked &&
+    Boolean(mediaAsset) &&
     Boolean(creator) &&
     Boolean(privacyLevel) &&
     confirmationsComplete &&
@@ -252,6 +327,8 @@ export function TokMetricVideoPublisherV3() {
     !brandedPrivacyInvalid &&
     !durationInvalid &&
     !fileSizeInvalid &&
+    !fileVersionMismatch &&
+    sourceReady &&
     !dimensionsInvalid;
 
   function resetPostControls() {
@@ -273,12 +350,42 @@ export function TokMetricVideoPublisherV3() {
     setProgress(0);
   }
 
+  function resetSelectedFile() {
+    setFile(null);
+    setFileChecksum("");
+    setFileVerificationMessage("");
+    setDurationSec(undefined);
+    setVideoWidth(undefined);
+    setVideoHeight(undefined);
+    setProgress(0);
+    setLocalPreviewUrl("");
+  }
+
   function changeWorkspace(nextWorkspaceId: string) {
     const next = context?.workspaces.find((item) => item.id === nextWorkspaceId);
     setWorkspaceId(nextWorkspaceId);
     setConnectorId(next?.connectors[0]?.id ?? "");
-    setContentId(next?.contents[0]?.id ?? "");
+    const nextContent = next?.contents[0];
+    setContentId(nextContent?.id ?? "");
+    setMediaAssetId(nextContent?.mediaAssets[0]?.id ?? "");
+    setTitle(approvedCaption(nextContent));
+    resetSelectedFile();
     setCreator(null);
+    resetPostControls();
+  }
+
+  function changeContent(nextContentId: string) {
+    const nextContent = workspace?.contents.find((item) => item.id === nextContentId);
+    setContentId(nextContentId);
+    setMediaAssetId(nextContent?.mediaAssets[0]?.id ?? "");
+    setTitle(approvedCaption(nextContent));
+    resetSelectedFile();
+    resetPostControls();
+  }
+
+  function changeMediaAsset(nextMediaAssetId: string) {
+    setMediaAssetId(nextMediaAssetId);
+    resetSelectedFile();
     resetPostControls();
   }
 
@@ -309,15 +416,41 @@ export function TokMetricVideoPublisherV3() {
     setVideoWidth(undefined);
     setVideoHeight(undefined);
     setProgress(0);
+    setFileChecksum("");
+    setFileVerificationMessage("");
     if (!nextFile) {
       setLocalPreviewUrl("");
       return;
     }
     setLocalPreviewUrl(URL.createObjectURL(nextFile));
-    const metadata = await readVideoMetadata(nextFile);
-    setDurationSec(metadata.durationSec);
-    setVideoWidth(metadata.width);
-    setVideoHeight(metadata.height);
+    setVerifyingFile(true);
+    try {
+      const [metadata, checksum] = await Promise.all([
+        readVideoMetadata(nextFile),
+        sha256File(nextFile),
+      ]);
+      setDurationSec(metadata.durationSec);
+      setVideoWidth(metadata.width);
+      setVideoHeight(metadata.height);
+      setFileChecksum(checksum);
+      const exactMatch = Boolean(
+        mediaAsset &&
+        checksum.toLowerCase() === mediaAsset.checksum.toLowerCase() &&
+        nextFile.size === mediaAsset.fileSize &&
+        nextFile.type === mediaAsset.mimeType,
+      );
+      setFileVerificationMessage(
+        exactMatch
+          ? "File checksum, size, and format match the exact approved video asset."
+          : "This file does not match the exact approved video asset. Select the approved file or use the managed video URL.",
+      );
+    } catch {
+      setFileVerificationMessage(
+        "The browser could not verify this file. Use the managed video URL or select the approved file again.",
+      );
+    } finally {
+      setVerifyingFile(false);
+    }
   }
 
   function setCommercialDisclosure(enabled: boolean) {
@@ -355,10 +488,11 @@ export function TokMetricVideoPublisherV3() {
 
   async function startPublish() {
     if (!creator) return setError("Query the latest TikTok creator settings first.");
-    if (!workspaceId || !connectorId || !contentId) return setError("Select a workspace, account, and approved content item.");
+    if (!workspaceId || !connectorId || !contentId || !mediaAssetId) return setError("Select a workspace, account, approved content item, and exact video asset.");
     if (!privacyLevel) return setError("Manually select a TikTok privacy level.");
     if (source === "FILE_UPLOAD" && !file) return setError("Select an MP4, MOV, or WebM video.");
-    if (source === "PULL_FROM_URL" && !videoUrl) return setError("Enter a verified HTTPS video URL.");
+    if (source === "FILE_UPLOAD" && !fileMatchesApprovedAsset) return setError("The selected file must match the exact approved video asset.");
+    if (source === "PULL_FROM_URL" && !managedUrlEligible) return setError("The approved video host must be verified in TikTok before managed URL publishing.");
     if (!commercialSelectionValid) return setError("Select Your brand, Branded content, or both.");
     if (brandedPrivacyInvalid) return setError("Branded content cannot use SELF ONLY visibility.");
 
@@ -374,6 +508,7 @@ export function TokMetricVideoPublisherV3() {
         body: JSON.stringify({
           workspaceId,
           contentId,
+          mediaAssetId,
           connectorId,
           title,
           privacyLevel,
@@ -384,8 +519,8 @@ export function TokMetricVideoPublisherV3() {
           brandOrganicToggle: commercialContent && brandOrganicToggle,
           isAigc,
           source,
-          file: file ? { name: file.name, mimeType: file.type, size: file.size, durationSec } : undefined,
-          videoUrl: source === "PULL_FROM_URL" ? videoUrl : undefined,
+          file: file ? { name: file.name, mimeType: file.type, size: file.size, checksumSha256: fileChecksum, durationSec } : undefined,
+          videoUrl: source === "PULL_FROM_URL" ? mediaAsset?.storageRef : undefined,
           consentToUpload,
           rightsConfirmed,
           musicRightsConfirmed,
@@ -471,7 +606,7 @@ export function TokMetricVideoPublisherV3() {
   }
 
   const sandbox = context.gate.mode === "sandbox";
-  const previewSource = source === "FILE_UPLOAD" ? localPreviewUrl : videoUrl;
+  const previewSource = source === "FILE_UPLOAD" ? localPreviewUrl : mediaAsset?.storageRef ?? "";
   const thirdPartyDisclosureDisabled = sandbox;
 
   return (
@@ -506,13 +641,22 @@ export function TokMetricVideoPublisherV3() {
           </select>
         </label>
         <label className="text-sm text-white/65">
-          Approved content
-          <select value={contentId} onChange={(event) => setContentId(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#091019] px-3 py-3 text-white">
-            <option value="">Select approved content</option>
+          Approved video content
+          <select value={contentId} onChange={(event) => changeContent(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#091019] px-3 py-3 text-white">
+            <option value="">Select approved video</option>
             {workspace?.contents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
           </select>
         </label>
       </div>
+
+      <label className="mt-4 block text-sm text-white/65">
+        Exact approved media asset
+        <select value={mediaAssetId} onChange={(event) => changeMediaAsset(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#091019] px-3 py-3 text-white">
+          <option value="">Select the approved asset</option>
+          {content?.mediaAssets.map((asset) => <option key={asset.id} value={asset.id}>{asset.fileName} · {(asset.fileSize / 1024 / 1024).toFixed(2)} MB</option>)}
+        </select>
+        {mediaAsset ? <span className="mt-2 block break-all text-xs text-emerald-200/70">Exact-version SHA-256: {mediaAsset.checksum}</span> : null}
+      </label>
 
       <button type="button" onClick={() => void queryCreator()} disabled={busy || !connectorId} className="mt-5 rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-[#071019] disabled:opacity-40">
         <RefreshCw className="mr-2 inline h-4 w-4" />
@@ -529,7 +673,7 @@ export function TokMetricVideoPublisherV3() {
           <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/20 p-1">
             {(["FILE_UPLOAD", "PULL_FROM_URL"] as TikTokVideoSource[]).map((value) => (
               <button key={value} type="button" onClick={() => { setSource(value); setProgress(0); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ${source === value ? "bg-cyan-300 text-[#071019]" : "text-white/55"}`}>
-                {value === "FILE_UPLOAD" ? "Local video file" : "Verified video URL"}
+                {value === "FILE_UPLOAD" ? "Approved local file" : "Managed video URL"}
               </button>
             ))}
           </div>
@@ -537,15 +681,18 @@ export function TokMetricVideoPublisherV3() {
           {source === "FILE_UPLOAD" ? (
             <label className="block text-sm text-white/65">
               MP4, MOV, or WebM
-              <input type="file" accept="video/mp4,video/quicktime,video/webm" onChange={(event) => void chooseFile(event.target.files?.[0] ?? null)} className="mt-2 block w-full rounded-xl border border-dashed border-white/15 p-4" />
+              <input type="file" accept="video/mp4,video/quicktime,video/webm" disabled={!mediaAsset} onChange={(event) => void chooseFile(event.target.files?.[0] ?? null)} className="mt-2 block w-full rounded-xl border border-dashed border-white/15 p-4 disabled:opacity-40" />
               {file && <span className="mt-2 block text-xs text-white/45">{file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB{durationSec ? ` · ${durationSec.toFixed(1)}s` : ""}{videoWidth && videoHeight ? ` · ${videoWidth}×${videoHeight}` : ""}</span>}
+              {verifyingFile ? <span className="mt-2 block text-xs text-cyan-200">Verifying the file checksum against the approved version…</span> : null}
+              {fileVerificationMessage ? <span className={`mt-2 block text-xs ${fileVersionMismatch ? "text-red-300" : "text-emerald-200"}`}>{fileVerificationMessage}</span> : null}
             </label>
           ) : (
-            <label className="block text-sm text-white/65">
-              Verified HTTPS video URL
-              <input value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white" placeholder="https://verified-domain.example/video.mp4" />
-              <span className="mt-2 block text-xs text-white/45">Configured properties: {context.verifiedMediaHosts.join(", ") || "none"}</span>
-            </label>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
+              <p className="font-medium text-white">Managed exact-version video</p>
+              <p className="mt-2 break-all text-xs leading-5 text-white/45">{mediaAsset?.storageRef ?? "Select an approved video asset."}</p>
+              <p className="mt-2 text-xs text-white/45">TikTok-verified properties: {context.verifiedMediaHosts.join(", ") || "not configured"}</p>
+              {!managedUrlEligible ? <p className="mt-2 text-xs text-amber-200">Managed URL publishing remains blocked until this exact asset host is configured and verified with TikTok.</p> : null}
+            </div>
           )}
 
           <div>
@@ -651,12 +798,13 @@ export function TokMetricVideoPublisherV3() {
         </div>
       </div>
 
-      {(durationInvalid || fileSizeInvalid || dimensionsInvalid || brandedPrivacyInvalid) && (
+      {(durationInvalid || fileSizeInvalid || dimensionsInvalid || brandedPrivacyInvalid || fileVersionMismatch) && (
         <div className="mt-5 rounded-xl border border-red-300/20 bg-red-300/[0.06] p-4 text-sm text-red-200">
           {durationInvalid && <p>The selected video exceeds this creator’s current maximum duration.</p>}
           {fileSizeInvalid && <p>The selected video exceeds TikTok’s 4 GB maximum.</p>}
           {dimensionsInvalid && <p>Video width and height must each be between 360 and 4096 pixels.</p>}
           {brandedPrivacyInvalid && <p>Branded content cannot use SELF ONLY visibility.</p>}
+          {fileVersionMismatch && <p>The local file is not the exact approved video asset.</p>}
         </div>
       )}
 
