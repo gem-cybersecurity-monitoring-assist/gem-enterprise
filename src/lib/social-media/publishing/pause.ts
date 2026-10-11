@@ -13,6 +13,35 @@
  * calls only this function, so the call site does not change.
  */
 import type { SharedSocialPublishingProvider } from "./types";
+import {
+  isSocialProviderPaused,
+  type SocialPauseProvider,
+} from "@/lib/social-media/oauth/provider-pause";
+
+const pauseKeyForPublishingProvider: Record<SharedSocialPublishingProvider, SocialPauseProvider> = {
+  FACEBOOK_PAGE: "META",
+  INSTAGRAM_PROFESSIONAL: "META",
+  X: "X",
+  LINKEDIN_COMPANY: "LINKEDIN",
+  YOUTUBE: "YOUTUBE",
+  NEXTDOOR: "NEXTDOOR",
+  TELEGRAM: "TELEGRAM",
+};
+
+/** Fail closed when the persistent pause store is unavailable or paused. */
+export async function persistentProviderPauseState(
+  workspaceId: string,
+  provider: SharedSocialPublishingProvider,
+): Promise<ProviderPauseState> {
+  const paused = await isSocialProviderPaused(
+    workspaceId,
+    pauseKeyForPublishingProvider[provider],
+  );
+  return paused
+    ? { paused: true, reason: `Publishing for ${provider} is paused in this workspace.` }
+    : { paused: false };
+}
+
 
 export interface ProviderPauseState {
   paused: boolean;

@@ -1,7 +1,19 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { TokMetricError } from "@/lib/tokmetric/security";
-import { parseSocialOAuthProvider, type SocialOAuthProvider } from "./config";
+import { socialOAuthProviders } from "./config";
+
+/** Telegram uses a bot credential, not OAuth, but has the same pause contract. */
+export const socialPauseProviders = [...socialOAuthProviders, "TELEGRAM"] as const;
+export type SocialPauseProvider = (typeof socialPauseProviders)[number];
+
+export function parseSocialPauseProvider(input: string): SocialPauseProvider {
+  const provider = input.trim().toUpperCase();
+  if (!socialPauseProviders.includes(provider as SocialPauseProvider)) {
+    throw new TokMetricError(400, "SOCIAL_PROVIDER_UNSUPPORTED", "Unsupported social pause provider.");
+  }
+  return provider as SocialPauseProvider;
+}
 
 /**
  * Provider-scoped publishing pause.
@@ -15,7 +27,7 @@ import { parseSocialOAuthProvider, type SocialOAuthProvider } from "./config";
 
 export interface SocialProviderPauseRecord {
   workspaceId: string;
-  provider: SocialOAuthProvider;
+  provider: SocialPauseProvider;
   pausedAt: Date;
   pausedBy: string | null;
   reason: string | null;
@@ -51,7 +63,7 @@ function normalizeReason(reason?: string) {
 
 export async function getPausedSocialProviders(
   workspaceId: string,
-): Promise<SocialOAuthProvider[]> {
+): Promise<SocialPauseProvider[]> {
   try {
     const rows = await db.$queryRaw<Array<{ provider: string }>>(Prisma.sql`
       SELECT provider
@@ -59,7 +71,7 @@ export async function getPausedSocialProviders(
       WHERE workspace_id = ${workspaceId}
       ORDER BY provider ASC
     `);
-    return rows.map((row) => parseSocialOAuthProvider(row.provider));
+    return rows.map((row) => parseSocialPauseProvider(row.provider));
   } catch (error) {
     return storeUnavailable(error);
   }
@@ -67,7 +79,7 @@ export async function getPausedSocialProviders(
 
 export async function isSocialProviderPaused(
   workspaceId: string,
-  provider: SocialOAuthProvider,
+  provider: SocialPauseProvider,
 ): Promise<boolean> {
   try {
     const rows = await db.$queryRaw<Array<{ one: number }>>(Prisma.sql`
@@ -89,7 +101,7 @@ export async function pauseSocialProvider(input: {
   pausedBy?: string;
   reason?: string;
 }): Promise<SocialProviderPauseRecord> {
-  const provider = parseSocialOAuthProvider(input.provider);
+  const provider = parseSocialPauseProvider(input.provider);
   const reason = normalizeReason(input.reason);
   const now = new Date();
   try {
@@ -126,7 +138,7 @@ export async function pauseSocialProvider(input: {
     `);
     const record = rows[0];
     if (!record) throw new Error("Social provider pause was not returned after upsert.");
-    return { ...record, provider: parseSocialOAuthProvider(record.provider) };
+    return { ...record, provider: parseSocialPauseProvider(record.provider) };
   } catch (error) {
     return storeUnavailable(error);
   }
@@ -135,8 +147,8 @@ export async function pauseSocialProvider(input: {
 export async function unpauseSocialProvider(input: {
   workspaceId: string;
   provider: string;
-}): Promise<{ provider: SocialOAuthProvider; wasPaused: boolean }> {
-  const provider = parseSocialOAuthProvider(input.provider);
+}): Promise<{ provider: SocialPauseProvider; wasPaused: boolean }> {
+  const provider = parseSocialPauseProvider(input.provider);
   try {
     const rows = await db.$queryRaw<Array<{ provider: string }>>(Prisma.sql`
       DELETE FROM social_provider_pauses
