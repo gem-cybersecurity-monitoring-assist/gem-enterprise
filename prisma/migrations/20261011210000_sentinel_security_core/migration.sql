@@ -42,3 +42,19 @@ CONSTRAINT "sentinel_security_events_collectorId_fkey" FOREIGN KEY ("collectorId
 CREATE UNIQUE INDEX "sentinel_security_events_tenantId_source_sourceEventId_key" ON "sentinel_security_events"("tenantId","source","sourceEventId");
 CREATE INDEX "sentinel_security_events_tenantId_receivedAt_idx" ON "sentinel_security_events"("tenantId","receivedAt");
 CREATE INDEX "sentinel_security_events_state_severity_receivedAt_idx" ON "sentinel_security_events"("state","severity","receivedAt");
+
+-- Fail closed for managed PostgreSQL Data APIs (including Supabase).
+-- No browser/PostgREST access is granted; all Sentinel operations use owner-gated server APIs.
+ALTER TABLE "sentinel_collectors" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "sentinel_nonces" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "sentinel_security_events" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE "sentinel_collectors", "sentinel_nonces", "sentinel_security_events" FROM PUBLIC;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON TABLE "sentinel_collectors", "sentinel_nonces", "sentinel_security_events" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON TABLE "sentinel_collectors", "sentinel_nonces", "sentinel_security_events" FROM authenticated;
+  END IF;
+END $$;
