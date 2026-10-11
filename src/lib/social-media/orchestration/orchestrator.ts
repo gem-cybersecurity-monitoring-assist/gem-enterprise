@@ -20,6 +20,7 @@ import {
 import type { SocialMediaProviderId } from "../providers";
 import { generateCrossPlatformContentPackage } from "./content-package";
 import { getGemApprovedSourceMaterial } from "./gem-sources";
+import type { SignalProvenance } from "../autopilot/signals";
 import {
   applyEngagementLearning,
   loadCurrentMarketSignals,
@@ -34,6 +35,18 @@ export interface DailyContentOrchestrationInput {
   planDate: Date;
   enabledProviders: readonly SocialMediaProviderId[];
   marketSignals?: readonly MarketSignal[];
+  /**
+   * Honest sourcing record for this run: "live" when the signals came from
+   * fresh approved news articles, "evergreen-fallback" when the run fell back
+   * to GEM-approved evergreen themes. Recorded on the campaign payload and
+   * in the audit trail — never claim "live" when the fallback applied.
+   */
+  signalProvenance?: SignalProvenance;
+  signalMetadata?: {
+    freshSignalCount?: number;
+    fallbackApplied?: boolean;
+    learningApplied?: readonly string[];
+  };
   approvedSources?: readonly ApprovedSourceMaterial[];
   useGemCatalog?: boolean;
   gemProductSlugs?: readonly string[];
@@ -210,6 +223,8 @@ async function createDailyCampaign(input: {
   correlationId: string;
   plan: DailyContentPlan;
   approvalMode: "HUMAN" | "AUTO_POLICY";
+  signalProvenance?: SignalProvenance;
+  signalMetadata?: DailyContentOrchestrationInput["signalMetadata"];
 }) {
   const title = dailyCampaignTitle(
     new Date(`${input.plan.planDate}T00:00:00.000Z`),
@@ -225,6 +240,10 @@ async function createDailyCampaign(input: {
     draftFingerprints: input.plan.drafts.map((draft) => draft.fingerprint),
     rejectedReasons: input.plan.rejectedReasons,
     externalActionTaken: false,
+    // Honest sourcing record: "live" only when fresh approved news signals
+    // powered the run; "evergreen-fallback" otherwise.
+    signalProvenance: input.signalProvenance ?? null,
+    signalMetadata: input.signalMetadata ?? null,
   };
   const objectHash = contentHash(payload);
 
@@ -342,6 +361,8 @@ export async function orchestrateDailyContent(
     correlationId: input.correlationId,
     plan,
     approvalMode: input.approvalMode ?? "HUMAN",
+    signalProvenance: input.signalProvenance,
+    signalMetadata: input.signalMetadata,
   });
   const sourcesById = new Map(approvedSources.map((source) => [source.id, source]));
   const signalsById = new Map(learnedSignals.map((signal) => [signal.id, signal]));
@@ -466,6 +487,8 @@ export async function orchestrateDailyContent(
         (item) => item.approvalRequestId,
       ).length,
       rejectedReasons: plan.rejectedReasons,
+      signalProvenance: input.signalProvenance ?? null,
+      signalMetadata: input.signalMetadata ?? null,
       externalActionTaken: false,
     },
   });

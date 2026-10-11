@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe("cross-platform social OAuth foundation", () => {
   it("supports only governed OAuth providers and excludes Indeed", () => {
-    expect(socialOAuthProviders).toEqual(["META", "X", "LINKEDIN", "YOUTUBE", "NEXTDOOR"]);
+    expect(socialOAuthProviders).toEqual(["META", "X", "LINKEDIN", "YOUTUBE", "NEXTDOOR", "TIKTOK"]);
     expect(parseSocialOAuthProvider("meta")).toBe("META");
     expect(() => parseSocialOAuthProvider("indeed")).toThrow("not supported");
   });

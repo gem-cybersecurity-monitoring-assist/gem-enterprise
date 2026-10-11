@@ -63,7 +63,7 @@ function tokenRequestHeaders(config: SocialOAuthProviderConfig) {
 
 function addClientAuthentication(body: URLSearchParams, config: SocialOAuthProviderConfig) {
   if (config.tokenClientAuthentication === "BODY") {
-    body.set("client_id", config.clientId);
+    body.set(config.clientIdTokenParameter || "client_id", config.clientId);
     body.set("client_secret", config.clientSecret);
   }
 }
@@ -170,10 +170,10 @@ export function buildSocialAuthorizationUrl(input: {
 }) {
   const { config } = input;
   const url = new URL(config.authorizationUrl);
-  url.searchParams.set("client_id", config.clientId);
+  url.searchParams.set(config.clientIdAuthorizationParameter || "client_id", config.clientId);
   url.searchParams.set("redirect_uri", config.redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", config.scopes.join(" "));
+  url.searchParams.set("scope", config.scopes.join(config.scopeDelimiter || " "));
   url.searchParams.set("state", input.state);
   for (const [key, value] of Object.entries(config.additionalAuthorizationParameters)) {
     url.searchParams.set(key, value);
@@ -226,10 +226,88 @@ export async function exchangeSocialAuthorizationCode(input: {
   };
 }
 
+/**
+ * Meta long-lived token exchange.
+ *
+ * Meta does not issue OAuth2 refresh tokens. Instead a valid (short- or
+ * long-lived) user or Page access token is exchanged server-side for a fresh
+ * ~60-day token via:
+ *   GET /oauth/access_token?grant_type=fb_exchange_token
+ *       &client_id=...&client_secret=...&fb_exchange_token=...
+ * The response carries a new access_token (+ expires_in) and no refresh_token.
+ */
+async function exchangeMetaLongLivedToken(input: {
+  config: SocialOAuthProviderConfig;
+  credential: StoredSocialCredential;
+}) {
+  const { config, credential } = input;
+  const url = new URL(config.tokenUrl);
+  url.searchParams.set("grant_type", "fb_exchange_token");
+  url.searchParams.set("client_id", config.clientId);
+  url.searchParams.set("client_secret", config.clientSecret);
+  url.searchParams.set("fb_exchange_token", credential.accessToken);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new TokMetricError(
+      503,
+      "SOCIAL_TOKEN_REFRESH_UNAVAILABLE",
+      `${config.displayName} token refresh service is unavailable.`,
+    );
+  }
+
+  let payload: GenericTokenPayload = {};
+  try {
+    payload = (await response.json()) as GenericTokenPayload;
+  } catch {
+    payload = {};
+  }
+  if (!response.ok) {
+    if (response.status === 429 || response.status >= 500) {
+      throw new TokMetricError(
+        503,
+        "SOCIAL_TOKEN_REFRESH_UNAVAILABLE",
+        `${config.displayName} token refresh service is unavailable.`,
+      );
+    }
+    throw new TokMetricError(
+      401,
+      "SOCIAL_TOKEN_REFRESH_REJECTED",
+      `${config.displayName} rejected the stored credential during long-lived token exchange.`,
+    );
+  }
+
+  const next = credentialFromTokenPayload({
+    config,
+    payload,
+    requestedScopes: credential.grantedScopes,
+    previous: credential,
+  });
+
+  return {
+    credential: next,
+    safeMetadata: {
+      ...safeTokenMetadata(next),
+      rotatedAt: new Date().toISOString(),
+      refreshMechanism: "fb_exchange_token",
+    },
+  };
+}
+
 export async function refreshSocialAccessToken(input: {
   config: SocialOAuthProviderConfig;
   credential: StoredSocialCredential;
 }) {
+  if (input.config.refreshMode === "LONG_LIVED_EXCHANGE") {
+    return exchangeMetaLongLivedToken(input);
+  }
   if (input.config.refreshMode !== "STANDARD") {
     throw new TokMetricError(
       409,

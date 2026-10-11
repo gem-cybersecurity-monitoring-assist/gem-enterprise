@@ -12,6 +12,10 @@ import type {
   SocialPublishingJobState,
   SocialPublishingPayload,
 } from "./types";
+import {
+  providerSlotCapCaseSql,
+  providerSpacingIntervalSql,
+} from "./slots";
 
 const CLAIM_TTL_MS = 2 * 60 * 1000;
 
@@ -119,6 +123,29 @@ function storeUnavailable(error: unknown): never {
   throw error;
 }
 
+/**
+ * Idempotency binding check: an existing job under the same idempotency key is
+ * only a safe duplicate when it describes the same publishing request.
+ * Anything else is a 409 conflict so a key can never be silently rebound.
+ */
+export function isSamePublishingRequest(
+  existing: Pick<
+    SocialPublishingJobRecord,
+    "provider" | "connectorId" | "contentVersionHash" | "approvedVersionHash"
+  >,
+  input: Pick<
+    SocialPublishingJobRecord,
+    "provider" | "connectorId" | "contentVersionHash" | "approvedVersionHash"
+  >,
+) {
+  return (
+    existing.provider === input.provider &&
+    existing.connectorId === input.connectorId &&
+    existing.contentVersionHash === input.contentVersionHash &&
+    existing.approvedVersionHash === input.approvedVersionHash
+  );
+}
+
 export async function createSocialPublishingJob(input: {
   workspaceId: string;
   provider: SharedSocialPublishingProvider;
@@ -173,12 +200,7 @@ export async function createSocialPublishingJob(input: {
       `);
       if (existing[0]) {
         const current = job(existing[0]);
-        const sameRequest =
-          current.provider === input.provider &&
-          current.connectorId === input.connectorId &&
-          current.contentVersionHash === input.contentVersionHash &&
-          current.approvedVersionHash === input.approvedVersionHash;
-        if (!sameRequest) {
+        if (!isSamePublishingRequest(current, input)) {
           throw new TokMetricError(
             409,
             "SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT",
@@ -339,26 +361,87 @@ export async function cancelPendingSocialAutopilotJobs(input: {
   }
 }
 
-export async function claimSocialPublishingJobs(limit = 10) {
+/**
+ * Claims the next batch of due publishing jobs.
+ *
+ * Slot semantics: when slotEnd is provided (hourly /process/{HH} ticks), jobs
+ * scheduled after the end of the slot window are NOT claimed — their own slot
+ * tick (or a later recovery tick) owns them. Unscheduled jobs and overdue
+ * scheduled jobs are always eligible.
+ *
+ * Backpressure inside the claim (all derived from slots.ts policy constants):
+ * - per-provider per-workspace batch caps per tick, and
+ * - per-provider minimum spacing: a job is not claimed when the same
+ *   connector already published for that provider inside the spacing window.
+ */
+export async function claimSocialPublishingJobs(
+  limit = 10,
+  options: { slotEnd?: Date | null } = {},
+) {
   const claimId = randomUUID();
   const now = new Date();
   const claimExpiresAt = new Date(now.getTime() + CLAIM_TTL_MS);
   const boundedLimit = Math.min(Math.max(limit, 1), 25);
+  const slotEnd = options.slotEnd ?? null;
   try {
     const rows = await db.$queryRaw<SocialPublishingJobRow[]>(Prisma.sql`
-      WITH candidates AS (
-        SELECT id
-        FROM social_publishing_jobs
+      WITH due AS (
+        SELECT j.id, j.workspace_id, j.provider, j.connector_id, j.created_at
+        FROM social_publishing_jobs j
         WHERE (
-          state IN ('PENDING', 'RETRYING')
-          AND next_attempt_at <= ${now}
-          AND (scheduled_for IS NULL OR scheduled_for <= ${now})
-        ) OR (
-          state = 'CLAIMED'
-          AND claim_expires_at IS NOT NULL
-          AND claim_expires_at <= ${now}
+          (
+            j.state IN ('PENDING', 'RETRYING')
+            AND j.next_attempt_at <= ${now}
+            AND (j.scheduled_for IS NULL OR j.scheduled_for <= ${now})
+          ) OR (
+            j.state = 'CLAIMED'
+            AND j.claim_expires_at IS NOT NULL
+            AND j.claim_expires_at <= ${now}
+          )
         )
-        ORDER BY created_at ASC
+        AND (
+          ${slotEnd}::timestamptz IS NULL
+          OR j.scheduled_for IS NULL
+          OR j.scheduled_for < ${slotEnd}::timestamptz
+        )
+      ),
+      spaced AS (
+        SELECT d.*
+        FROM due d
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM social_publishing_jobs prev
+          WHERE prev.workspace_id = d.workspace_id
+            AND prev.connector_id = d.connector_id
+            AND prev.provider = d.provider
+            AND prev.state = 'PUBLISHED'
+            AND prev.submitted_at IS NOT NULL
+            AND prev.submitted_at > ${now} - ${providerSpacingIntervalSql(Prisma.sql`prev.provider`)}
+        )
+      ),
+      ranked AS (
+        SELECT
+          s.id,
+          s.provider,
+          s.created_at,
+          ROW_NUMBER() OVER (
+            PARTITION BY s.workspace_id, s.provider
+            ORDER BY s.created_at ASC
+          ) AS provider_rank
+        FROM spaced s
+      ),
+      -- Lock real base-table rows only. FOR UPDATE cannot safely sit on the
+      -- window-function CTE above, so the rank filter runs as a plain
+      -- subquery and the locking clause applies to social_publishing_jobs.
+      candidates AS (
+        SELECT jobs.id
+        FROM social_publishing_jobs jobs
+        WHERE jobs.id IN (
+          SELECT r.id
+          FROM ranked r
+          WHERE r.provider_rank <= ${providerSlotCapCaseSql(Prisma.sql`r.provider`)}
+        )
+        ORDER BY jobs.created_at ASC
         FOR UPDATE SKIP LOCKED
         LIMIT ${boundedLimit}
       )

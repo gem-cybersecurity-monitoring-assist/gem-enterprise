@@ -6,14 +6,14 @@ TokMetric supports a governed end-to-end TikTok video publishing workflow:
 
 1. An authenticated operator selects a TokMetric workspace.
 2. The operator selects a connected TikTok Content Posting API account.
-3. The operator selects an approved content version.
+3. The operator selects an approved content version and one of the video assets attached to that exact version.
 4. TokMetric queries TikTok's latest creator information before rendering publishing controls.
 5. The operator chooses one of the privacy levels returned for that creator.
 6. The operator configures comments, Duet, Stitch, commercial-content disclosure, and AI-generated-content disclosure.
 7. The operator explicitly confirms upload consent, video rights, music rights, and the TikTok processing notice.
 8. TokMetric initializes the Direct Post request through TikTok's official Content Posting API.
-9. A local MP4, MOV, or WebM file is uploaded directly from the browser to TikTok's temporary upload URL in sequential chunks.
-10. A server-hosted video can use `PULL_FROM_URL` only when its hostname is included in `TOKMETRIC_VERIFIED_MEDIA_HOSTS` and has been verified in the TikTok Developer Portal.
+9. A local MP4, MOV, or WebM file is accepted only when its browser-calculated SHA-256 checksum, MIME type, and file size match the selected approved asset, then it is uploaded directly from the browser to TikTok's temporary upload URL in sequential chunks.
+10. A server-hosted video can use `PULL_FROM_URL` only from the selected approved asset's stored URL, when its hostname is included in `TOKMETRIC_VERIFIED_MEDIA_HOSTS` and has been verified in the TikTok Developer Portal. Operators cannot substitute another URL.
 11. TokMetric polls the official post-status endpoint and records the internal and external state of the publishing job.
 12. Operators can refresh the status until TikTok reports a final success or failure state.
 
@@ -77,6 +77,12 @@ Every configured domain or URL prefix must also be verified in the TikTok Develo
 - `POST /api/tokmetric/publishing/cancel` — `PULL_FROM_URL` only
 
 All routes require an authenticated TokMetric session, workspace access, and the `publish:content` permission where a workspace role is present.
+
+All publishing mutations also require an active account and an explicit same-origin browser request. The publishing context omits approved content that has no attached supported video asset.
+
+## Built-in website flow
+
+The complete approved-video handoff is available inside GEM at `/app/social-media/video`. The page loads authorized workspaces and exact approved video assets, provides a private verified preview, and exposes the governed TikTok posting controls without embedding an external product. Content preparation and rendering remain at `/app/social-media/content`; exact-version review remains at `/app/social-media/approvals`.
 
 ## App review recording
 
