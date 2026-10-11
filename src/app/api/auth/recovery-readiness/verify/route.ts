@@ -18,12 +18,12 @@ export async function POST(request: NextRequest) {
   if (!gate.ok) return gate.response;
 
   const { ipAddress } = getRequestContext(request);
-  const limit = rateLimit(ipAddress, {
+  const limit = await rateLimit(ipAddress, {
     key: "auth:recovery-readiness:verify",
     windowMs: 15 * 60_000,
     max: 3,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   const verification = await verifyMailTransport();
   const response = {

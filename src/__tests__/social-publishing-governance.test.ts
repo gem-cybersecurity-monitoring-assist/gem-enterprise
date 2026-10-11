@@ -49,6 +49,9 @@ describe("governed cross-platform social publishing", () => {
     expect(worker).toContain("providerSocialPublishingEnabled(job.provider)");
     expect(worker).toContain("enforceEmergencyLocks(job.workspaceId, \"publish\")");
     expect(worker).toContain("decision?.actorId !== approval?.requestedById");
+    expect(worker).toContain("Boolean(decision?.actorId)");
+    expect(worker).toContain("(humanApprovalValid || autoPolicyApprovalValid)");
+    expect(worker).toContain("isSocialAutopilotApprovalDecision");
     expect(worker).toContain("complianceReview?.contentVersionId === versionId");
     expect(worker).toContain("job.contentVersionHash === job.approvedVersionHash");
     expect(worker).toContain("missingPublishingScopes");

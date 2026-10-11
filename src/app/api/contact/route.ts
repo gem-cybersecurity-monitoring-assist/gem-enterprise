@@ -36,12 +36,12 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const { ipAddress, userAgent } = getRequestContext(req);
 
-  const limit = rateLimit(ipAddress, {
+  const limit = await rateLimit(ipAddress, {
     key: "contact:submit",
     windowMs: 60 * 60_000,
     max: 5,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {
