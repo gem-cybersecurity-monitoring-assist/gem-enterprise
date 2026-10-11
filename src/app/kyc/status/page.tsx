@@ -36,6 +36,24 @@ export default async function VerificationStatusPage() {
   const session = await getSession();
   if (!session) redirect("/client-login?next=/kyc/status");
 
+  // A gateway session must never read the unrelated direct Prisma authority.
+  if (session.authSource === "supabase_gateway") {
+    return (
+      <div role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-500/25 bg-amber-500/10 p-8">
+        <h1 className="text-2xl font-bold text-foreground">Verification status temporarily unavailable</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Your GEM sign-in is valid, but application-status records cannot yet be read through the
+          verified Supabase gateway backend. No application was changed or submitted by this request.
+          Signing in again will not resolve this restriction.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button asChild variant="outline"><Link href="/contact">Contact support</Link></Button>
+          <Button asChild variant="ghost"><Link href="/app/dashboard">Return to dashboard</Link></Button>
+        </div>
+      </div>
+    );
+  }
+
   const application = await getLatestVerificationApplication(session.userId);
   if (!application) {
     return (
