@@ -32,8 +32,8 @@ describe("KYC status page gateway safety", () => {
     const response = await VerificationStatusPage();
     expect(mocks.latestApplication).not.toHaveBeenCalled();
     expect(mocks.toView).not.toHaveBeenCalled();
-    expect(JSON.stringify(response)).toContain("Verification status temporarily unavailable");
-    expect(JSON.stringify(response)).toContain("Signing in again will not resolve");
+    expect(response.props.children[0].props.children).toBe("Verification status temporarily unavailable");
+    expect(response.props.children[1].props.children).toContain("Signing in again will not resolve");
   });
 
   it("retains direct-database status lookup for authorized local sessions", async () => {
@@ -46,7 +46,7 @@ describe("KYC status page gateway safety", () => {
     const response = await VerificationStatusPage();
     expect(mocks.latestApplication).toHaveBeenCalledOnce();
     expect(mocks.latestApplication).toHaveBeenCalledWith("local-client");
-    expect(JSON.stringify(response)).toContain("No application found");
+    expect(response.props.children[0].props.children).toBe("No application found");
   });
 
   it("redirects unauthenticated requests before attempting a status lookup", async () => {
