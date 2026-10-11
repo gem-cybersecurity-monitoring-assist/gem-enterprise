@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Clock, AlertTriangle, Shield } from "lucide-react";
+import { Mail, Phone, Clock, AlertTriangle, Shield, MessageCircle } from "lucide-react";
 import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
@@ -115,6 +116,29 @@ export default function ContactPage() {
                     Registered, operating, or mailing address details are provided in applicable contracts
                     and verified business documentation rather than inferred from this contact page.
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-panel border-emerald-400/25 bg-emerald-400/[0.04]">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 rounded-md border border-emerald-400/30 bg-emerald-400/10 p-2">
+                      <MessageCircle className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold">WhatsApp Business</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Start a service conversation using the connected GEM WhatsApp Business channel.
+                        Sensitive records, credentials, and protected evidence should remain inside the secure GEM portal.
+                      </p>
+                      <Link
+                        href="/whatsapp"
+                        className="mt-4 inline-flex items-center rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/15"
+                      >
+                        Open WhatsApp options
+                      </Link>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
