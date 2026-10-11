@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { gatewayVerificationUnavailable } from "@/lib/kyc/gateway-guard";
 import { requireSession } from "@/lib/api/auth-helpers";
 import {
   getLatestVerificationApplication,
@@ -15,6 +16,7 @@ function json(body: unknown, status = 200) {
 export async function GET() {
   const gate = await requireSession();
   if (!gate.ok) return gate.response;
+  if (gate.session.authSource === "supabase_gateway") return gatewayVerificationUnavailable();
 
   const application = await getLatestVerificationApplication(gate.session.userId);
   return json({

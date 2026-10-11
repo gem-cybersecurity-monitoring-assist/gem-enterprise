@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { gatewayVerificationUnavailable } from "@/lib/kyc/gateway-guard";
 import { requireAdmin } from "@/lib/api/auth-helpers";
 import {
   listVerificationReviewQueue,
@@ -15,6 +16,7 @@ function json(body: unknown, status = 200) {
 export async function GET() {
   const gate = await requireAdmin();
   if (!gate.ok) return gate.response;
+  if (gate.session.authSource === "supabase_gateway") return gatewayVerificationUnavailable();
 
   const applications = await listVerificationReviewQueue(
     gate.session.userId,
