@@ -160,3 +160,17 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | STATUS | Local repairs validated; live Market and Command Center hosting made private; application code deployment pending |
 | BLOCKERS | Production identity/provider/database evidence; six reproduced base test failures; build errors in existing routes |
 | NEXT SAFE ACTION | Review isolated repair commits and coordinate existing build lanes before merge; verify configured stable Sites owner IDs |
+
+## Member Workspace Showcase — 2026-10-11 reconciliation
+
+| Field | Value |
+|---|---|
+| TASK | [MEMBER-WORKSPACE-SHOWCASE](tasks/MEMBER-WORKSPACE-SHOWCASE.md) |
+| SOURCE | Historical PR #390 and issue #389 |
+| PREVIOUS BASE | `7175341a328b522fdf181bf4f5ee78d6c3376f41` |
+| RECONCILIATION BASE | `0161fdfd05b2754ac677875345a5aba6c979d639` |
+| OWNED SCOPE | Public Community, client Community, Community Hub layout, shared standalone workspace links, focused tests and task docs |
+| EXCLUDED | Auth/session changes, sensitive member records, fabricated activity, provider connections, migrations, billing |
+| STATUS | Isolated source reconciliation; GitHub CI and preview validation required |
+| RELEASE CONTROL | Separate ChatGPT sign-in and membership entitlement required; do not present preview members as real |
+| NEXT STEP | Validate on hosted CI and preview; check workspace destination before production merge |
