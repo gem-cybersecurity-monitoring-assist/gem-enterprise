@@ -10,7 +10,7 @@ export type SocialPauseProvider = (typeof socialPauseProviders)[number];
 export function parseSocialPauseProvider(input: string): SocialPauseProvider {
   const provider = input.trim().toUpperCase();
   if (!socialPauseProviders.includes(provider as SocialPauseProvider)) {
-    throw new TokMetricError(400, "SOCIAL_PROVIDER_UNSUPPORTED", "Unsupported social pause provider.");
+    throw new TokMetricError(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Unsupported social pause provider.");
   }
   return provider as SocialPauseProvider;
 }
