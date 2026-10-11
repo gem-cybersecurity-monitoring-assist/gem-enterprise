@@ -5,77 +5,83 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GEM Call Studio — Trusted Transformation</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/simple-flow.css?v=1">
 </head>
 <body>
 <header class="topbar">
   <div>
     <span class="eyebrow">GEM ENTERPRISE</span>
     <h1>GEM Call Studio</h1>
-    <p>Choose a virtual team member for customer calls. Your live speech and full-body performance drive the selected character, custom voice and independent background.</p>
+    <p>Choose your team member, background and voice.</p>
   </div>
   <div class="header-status">
-    <span class="version">v2.4 preview · Virtual Team</span>
+    <span class="version">Your live studio</span>
     <div id="serviceBadge" class="badge neutral">Starting</div>
   </div>
 </header>
 
 <nav class="tabs">
-  <button class="active" data-tab="studio">Transformation</button>
-  <button data-tab="output">OBS Output</button>
-  <button data-tab="system">Readiness & Logs</button>
+  <button class="active" data-tab="studio">Your studio</button>
+  <button data-tab="output">Call setup</button>
+  <button data-tab="system">Troubleshooting</button>
 </nav>
 
 <main>
   <section id="tab-studio" class="tab active">
+    <p class="simple-status">Full-body calling is still being built. Team setup and voice testing are available.</p>
+<div class="simple-choices">
     <article class="panel">
-<h2>Your virtual team</h2>
-<p>Reference assets are saved privately in this browser on this computer. These previews are static references; the caller output stays closed until a live renderer and custom voice are verified.</p>
+<h2>1. Team member</h2>
+
 <label>Saved team member<select id="teamProfile"></select></label>
-<label>New team member name<input id="teamName" maxlength="80" placeholder="Customer support representative"></label>
+<details><summary>Add a team member</summary><label>New team member name<input id="teamName" maxlength="80" placeholder="Customer support representative"></label>
 <label>Full-body reference images (1–8)<input id="teamImages" type="file" multiple accept="image/png,image/jpeg,image/webp"></label>
 <label>Optional profile background — scene library below<input id="teamBackground" type="file" accept="image/png,image/jpeg,image/webp"></label>
 <label>Optional voice reference — use a live voice app below<input id="teamVoice" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/flac"></label>
 <label class="checkbox"><input id="teamFullBody" type="checkbox"> At least one reference shows the full body.</label>
 <label class="checkbox"><input id="teamAuthorized" type="checkbox"> I am authorized to use these images and voice as a disclosed virtual team member.</label>
 <div class="actions"><button id="saveTeam">Save new team member</button><button id="deleteTeam">Delete selected member</button></div>
-<div id="teamPreview"></div><p id="teamStatus" role="status"></p>
-<div class="notice">Your performance controls the conversation. Uploading a voice sample stores a reference; it does not install voice conversion.</div>
+</details><div id="teamPreview"></div><p id="teamStatus" role="status"></p>
+
 </article>
 <article class="panel">
-<h2>Reference source, background changer and live voice</h2>
-<label>Notion reference page<input id="notionSource" type="url" placeholder="https://www.notion.so/..."></label>
+<h2>2. Background</h2>
+<details><summary>Notion images</summary><label>Notion reference page<input id="notionSource" type="url" placeholder="https://www.notion.so/..."></label>
 <a id="notionPageLink" target="_blank" rel="noopener noreferrer">Open Notion profile gallery</a>
-<p id="notionStatus" role="status"></p>
+<p id="notionStatus" role="status"></p></details>
 <label>Scene category<select id="backgroundCategory"><option value="home">Home</option><option value="office">Office</option><option value="bedroom">Bedroom</option><option value="pool">Swimming pool</option><option value="custom">Other space</option></select></label>
-<label>Upload multiple scene images or moving backgrounds<input id="uploadBackgrounds" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"></label>
-<label>Choose background<select id="backgroundChoice"></select></label>
-<button id="deleteBackground">Delete selected background</button>
+<details><summary>Add backgrounds</summary><label>Upload images or moving backgrounds<input id="uploadBackgrounds" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"></label>
+</details><label>Choose background<select id="backgroundChoice"></select></label>
+<details><summary>Manage backgrounds</summary><button id="deleteBackground">Delete selected background</button></details>
 <div id="backgroundPreview"></div>
-<label>Live voice application<select id="voiceProvider"><option value="voicemod">Voicemod</option><option value="voicemeeter">VoiceMeeter routing</option><option value="other">Other voice application</option></select></label>
+<p id="sceneStatus" role="status"></p>
+</article>
+<article class="panel">
+<h2>3. Voice</h2>
+<p>Choose a style and test how you sound.</p>
+<label>Voice style<select id="localVoicePreset"></select></label>
+<details><summary>Customize voice</summary><label>Pitch <output id="voice-pitch-value"></output><input id="voice-pitch" type="range" min="-7" max="7" step="1" value="0"></label>
+<label>Bass <output id="voice-bass-value"></output><input id="voice-bass" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Brightness <output id="voice-treble-value"></output><input id="voice-treble" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Gain <output id="voice-gain-value"></output><input id="voice-gain" type="range" min="0.2" max="1.5" step="0.05" value="1"></label>
+<button id="saveLocalVoice">Save voice settings</button></details>
+<details><summary>Microphone settings</summary><label>Microphone<select id="localVoiceMic"><option value="">System microphone</option></select></label>
+<button id="scanLocalMics">Detect microphones</button></details>
+<label class="checkbox"><input id="listenLocalVoice" type="checkbox"> Listen live through headphones</label>
+<div class="actions"><button id="startLocalVoice">Test voice</button><button id="stopLocalVoice">Stop voice</button></div>
+<label>Processed audio level <meter id="localVoiceMeter" min="0" max="100" value="0"></meter></label>
+<p id="localVoiceStatus" role="status">Ready to test. Sending this voice into calls is still being built.</p>
+<details><summary>Use another voice application</summary><label>Live voice application<select id="voiceProvider"><option value="voicemod">Voicemod</option><option value="voicemeeter">VoiceMeeter routing</option><option value="other">Other voice application</option></select></label>
 <p>Select the voice or preset inside your voice app. Studio selects its audio device; it does not control that app's preset library.</p>
 <label>Converted voice input<select id="voiceDevice"><option value="">Scan for the voice app virtual microphone</option></select></label>
 <button id="scanVoiceDevices">Detect voice devices</button>
 <button data-launch="voicemod">Open Voicemod</button>
 <button data-launch="voicemeeter">Open VoiceMeeter</button>
 <p id="voiceStatus" role="status">Voice conversion has not been verified.</p>
-<p id="sceneStatus" role="status"></p>
+</details>
 </article>
-<article class="panel">
-<h2>Built-in live voice selector · no Voicemod required</h2>
-<p>Choose a voice effect, adjust it and save your settings. This processes your microphone live; it does not clone another person's voice.</p>
-<label>Voice style<select id="localVoicePreset"></select></label>
-<label>Pitch <output id="voice-pitch-value"></output><input id="voice-pitch" type="range" min="-7" max="7" step="1" value="0"></label>
-<label>Bass <output id="voice-bass-value"></output><input id="voice-bass" type="range" min="-8" max="8" step="1" value="0"></label>
-<label>Brightness <output id="voice-treble-value"></output><input id="voice-treble" type="range" min="-8" max="8" step="1" value="0"></label>
-<label>Gain <output id="voice-gain-value"></output><input id="voice-gain" type="range" min="0.2" max="1.5" step="0.05" value="1"></label>
-<label>Microphone<select id="localVoiceMic"><option value="">System microphone</option></select></label>
-<button id="scanLocalMics">Detect microphones</button>
-<label class="checkbox"><input id="listenLocalVoice" type="checkbox"> Listen live through headphones</label>
-<div class="actions"><button id="startLocalVoice">Start voice preview</button><button id="stopLocalVoice">Stop voice preview</button><button id="saveLocalVoice">Save voice settings</button></div>
-<label>Processed audio level <meter id="localVoiceMeter" min="0" max="100" value="0"></meter></label>
-<p id="localVoiceStatus" role="status">Local voice processing ready to test. Call routing remains unconnected.</p>
-</article>
-<div class="two-col">
+</div>
+<details class="advanced-settings"><summary>Advanced camera settings</summary><div class="two-col">
       <article class="panel">
         <h2>1. Trusted engine and authorized character</h2>
         <label>Transformation engine
@@ -129,13 +135,14 @@
       </article>
     </div>
 
+</details>
     <article class="panel control-panel">
       <div>
-        <h2>3. Start verified transformation</h2>
-        <p id="sessionMessage">Select a saved team member. Full-body live processing is currently awaiting engine connection.</p>
+        <h2>Your call preview</h2>
+        <p id="sessionMessage">Choose your team member above. Live body animation is not connected yet.</p>
       </div>
       <div class="actions">
-        <button id="connect" class="primary">Start transformation</button>
+        <button id="connect" class="primary">Start call preview</button>
         <button id="apply" disabled>Apply portrait/prompt update</button>
         <button id="disconnect" disabled>Stop</button>
       </div>
@@ -144,16 +151,16 @@
     <article class="panel stage">
       <div class="stage-grid">
         <div class="video-card">
-          <div class="video-label">Driving camera <span class="mini-badge neutral">LOCAL</span></div>
+          <div class="video-label">Your camera <span class="mini-badge neutral">LOCAL</span></div>
           <video id="localVideo" autoplay muted playsinline></video>
         </div>
         <div class="video-card output-card">
-          <div class="video-label">Verified trusted output <span id="outputBadge" class="mini-badge neutral">WAITING</span></div>
+          <div class="video-label">What the caller sees <span id="outputBadge" class="mini-badge neutral">WAITING</span></div>
           <video id="remoteVideo" autoplay muted playsinline></video>
-          <div id="outputPlaceholder" class="placeholder">No verified engine output is being broadcast. The physical camera is never substituted here.</div>
+          <div id="outputPlaceholder" class="placeholder">Your presenter will appear here when live animation is connected.</div>
         </div>
       </div>
-      <div class="status-grid wide">
+      <details><summary>Session details</summary><div class="status-grid wide">
         <div><span>Session</span><strong id="sessionState">Idle</strong></div>
         <div><span>Engine</span><strong id="engineState">Standby</strong></div>
         <div><span>SDK state</span><strong id="sdkState">Disconnected</strong></div>
@@ -162,7 +169,7 @@
         <div><span>Latency</span><strong id="latencyMetric">—</strong></div>
         <div><span>Timer</span><strong id="sessionTimer">00:00:00</strong></div>
       </div>
-    </article>
+</details>    </article>
   </section>
 
   <section id="tab-output" class="tab">
@@ -224,7 +231,7 @@
 </main>
 
 <div id="toast"></div>
-<script type="module" src="/assets/studio.js?v=scene-voice-20261011"></script>
+<script type="module" src="/assets/studio.js?v=simple-flow-20261012"></script>
 <script type="module" src="/voice-select.js?v=local-voice-1"></script>
 </body>
 </html>

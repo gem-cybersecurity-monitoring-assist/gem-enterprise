@@ -885,7 +885,7 @@ async function connect() {
     activeEngine = "none";
     $("#engineState").textContent = "Failed";
     setGate("engine", "fail", "No verified engine");
-    forceState(SessionState.FAILED, error.message);
+    forceState(SessionState.FAILED, $("#engineMode").value === "fullbody" ? "Live body animation is not connected yet. You can set up your team and test the voice." : error.message);
   } finally {
     startTransactionInProgress = false;
     button.textContent = originalLabel;
@@ -1005,7 +1005,7 @@ async function refreshHealth() {
   try {
     const health = await api("/api/health");
     $("#serviceBadge").textContent = health.keyConfigured
-      ? `Backend online · Virtual team engine pending · v${health.version}`
+      ? "Studio connected"
       : `Backend online · Virtual team engine pending · v${health.version}`;
     $("#serviceBadge").className = "badge good";
     setGate("backend", "pass", `v${health.version}`);
@@ -1168,7 +1168,7 @@ function bind() {
 initSceneControls({ isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream) });
 virtualTeam = initVirtualTeam({
   isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream),
-  onSelect: (profile) => { if ($("#engineMode").value === "fullbody") $("#sessionMessage").textContent = profile ? profile.name + " selected. Full-body renderer and custom voice connection pending." : "Select or create a virtual team member."; }
+  onSelect: (profile) => { if ($("#engineMode").value === "fullbody") $("#sessionMessage").textContent = profile ? profile.name + " selected. Live body animation is still being built." : "Select or create a virtual team member."; }
 });
 bind();
 renderGates();

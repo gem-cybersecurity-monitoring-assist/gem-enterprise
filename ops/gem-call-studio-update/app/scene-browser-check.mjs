@@ -36,7 +36,7 @@ try {
  await evaluate("document.querySelector('#teamProfile').value="+JSON.stringify(save.id)+";document.querySelector('#teamProfile').dispatchEvent(new Event('change'));document.querySelector('#consent').checked=true;document.querySelector('#connect').click();true");
  await wait(1500);
  const blocked=await evaluate("({message:document.querySelector('#sessionMessage').textContent,source:!!document.querySelector('#localVideo').srcObject,output:!!document.querySelector('#remoteVideo').srcObject})");
- if(blocked.source||blocked.output||!blocked.message.includes("Full-body call setup incomplete"))throw new Error("Unavailable engine did not fail closed");
+ if(blocked.source||blocked.output||!blocked.message.includes("Live body animation"))throw new Error("Unavailable engine did not fail closed");
  console.log("BLOCKED_OUTPUT="+JSON.stringify(blocked));
  await evaluate("document.querySelector('#deleteTeam').click();true");await wait(700);
  console.log("TEST_PROFILE_REMOVED="+await evaluate("!Array.from(document.querySelector('#teamProfile').options).some(o=>o.textContent==='TEST virtual team validation')"));
@@ -60,4 +60,8 @@ try {
  console.log("SCENE_PERSISTENCE="+JSON.stringify(restored));
  await evaluate("document.querySelector('#deleteBackground').click();true");await wait(500);
  console.log("TEST_SCENE_REMOVED="+await evaluate("!document.querySelector('#backgroundChoice').value"));
+
+ const layout=await evaluate("({cards:Array.from(document.querySelectorAll('.simple-choices > article')).map(e=>e.querySelector('h2').textContent),openAdvanced:document.querySelector('.advanced-settings').open,duplicates:Array.from(document.querySelectorAll('[id]')).map(e=>e.id).filter((x,i,a)=>a.indexOf(x)!==i)})");
+ if(layout.cards.length!==3||layout.openAdvanced||layout.duplicates.length)throw new Error("Simple layout failed");
+ console.log("SIMPLE_LAYOUT="+JSON.stringify(layout));
 }finally{ws.close();}
