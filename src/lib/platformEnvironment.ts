@@ -7,7 +7,7 @@ export const platformEnvironment = {
   repositoryName: "gem-enterprise",
   defaultBranch: "main",
   runtime: "serverless",
-  status: "connected",
+  status: "configured",
 } as const;
 
 export const deploymentPlan = {
@@ -18,7 +18,7 @@ export const deploymentPlan = {
   buildCommand: "pnpm run build",
   startCommand: "pnpm start",
   healthCheckPath: "/api/v1/production/health",
-  status: "ready",
+  status: "unverified",
 } as const;
 
 export const repositoryConnection = {
@@ -29,5 +29,16 @@ export const repositoryConnection = {
   fullName: platformEnvironment.repository,
   url: "https://github.com/support371/gem-enterprise",
   defaultBranch: platformEnvironment.defaultBranch,
-  status: "connected",
+  status: "configured",
 } as const;
+
+// Configuration describes intended wiring; it does not establish provider health.
+export function platformConfigurationEvidence() {
+  return {
+    checkedAt: new Date().toISOString(),
+    source: "server_configuration",
+    commitSha: process.env.VERCEL_GIT_COMMIT_SHA || null,
+    deploymentEnvironment: process.env.VERCEL_ENV || "local",
+    operationallyVerified: false,
+  };
+}
