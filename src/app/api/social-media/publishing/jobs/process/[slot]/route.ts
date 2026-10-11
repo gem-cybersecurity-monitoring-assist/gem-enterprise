@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 import { processSocialPublishingBatch } from "@/lib/social-media/publishing/worker";
 import { parseSlotHour } from "@/lib/social-media/publishing/slots";
 
@@ -65,6 +66,9 @@ async function run(request: NextRequest, slot: string) {
       { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
+
+  const gatewayBlock = socialCronGatewayBlock();
+  if (gatewayBlock) return gatewayBlock;
 
   try {
     const result = await processSocialPublishingBatch(10, { slotHour });

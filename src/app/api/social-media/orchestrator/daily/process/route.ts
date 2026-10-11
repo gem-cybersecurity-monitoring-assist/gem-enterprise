@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 import { orchestrateDailyContent } from "@/lib/social-media/orchestration/orchestrator";
 import {
   isAuthorizedSocialCronRequest,
@@ -104,6 +105,9 @@ async function run(request: NextRequest) {
       { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
+
+  const gatewayBlock = socialCronGatewayBlock();
+  if (gatewayBlock) return gatewayBlock;
 
   // Global emergency stop (globalEmergencyLock / publishingDisabled): fail
   // closed before any orchestration or scheduling decision.

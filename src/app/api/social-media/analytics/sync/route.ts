@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 import { runSocialMetricsSync } from "@/lib/social-media/analytics/sync";
 
 function authorized(request: NextRequest) {
@@ -40,6 +41,9 @@ async function run(request: NextRequest) {
       { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
+
+  const gatewayBlock = socialCronGatewayBlock();
+  if (gatewayBlock) return gatewayBlock;
 
   const limitParam = request.nextUrl.searchParams.get("limit");
   const limit = limitParam ? Math.min(Math.max(Number(limitParam) || 50, 1), 200) : 50;
