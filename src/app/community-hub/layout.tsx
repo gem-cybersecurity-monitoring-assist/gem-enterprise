@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import { MemberWorkspaceShowcase } from "@/components/community/MemberWorkspaceShowcase";
 import { HubShell } from "@/components/hub/HubShell";
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
 export default function CommunityHubLayout({ children }: { children: ReactNode }) {
   return (
     <HubShell>
+      <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8">
+        <MemberWorkspaceShowcase />
+      </div>
       <aside
         role="status"
         aria-label="Demonstration data notice"
@@ -29,7 +33,7 @@ export default function CommunityHubLayout({ children }: { children: ReactNode }
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true" />
           <p>
             <strong>Controlled preview:</strong> profiles, organizations, member counts,
-            events, statistics, circles, and opportunities shown in this Community Hub are
+            events, statistics, circles, and opportunities on the preview pages below are
             fictional sample data for interface testing. They are not live members, verified
             firms, active investments, or offers to transact.
           </p>
