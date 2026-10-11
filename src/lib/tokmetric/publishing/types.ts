@@ -16,6 +16,15 @@ export const TIKTOK_PRIVACY_LEVELS = [
 export type TikTokPrivacyLevel = (typeof TIKTOK_PRIVACY_LEVELS)[number];
 export type TikTokVideoSource = "FILE_UPLOAD" | "PULL_FROM_URL";
 
+export type TikTokApprovedVideoAsset = {
+  id: string;
+  fileName: string;
+  mimeType: TikTokVideoMimeType;
+  fileSize: number;
+  checksum: string;
+  storageRef: string;
+};
+
 export type TikTokCreatorInfo = {
   creatorAvatarUrl: string | null;
   creatorUsername: string;
