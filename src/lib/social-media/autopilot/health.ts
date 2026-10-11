@@ -87,8 +87,8 @@ export function resolveProviderPauseState(input: {
  * Reads workspace-level provider pauses from WS-A's source of truth,
  * `social_provider_pauses` (one row per paused provider per workspace;
  * absence of a row means "not paused"). Returns autopilot provider ids.
- * Defensive: when the table/migration is absent the query throws and this
- * returns an empty list (no pauses can exist without the table).
+ * If the backing table or database is unavailable, fail closed: the scheduler
+ * cannot distinguish an unpaused provider from an inaccessible pause record.
  */
 export async function getWorkspacePausedProviders(
   workspaceId: string,
@@ -117,7 +117,11 @@ export async function getWorkspacePausedProviders(
       pausedControlPlaneProviders.has(autopilotToControlPlaneProvider[provider]),
     );
   } catch {
-    return [];
+    throw new TokMetricError(
+      503,
+      "SOCIAL_PROVIDER_PAUSE_STATE_UNAVAILABLE",
+      "Publishing scheduling is blocked until provider pause state can be verified.",
+    );
   }
 }
 

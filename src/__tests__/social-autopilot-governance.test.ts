@@ -276,9 +276,10 @@ describe("provider pause resolution", () => {
     db.$queryRaw = vi.fn(async () => {
       throw new Error('relation "social_provider_pauses" does not exist');
     });
-    await expect(getWorkspacePausedProviders("workspace-1")).resolves.toEqual(
-      [],
-    );
+    await expect(getWorkspacePausedProviders("workspace-1")).rejects.toMatchObject({
+      status: 503,
+      code: "SOCIAL_PROVIDER_PAUSE_STATE_UNAVAILABLE",
+    });
   });
 
   it("honors workspace-level paused providers first", () => {
