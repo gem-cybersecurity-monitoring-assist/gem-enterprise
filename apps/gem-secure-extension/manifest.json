@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "GEM Secure — Browser Protection",
+  "version": "0.1.0",
+  "description": "Privacy posture checks, HTTPS inspection, and explicit breach-monitoring handoff for GEM Enterprise.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "privacy"
+  ],
+  "action": {
+    "default_title": "GEM Secure",
+    "default_popup": "popup.html"
+  }
+}
