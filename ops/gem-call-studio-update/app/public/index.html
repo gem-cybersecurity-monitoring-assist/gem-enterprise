@@ -60,6 +60,21 @@
 <p id="voiceStatus" role="status">Voice conversion has not been verified.</p>
 <p id="sceneStatus" role="status"></p>
 </article>
+<article class="panel">
+<h2>Built-in live voice selector · no Voicemod required</h2>
+<p>Choose a voice effect, adjust it and save your settings. This processes your microphone live; it does not clone another person's voice.</p>
+<label>Voice style<select id="localVoicePreset"></select></label>
+<label>Pitch <output id="voice-pitch-value"></output><input id="voice-pitch" type="range" min="-7" max="7" step="1" value="0"></label>
+<label>Bass <output id="voice-bass-value"></output><input id="voice-bass" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Brightness <output id="voice-treble-value"></output><input id="voice-treble" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Gain <output id="voice-gain-value"></output><input id="voice-gain" type="range" min="0.2" max="1.5" step="0.05" value="1"></label>
+<label>Microphone<select id="localVoiceMic"><option value="">System microphone</option></select></label>
+<button id="scanLocalMics">Detect microphones</button>
+<label class="checkbox"><input id="listenLocalVoice" type="checkbox"> Listen live through headphones</label>
+<div class="actions"><button id="startLocalVoice">Start voice preview</button><button id="stopLocalVoice">Stop voice preview</button><button id="saveLocalVoice">Save voice settings</button></div>
+<label>Processed audio level <meter id="localVoiceMeter" min="0" max="100" value="0"></meter></label>
+<p id="localVoiceStatus" role="status">Local voice processing ready to test. Call routing remains unconnected.</p>
+</article>
 <div class="two-col">
       <article class="panel">
         <h2>1. Trusted engine and authorized character</h2>
@@ -210,5 +225,6 @@
 
 <div id="toast"></div>
 <script type="module" src="/assets/studio.js?v=scene-voice-20261011"></script>
+<script type="module" src="/voice-select.js?v=local-voice-1"></script>
 </body>
 </html>
