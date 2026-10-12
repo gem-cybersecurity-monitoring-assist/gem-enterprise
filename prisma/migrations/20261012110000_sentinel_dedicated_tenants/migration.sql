@@ -4,7 +4,7 @@ CREATE TABLE "sentinel_tenants" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "consentReference" TEXT NOT NULL,
-  "consentVerifiedAt" TIMESTAMP(3) NOT NULL,
+  "consentVerifiedAt" TIMESTAMP(3),
   "registeredBy" TEXT NOT NULL,
   "enabled" BOOLEAN NOT NULL DEFAULT false,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
