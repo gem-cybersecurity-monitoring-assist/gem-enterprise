@@ -1440,3 +1440,32 @@ model SentinelSecurityEvent {
   @@index([state, severity, receivedAt])
   @@map("sentinel_security_events")
 }
+
+ 
+/// Registered, explicitly authorized organizations in a dedicated Sentinel database.
+model SentinelTenant {
+  id                String   @id
+  name              String
+  consentReference  String
+  consentVerifiedAt DateTime?
+  registeredBy      String
+  enabled           Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("sentinel_tenants")
+}
+
+/// Append-only security administration evidence, stored beside Sentinel data.
+model SentinelOperationAudit {
+  id          String   @id @default(cuid())
+  tenantId    String
+  collectorId String?
+  actorId     String
+  action      String
+  detail      Json?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@map("sentinel_operation_audit")
+}
