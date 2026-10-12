@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformOwner } from "@/lib/api/auth-helpers";
-import { db } from "@/lib/db";
+import { getSentinelDb } from "@/lib/security-operations/sentinel-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export async function GET(request:NextRequest) {
     return NextResponse.json({error:"Invalid organization"},{status:400,headers:{"Cache-Control":"no-store"}});
   }
   try {
-    const events=await db.sentinelSecurityEvent.findMany({
+    const events=await getSentinelDb().sentinelSecurityEvent.findMany({
       where:tenantId?{tenantId}:{},
       select:{id:true,tenantId:true,source:true,sourceEventId:true,severity:true,title:true,description:true,occurredAt:true,receivedAt:true,state:true,requiresReview:true},
       take:100,orderBy:{receivedAt:"desc"},
