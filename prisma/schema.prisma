@@ -1384,3 +1384,59 @@ model LifecycleFunnelState {
 
   @@map("lifecycle_funnel_states")
 }
+
+// GEM Sentinel (controlled, tenant-scoped security telemetry).
+// Collector keys are stored only as hashes; raw source payloads are not persisted.
+model SentinelCollector {
+  id                String   @id @default(cuid())
+  tenantId          String
+  source            String
+  label             String
+  keyHash           String   @unique
+  consentReference  String
+  consentVerifiedAt DateTime?
+  enabled           Boolean  @default(false)
+  revokedAt         DateTime?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  nonces SentinelNonce[]
+  events SentinelSecurityEvent[]
+
+  @@index([tenantId, enabled])
+  @@map("sentinel_collectors")
+}
+
+model SentinelNonce {
+  id          String   @id @default(cuid())
+  collectorId String
+  nonce       String
+  createdAt   DateTime @default(now())
+  collector   SentinelCollector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+
+  @@unique([collectorId, nonce])
+  @@index([createdAt])
+  @@map("sentinel_nonces")
+}
+
+model SentinelSecurityEvent {
+  id             String   @id @default(cuid())
+  collectorId    String
+  tenantId       String
+  source         String
+  sourceEventId  String
+  severity       String
+  title          String
+  description    String
+  occurredAt     DateTime
+  receivedAt     DateTime @default(now())
+  requiresReview Boolean  @default(false)
+  state          String   @default("triage_pending")
+  collector      SentinelCollector @relation(fields: [collectorId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, source, sourceEventId])
+  @@index([tenantId, receivedAt])
+  @@index([state, severity, receivedAt])
+  @@map("sentinel_security_events")
+}
