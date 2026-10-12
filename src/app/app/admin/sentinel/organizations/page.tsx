@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, CircleHelp, LockKeyhole, Plus, RefreshCw, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleHelp, LockKeyhole, Plus, RefreshCw, ShieldAlert, ShieldOff } from "lucide-react";
 
 type Tenant = {
   id:string; name:string; consentReference:string;
