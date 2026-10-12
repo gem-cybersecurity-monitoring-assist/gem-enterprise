@@ -52,7 +52,7 @@ test("local avatar is self-hosted and gates OBS on active face tracking", () => 
   assert.match(avatar, /\/models\/face_landmarker\.task/);
   assert.match(avatar, /detectForVideo/);
   assert.match(studio, /avatarTrackingReady/);
-  assert.match(studio, /if \(activeEngine === "avatar" && !avatarTrackingReady\)/);
+  assert.match(studio, /if \(\(activeEngine === "avatar" \|\| activeEngine === "puppet"\) && !avatarTrackingReady\)/);
   assert.ok(fs.statSync(bundle).size > 100000);
   assert.ok(fs.statSync(wasm).size > 10000000);
   assert.ok(fs.statSync(model).size > 1000000);
