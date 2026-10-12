@@ -12,7 +12,12 @@ import { db } from "@/lib/db";
  */
 const globals = globalThis as unknown as { gemSentinelPrisma?: PrismaClient };
 
-export function resolveSentinelStorageConfig(env: NodeJS.ProcessEnv = process.env):
+type SentinelConfigEnv = Partial<Pick<NodeJS.ProcessEnv,
+  "SENTINEL_STORAGE_MODE" | "SENTINEL_DATABASE_URL" | "POSTGRES_PRISMA_URL" |
+  "DATABASE_URL" | "POSTGRES_URL" | "NEON_DATABASE_URL"
+>>;
+
+export function resolveSentinelStorageConfig(env: SentinelConfigEnv = process.env):
   { mode: "shared" } | { mode: "dedicated"; url: string } {
   const mode = env.SENTINEL_STORAGE_MODE?.trim() || "shared";
   const url = env.SENTINEL_DATABASE_URL?.trim() || "";
