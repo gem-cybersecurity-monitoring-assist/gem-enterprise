@@ -234,6 +234,7 @@ export default function SentinelSecurityPage() {
             <h2 id="quick-title" className="text-2xl font-black">Quick access</h2>
             <p className="mt-2 text-sm text-slate-300">Move between GEM security services without losing your place.</p>
             <div className="mt-5 space-y-3">
+              <Link className={buttonBase+" w-full justify-between bg-[#ffbf00] text-[#001f3f] hover:bg-[#ffe09b]"} href="/app/admin/sentinel/organizations">Authorize organizations <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between border border-white/25 bg-white/10 text-white hover:bg-white/20"} href="/app/admin">Admin Center <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between border border-white/25 bg-white/10 text-white hover:bg-white/20"} href="/app/command-center">Command Center <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between border border-white/25 bg-white/10 text-white hover:bg-white/20"} href="/intel">Sentinel Intelligence <ArrowRight size={17}/></Link>
@@ -248,6 +249,7 @@ export default function SentinelSecurityPage() {
             <p className="text-xs font-black uppercase tracking-wider text-[#ffd56e]">Step 1 · Registration</p>
             <h2 id="register-title" className="mt-2 text-2xl font-black">Add a security connection</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">Only register a sensor for an organization with a signed agreement. New connections start disabled.</p>
+            <Link href="/app/admin/sentinel/organizations" className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-[#ffbf00] underline underline-offset-4">First, approve the organization <ArrowRight size={17}/></Link>
             <form onSubmit={e=>void registerCollector(e)} className="mt-5 space-y-4">
               <label className="block text-sm font-bold">Organization ID
                 <input className={inputStyle} autoComplete="off" required minLength={3} maxLength={128} pattern="[A-Za-z0-9_-]{3,128}"
