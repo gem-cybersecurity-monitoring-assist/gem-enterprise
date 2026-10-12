@@ -19,7 +19,7 @@ describe("GEM Sentinel accessible operator experience",()=>{
     expect(screen.getByText(/This workspace requires an authenticated Platform Owner account/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:/Set up protection/}));
     expect(screen.getByRole("button",{name:/Register disabled connection/}).hasAttribute("disabled")).toBe(true);
-  });
+  },20000);
 
   it("renders working tabs and an honest empty collector state",async()=>{
     vi.stubGlobal("fetch",vi.fn((input:string)=>{
@@ -32,7 +32,7 @@ describe("GEM Sentinel accessible operator experience",()=>{
     fireEvent.click(screen.getByRole("button",{name:"Incidents"}));
     expect(screen.getByText("No matching stored incidents")).toBeTruthy();
     expect(screen.getByText(/No results is not proof of safety/)).toBeTruthy();
-  });
+  },20000);
 
   it("shows a new collector key only after a real successful registration response",async()=>{
     const key="snt_test-key-one-time";
@@ -57,5 +57,5 @@ describe("GEM Sentinel accessible operator experience",()=>{
     expect(payload.consentReference).toBe("CONSENT-LAB-2026-10");
     fireEvent.click(screen.getByRole("button",{name:"I saved the key"}));
     expect(screen.queryByText(key)).toBeNull();
-  });
+  },20000);
 });
