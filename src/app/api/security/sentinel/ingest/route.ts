@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { getSentinelDb } from "@/lib/security-operations/sentinel-store";
 import { collectorIdFromCredential, credentialMatches, isCollectorReady } from "@/lib/security-operations/collector-auth";
 import { evaluateIncomingSecurityAlert } from "@/lib/security-operations/ingestion-contract";
 import { normalizeSecurityEvent } from "@/lib/security-operations/events";
@@ -64,10 +64,11 @@ export async function POST(request: NextRequest) {
     return response({error:"Invalid alert payload"},400);
   }
   try {
-    const collector = await db.sentinelCollector.findUnique({where:{id:collectorId}});
+    const securityDb = getSentinelDb();
+    const collector = await securityDb.sentinelCollector.findUnique({where:{id:collectorId}});
     if (!collector || !credentialMatches(key,collector)) return response({error:"Collector authentication failed"},401);
     if (!isCollectorReady(collector)) return response({error:"Collector is not enabled or consent has expired"},403);
-    const recent = await db.sentinelNonce.count({
+    const recent = await securityDb.sentinelNonce.count({
       where:{collectorId,createdAt:{gte:new Date(Date.now()-60000)}},
     });
     if (recent>=PER_MINUTE) return response({error:"Rate limit exceeded"},429);
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (!evaluation.accepted) return response({error:"Alert rejected",code:evaluation.code},400);
     const incident = evaluation.incident;
     const event = normalizeSecurityEvent({tenantId:collector.tenantId, source:collector.source as "wazuh"|"suricata"|"osquery"|"prowler"|"trivy"|"gem", payload, receivedAt:now.toISOString()});
-    const result = await db.$transaction(async(tx)=>{
+    const result = await securityDb.$transaction(async(tx)=>{
       await tx.sentinelNonce.create({data:{collectorId,nonce}});
       const prior = await tx.sentinelSecurityEvent.findUnique({
         where:{tenantId_source_sourceEventId:{
