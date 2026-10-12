@@ -28,7 +28,7 @@
 
 <main>
   <section id="tab-studio" class="tab active">
-    <p class="simple-status">Full-body calling is still being built. Team setup and voice testing are available.</p>
+    <p class="simple-status">Photorealistic full-body calls are not ready. You can try a free 2D motion demo with an authorized uploaded character.</p>
 <div class="simple-choices">
     <article class="panel">
 <h2>1. Team member</h2>
@@ -89,6 +89,7 @@
         <label>Transformation engine
           <select id="engineMode">
             <option value="fullbody" selected>Virtual Team · Full-body live performance</option>
+<option value="puppet">Experimental · free 2D full-body motion demo</option>
 <option value="auto">Legacy demonstration · Automatic</option>
             <option value="local">Legacy demonstration · Decorated camera</option>
             <option value="avatar">Legacy demonstration · Face portrait overlay</option>
@@ -145,6 +146,7 @@
       </div>
       <div class="actions">
         <button id="connect" class="primary">Start call preview</button>
+        <button id="tryPuppet">Try free 2D body demo</button>
         <button id="apply" disabled>Apply portrait/prompt update</button>
         <button id="disconnect" disabled>Stop</button>
       </div>
