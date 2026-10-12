@@ -38,7 +38,7 @@ export async function POST(request:NextRequest){
     await store.$transaction(async tx=>{
       await tx.sentinelTenant.create({data:{
         id:body.tenantId,name:body.name,consentReference:body.consentReference,
-        consentVerifiedAt:new Date(),registeredBy:gate.session.userId,enabled:false,
+        consentVerifiedAt:null,registeredBy:gate.session.userId,enabled:false,
       }});
       await tx.sentinelOperationAudit.create({data:{
         tenantId:body.tenantId,actorId:gate.session.userId,action:"tenant_registration",
