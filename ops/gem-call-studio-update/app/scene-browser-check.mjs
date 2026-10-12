@@ -5,8 +5,8 @@ const ws=new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((r,j)=>{ws.addEventListener("open",r,{once:true});ws.addEventListener("error",j,{once:true});});
 let id=0;const pending=new Map();
 ws.addEventListener("message",e=>{const m=JSON.parse(e.data);if(!m.id)return;const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.j(new Error(m.error.message)):p.r(m.result);}});
-function send(method,params={}){return new Promise((r,j)=>{const n=++id;pending.set(n,{r,j});ws.send(JSON.stringify({id:n,method,params}));});}
-async function evaluate(expression){const r=await send("Runtime.evaluate",{expression,awaitPromise:true,returnByValue:true,userGesture:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text);return r.result?.value;}
+function send(method,params={}){return new Promise((r,j)=>{const n=++id;const timer=setTimeout(()=>{pending.delete(n);j(new Error("Browser command timed out: "+method));},30000);pending.set(n,{r:value=>{clearTimeout(timer);r(value);},j:error=>{clearTimeout(timer);j(error);}});ws.send(JSON.stringify({id:n,method,params}));});}
+async function evaluate(expression){const r=await send("Runtime.evaluate",{expression,awaitPromise:true,returnByValue:true,userGesture:true,timeout:30000});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text);return r.result?.value;}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(expression, label) { for(let n=0;n<120;n++){if(await evaluate(expression))return;await wait(250);} throw new Error(label); }
 const fixtureName="TEST virtual team "+Date.now();
@@ -19,8 +19,7 @@ try {
  if(initial.mode!=="fullbody"||!initial.fallbackDisabled)throw new Error("Default gate failed");
  console.log("INITIAL="+JSON.stringify(initial));
  const save=await evaluate(`(async()=>{
-  const c=document.createElement("canvas");c.width=20;c.height=40;c.getContext("2d").fillRect(0,0,20,40);
-  const b=await new Promise(r=>c.toBlob(r,"image/png"));
+  const b=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII="),c=>c.charCodeAt(0))],{type:"image/png"});
   const refs=[new File([b],"test-front.png",{type:"image/png"}),new File([b],"test-body.png",{type:"image/png"})];
   const set=(id,files)=>{const d=new DataTransfer();files.forEach(f=>d.items.add(f));document.getElementById(id).files=d.files;};
   document.getElementById("teamName").value=${JSON.stringify(fixtureName)};
@@ -49,8 +48,7 @@ try {
  if(q("backgroundCategory").options.length!==5)throw new Error("Scene categories missing");
  if(!q("notionPageLink").href.includes("app.notion.com/p/"))throw new Error("Notion page link missing");
  q("backgroundCategory").value="pool";q("backgroundCategory").dispatchEvent(new Event("change"));await new Promise(r=>setTimeout(r,300));
- const c=document.createElement("canvas");c.width=30;c.height=20;c.getContext("2d").fillRect(0,0,30,20);
- const blob=await new Promise(r=>c.toBlob(r,"image/png"));const transfer=new DataTransfer();
+ const blob=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII="),c=>c.charCodeAt(0))],{type:"image/png"});const transfer=new DataTransfer();
  transfer.items.add(new File([blob],"TEST-pool-scene.png",{type:"image/png"}));
  q("uploadBackgrounds").files=transfer.files;q("uploadBackgrounds").dispatchEvent(new Event("change"));
  for(let n=0;n<30;n++){await new Promise(r=>setTimeout(r,100));if(q("backgroundChoice").value)return {id:q("backgroundChoice").value,preview:!!q("backgroundPreview").querySelector("img")};}
