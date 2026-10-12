@@ -1,10 +1,19 @@
 # GEM Sentinel — dedicated Supabase database setup (free-first)
 
-Status: **implementation prepared, not provisioned and not connected**. The account owner must choose an authorized Supabase organization and explicitly accept the displayed project cost before project creation.
+Status (2026-10-12): **dedicated Supabase project created and migrations installed**. Project `thhbviealrttyqyagqnu` in organization `atnocdfzendybmbokfvc` was provisioned on the **Free** plan at provider-confirmed **$0/month** project creation cost, in `us-east-1`, and reports `ACTIVE_HEALTHY`. The project remains **not connected to Vercel's GEM Sentinel application** because an authenticated private PostgreSQL connection value is not available to this session and Vercel environment listing returned HTTP 403. No customer sensors are enrolled.
 
 ## Why dedicated storage
 
 The main GEM Enterprise application may use an existing Supabase Auth Gateway and a separate PostgreSQL connection. Sentinel must **never replace** the public app's `NEXT_PUBLIC_SUPABASE_URL`, `POSTGRES_PRISMA_URL`, `DATABASE_URL`, or other business-database variables with credentials from a new project. GEM Sentinel's monitoring records are intentionally isolated from customer accounts, transactions, and any separate crypto project.
+
+## Verified provisioning and security (2026-10-12)
+
+- Supabase project: `thhbviealrttyqyagqnu` (GEM Sentinel Security). Direct management: https://supabase.com/dashboard/project/thhbviealrttyqyagqnu
+- Completed Supabase migrations: `gem_sentinel_security_core` (version `20261012015611`) and `gem_sentinel_dedicated_tenants` (version `20261012015615`).
+- Verified all five `sentinel_*` tables exist with **zero rows**, RLS enabled, and anonymous / authenticated roles denied SELECT and INSERT permissions. No browser Data API policies were granted.
+- Security advisor's five INFO `rls_enabled_no_policy` findings are an intentional consequence of server-only table use. Do not add permissive browser policies to suppress them.
+- Readiness endpoint: `GET /api/admin/sentinel/readiness` (Platform Owner only). Returns `SCHEMA_READY_FOR_LAB` only after the running application connects to the designated private PostgreSQL database and verifies the five table privileges. This is distinct from live customer-device protection.
+- **Open blocker:** connect a **server-only** secret via Vercel preview environment configuration. Do not replace GEM Enterprise's canonical database or Auth Gateway variables.
 
 ## Project setup
 
