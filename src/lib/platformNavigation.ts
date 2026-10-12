@@ -403,6 +403,18 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
     ],
   },
   {
+    label: "Security operations",
+    items: [
+      {
+        href: "/app/admin/sentinel",
+        icon: "ShieldAlert",
+        label: "GEM Sentinel",
+        description: "Owner-only device security connections, incident evidence, and setup workflow.",
+        ownerOnly: true,
+      },
+    ],
+  },
+  {
     label: "Operations & evidence",
     items: [
       {
@@ -451,6 +463,7 @@ export const adminPrimaryNavItems: PlatformNavItem[] = adminPortalNavItems.filte
       "/app/admin/workspace-access",
       "/app/admin/api",
       "/app/admin/audit",
+      "/app/admin/sentinel",
     ].includes(item.href),
 );
 

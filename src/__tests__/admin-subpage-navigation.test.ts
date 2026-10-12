@@ -18,6 +18,7 @@ describe("enterprise admin sub-page navigation", () => {
     expect(adminPortalNavGroups.map((group) => group.label)).toEqual([
       "Organizations & access",
       "Identity & decisions",
+      "Security operations",
       "Operations & evidence",
     ]);
     expect(routes).toEqual(expect.arrayContaining([
@@ -36,6 +37,7 @@ describe("enterprise admin sub-page navigation", () => {
       "/app/admin",
       "/app/admin/organization-reports",
       "/app/admin/workspace-access",
+      "/app/admin/sentinel",
       "/app/admin/api",
       "/app/admin/audit",
     ]);
@@ -52,10 +54,12 @@ describe("enterprise admin sub-page navigation", () => {
     expect(ownerOnlyRoutes).toEqual([
       "/app/admin/workspace-access",
       "/app/admin/plan-workspaces",
+      "/app/admin/sentinel",
     ]);
     const navigation = source("src/components/admin/AdminSectionNavigation.tsx");
     expect(navigation).toContain('viewerRole === "super_admin"');
     expect(navigation).toContain("item.ownerOnly");
+    expect(adminPortalNavItems.find((item) => item.href === "/app/admin/sentinel")?.ownerOnly).toBe(true);
   });
 
   it("uses dedicated API domain pages instead of one dense registry table", () => {
