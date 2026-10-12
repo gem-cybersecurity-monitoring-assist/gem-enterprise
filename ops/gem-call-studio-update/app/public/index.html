@@ -68,9 +68,11 @@
 <details><summary>Microphone settings</summary><label>Microphone<select id="localVoiceMic"><option value="">System microphone</option></select></label>
 <button id="scanLocalMics">Detect microphones</button></details>
 <label class="checkbox"><input id="listenLocalVoice" type="checkbox"> Listen live through headphones</label>
-<div class="actions"><button id="startLocalVoice">Test voice</button><button id="stopLocalVoice">Stop voice</button></div>
+<div class="actions"><button id="startLocalVoice">Start voice</button><button id="stopLocalVoice">Stop voice</button></div>
 <label>Processed audio level <meter id="localVoiceMeter" min="0" max="100" value="0"></meter></label>
-<p id="localVoiceStatus" role="status">Ready to test. Sending this voice into calls is still being built.</p>
+<p id="localVoiceStatus" role="status">Choose your voice style, then start voice.</p>
+<label class="checkbox"><input id="routeVoiceToCalls" type="checkbox" checked> Send selected voice to calls</label>
+<p id="voiceRouteStatus" role="status" data-state="idle">Uses the VB-CABLE virtual microphone. Your calling app must select CABLE Output (VB-Audio Virtual Cable).</p>
 <details><summary>Use another voice application</summary><label>Live voice application<select id="voiceProvider"><option value="voicemod">Voicemod</option><option value="voicemeeter">VoiceMeeter routing</option><option value="other">Other voice application</option></select></label>
 <p>Select the voice or preset inside your voice app. Studio selects its audio device; it does not control that app's preset library.</p>
 <label>Converted voice input<select id="voiceDevice"><option value="">Scan for the voice app virtual microphone</option></select></label>
@@ -232,6 +234,6 @@
 
 <div id="toast"></div>
 <script type="module" src="/assets/studio.js?v=restore-selection-20261012"></script>
-<script type="module" src="/voice-select.js?v=local-voice-1"></script>
+<script type="module" src="/voice-select.js?v=voice-routing-2"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@ try {
  if(initial.mode!=="fullbody"||!initial.fallbackDisabled)throw new Error("Default gate failed");
  console.log("INITIAL="+JSON.stringify(initial));
  const save=await evaluate(`(async()=>{
-  const b=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII="),c=>c.charCodeAt(0))],{type:"image/png"});
+  const b=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAABQAAAAoCAIAAABxU02MAAAAJElEQVR4nO3LMQEAAAgDoGn/ztrBV/ipZHLV5ynLsizLsvw+LwLoAU+mxwuvAAAAAElFTkSuQmCC"),c=>c.charCodeAt(0))],{type:"image/png"});
   const refs=[new File([b],"test-front.png",{type:"image/png"}),new File([b],"test-body.png",{type:"image/png"})];
   const set=(id,files)=>{const d=new DataTransfer();files.forEach(f=>d.items.add(f));document.getElementById(id).files=d.files;};
   document.getElementById("teamName").value=${JSON.stringify(fixtureName)};
@@ -48,7 +48,7 @@ try {
  if(q("backgroundCategory").options.length!==5)throw new Error("Scene categories missing");
  if(!q("notionPageLink").href.includes("app.notion.com/p/"))throw new Error("Notion page link missing");
  q("backgroundCategory").value="pool";q("backgroundCategory").dispatchEvent(new Event("change"));await new Promise(r=>setTimeout(r,300));
- const blob=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII="),c=>c.charCodeAt(0))],{type:"image/png"});const transfer=new DataTransfer();
+ const blob=new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAABQAAAAoCAIAAABxU02MAAAAJElEQVR4nO3LMQEAAAgDoGn/ztrBV/ipZHLV5ynLsizLsvw+LwLoAU+mxwuvAAAAAElFTkSuQmCC"),c=>c.charCodeAt(0))],{type:"image/png"});const transfer=new DataTransfer();
  transfer.items.add(new File([blob],"TEST-pool-scene.png",{type:"image/png"}));
  q("uploadBackgrounds").files=transfer.files;q("uploadBackgrounds").dispatchEvent(new Event("change"));
  for(let n=0;n<30;n++){await new Promise(r=>setTimeout(r,100));if(q("backgroundChoice").value)return {id:q("backgroundChoice").value,preview:!!q("backgroundPreview").querySelector("img")};}

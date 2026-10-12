@@ -1,3 +1,4 @@
+import { VoiceCallRouter } from "./voice-call-router.js?v=1";
 export const VOICE_PRESETS = {
  natural:{label:"Natural · original pitch",pitch:0,bass:0,treble:0,gain:1},
  warm:{label:"Warm",pitch:-1,bass:4,treble:-2,gain:1},
@@ -21,7 +22,16 @@ export class LocalVoiceProcessor {
   try {
    source=await navigator.mediaDevices.getUserMedia({audio:{deviceId:deviceId?{exact:deviceId}:undefined,echoCancellation:true,noiseSuppression:true,autoGainControl:false},video:false});
    if(generation!==this.generation){source.getTracks().forEach(t=>t.stop());return;}
-   context=new AudioContext({latencyHint:"interactive"});this.context=context;this.source=source;
+   if(source.getAudioTracks().some(t=>/CABLE Output|Voicemeeter|Voicemod/i.test(t.label))) {
+    source.getTracks().forEach(t=>t.stop());
+    if(deviceId)throw new Error("Choose your physical microphone to avoid an audio feedback loop.");
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    const physical=devices.find(d=>d.kind==="audioinput"&&!["default","communications"].includes(d.deviceId)&&d.label&&!/CABLE|Voicemeeter|Voicemod|Virtual/i.test(d.label));
+    if(!physical)throw new Error("Select your physical microphone in Microphone settings.");
+    source=await navigator.mediaDevices.getUserMedia({audio:{deviceId:{exact:physical.deviceId},echoCancellation:true,noiseSuppression:true,autoGainControl:false},video:false});
+    if(generation!==this.generation){source.getTracks().forEach(t=>t.stop());return;}
+   }
+   this.source=source;context=new AudioContext({latencyHint:"interactive"});this.context=context;
    await context.audioWorklet.addModule("/voice-pitch-worklet.js?v=1");
    if(generation!==this.generation){source.getTracks().forEach(t=>t.stop());await context.close();return;}
    this.input=context.createMediaStreamSource(source);
@@ -36,7 +46,7 @@ export class LocalVoiceProcessor {
    this.analyser.connect(this.output);this.analyser.connect(this.monitor).connect(context.destination);
    this.update(controls);await context.resume();
    if(generation!==this.generation)return;
-   this.state="live";return this.output.stream;
+   this.state="live";source.getAudioTracks().forEach(track=>track.addEventListener("ended",()=>this.onSourceEnded?.(),{once:true}));return this.output.stream;
   }catch(error){if(generation===this.generation)await this.stop();else{source?.getTracks().forEach(t=>t.stop());if(context?.state!=="closed")await context?.close();}throw error;}
  }
  update(value){const v=normalizeVoice(value);if(!this.context||!this.pitch)return;const t=this.context.currentTime;
@@ -49,7 +59,20 @@ export class LocalVoiceProcessor {
 }
 export function initVoiceSelector() {
  const $=id=>document.getElementById(id);if(!$("localVoicePreset"))return;
- const processor=new LocalVoiceProcessor();let settings={preset:"natural",...normalizeVoice()},meterTimer=null;
+ const processor=new LocalVoiceProcessor();
+ const routeStatus=$("voiceRouteStatus");
+ const router=new VoiceCallRouter({onStatus:value=>{
+  routeStatus.textContent=value.state==="connected"?"Voice output connected. Select CABLE Output (VB-Audio Virtual Cable) as the microphone in your calling app.":value.message||"Voice output stopped.";
+  routeStatus.dataset.state=value.state;
+ }});
+ async function routeVoice(){
+  if(!$("routeVoiceToCalls").checked){router.stop();routeStatus.textContent="Preview only. Call output is off.";routeStatus.dataset.state="idle";return;}
+  if(processor.state!=="live")return;
+  routeStatus.textContent="Connecting voice output…";routeStatus.dataset.state="connecting";
+  try{await router.connect(processor.output.stream);}catch(e){routeStatus.textContent=e.message;routeStatus.dataset.state="idle";}
+ }
+ $("routeVoiceToCalls").onchange=()=>{void routeVoice();};
+ let settings={preset:"natural",...normalizeVoice()},meterTimer=null;
  try{settings={...settings,...JSON.parse(localStorage.getItem("gem-local-voice-v1")||"{}"),...normalizeVoice(JSON.parse(localStorage.getItem("gem-local-voice-v1")||"{}"))};}catch{}
  const select=$("localVoicePreset");Object.entries(VOICE_PRESETS).forEach(([id,p])=>select.add(new Option(p.label,id)));
  select.value=VOICE_PRESETS[settings.preset]?settings.preset:"custom";
@@ -66,14 +89,18 @@ export function initVoiceSelector() {
  $("startLocalVoice").onclick=async()=>{const button=$("startLocalVoice");button.disabled=true;$("localVoiceStatus").textContent="Starting local voice processing…";
   try{const stream=await processor.start($("localVoiceMic").value,controls());if(!stream)return;
    processor.listen($("listenLocalVoice").checked);
-   document.dispatchEvent(new CustomEvent("gem-processed-voice-ready",{detail:{stream,source:"local-dsp-preview",callRoutingVerified:false}}));
-   $("localVoiceStatus").textContent="LIVE local voice preview. Pitch and tone processing are active. External call microphone routing is not connected.";
+   document.dispatchEvent(new CustomEvent("gem-processed-voice-ready",{detail:{stream,source:"local-dsp",callRoutingVerified:false}}));
+   $("localVoiceStatus").textContent="LIVE · selected pitch and tone are active.";
+   await routeVoice();
+   if(processor.state!=="live")return;
    meterTimer=setInterval(()=>{if(!processor.analyser)return;const data=new Uint8Array(128);processor.analyser.getByteTimeDomainData(data);let energy=0;for(const x of data)energy+=(x-128)**2;$("localVoiceMeter").value=Math.min(100,Math.sqrt(energy/data.length)*4);},100);
   }catch(e){$("localVoiceStatus").textContent="Voice preview failed: "+e.message;button.disabled=false;}
  };
- $("stopLocalVoice").onclick=async()=>{clearInterval(meterTimer);await processor.stop();$("localVoiceMeter").value=0;$("startLocalVoice").disabled=false;$("localVoiceStatus").textContent="Voice preview stopped; microphone released.";
+ $("stopLocalVoice").onclick=async()=>{clearInterval(meterTimer);router.stop();routeStatus.textContent="Voice output stopped.";routeStatus.dataset.state="idle";await processor.stop();$("localVoiceMeter").value=0;$("startLocalVoice").disabled=false;$("localVoiceStatus").textContent="Voice preview stopped; microphone released.";
   document.dispatchEvent(new CustomEvent("gem-processed-voice-stopped"));};
  $("listenLocalVoice").onchange=()=>processor.listen($("listenLocalVoice").checked);
- window.addEventListener("beforeunload",()=>{clearInterval(meterTimer);void processor.stop();});
+ processor.onSourceEnded=()=>{void $("stopLocalVoice").onclick();};
+ window.addEventListener("beforeunload",()=>{clearInterval(meterTimer);router.dispose();void processor.stop();});
 }
 if(typeof document!=="undefined")initVoiceSelector();
+
