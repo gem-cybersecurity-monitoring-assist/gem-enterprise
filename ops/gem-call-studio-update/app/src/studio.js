@@ -7,11 +7,13 @@ import { createDecartClient, models } from "@decartai/sdk";
 import OBSWebSocket from "obs-websocket-js";
 import { SessionState, requireTransition } from "./session-state.js";
 import { createLocalAvatarProcessor } from "./local-avatar.js";
+import { createBodyPuppetProcessor } from "./pose-puppet.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const events = [];
 let virtualTeam;
+let sceneState;
 const obs = new OBSWebSocket();
 const modelName = "lucy-2.5";
 const model = models.realtime(modelName);
@@ -434,6 +436,62 @@ async function startLocalTrustedTransformation(reason = "Free-first trusted rout
   log(`Trusted local engine started: ${reason}. Raw camera is not bridged to OBS.`, "success");
 }
 
+async function startBodyPuppetDemo() {
+  const profile = virtualTeam?.selected();
+  if (!profile?.authorized || !profile?.fullBodyConfirmed || !profile.images?.length)
+    throw new Error("Save and select an authorized full-body team member first.");
+  activeEngine = "puppet";
+  sdkState = "pose-2d";
+  avatarTrackingReady = false;
+  $("#sdkState").textContent = "Local 2D Pose";
+  $("#engineState").textContent = "2D MOTION DEMO";
+  $("#networkQuality").textContent = "Local";
+  $("#networkTransport").textContent = "No cloud";
+  setGate("engine", "pass", "2D preview, not photoreal");
+  setGate("key", "pass", "No key needed");
+  setGate("image", "pass", "Saved reference");
+  setGate("preflight", "pass", "Local pose tracking");
+  forceState(SessionState.PREFLIGHT, "Preparing free 2D motion demonstration.");
+  localStream = await createInputStream();
+  $("#localVideo").srcObject = localStream;
+  await $("#localVideo").play().catch(() => {});
+  forceState(SessionState.CAMERA_READY, "Capturing movement without sharing the raw camera.");
+  forceState(SessionState.CONNECTING, "Loading the local full-body pose model.");
+  const scene = sceneState?.background();
+  localProcessor = await createBodyPuppetProcessor({
+    sourceVideo: $("#localVideo"),
+    referenceFile: profile.images[0],
+    backgroundFile: scene?.file || profile.background,
+    onTrackingChange(tracked) {
+      avatarTrackingReady = tracked;
+      frameValidationPassed = false;
+      if (tracked) {
+        setGate("remote", "pass", "Body tracking active");
+        setOutputBadge("2D MOTION DEMO", "warn");
+      } else {
+        setGate("remote", "wait", "Body tracking unavailable");
+        setGate("distinct", "wait", "Waiting for tracking");
+        setOutputBadge("TRACKING WAIT", "warn");
+        if (bridgePublisher) {
+          bridgePublisher.stop("body tracking lost").catch(() => {});
+          bridgePublisher = null;
+          api("/api/bridge/clear", {method:"POST",body:JSON.stringify({reason:"body tracking lost"})}).catch(() => {});
+        }
+      }
+    }
+  });
+  remoteStream = localProcessor.stream;
+  $("#remoteVideo").srcObject = remoteStream;
+  $("#outputPlaceholder").classList.add("hidden");
+  await $("#remoteVideo").play().catch(() => {});
+  remoteProgressAt = Date.now();
+  forceState(SessionState.GENERATING, "2D presenter preview active; photorealistic animation is unavailable.");
+  startWatchdog();
+  startCompatibilityRelay();
+  updateControls();
+  log("Local 2D body-motion demonstration started without raw camera forwarding.","success");
+}
+
 async function startLocalAvatarTransformation(reason = "Free face-tracked avatar route") {
   if (!$("#consent").checked) throw new Error("Confirm authorized camera, image and voice use.");
   if (!referenceImage) throw new Error("Local Avatar requires an authorized reference portrait.");
@@ -533,7 +591,7 @@ function normalizedDifference(first, second) {
 
 async function validateFrameDifference() {
   if (!remoteStream || !localStream) return;
-  if (activeEngine === "avatar" && !avatarTrackingReady) {
+  if ((activeEngine === "avatar" || activeEngine === "puppet") && !avatarTrackingReady) {
     frameValidationPassed = false;
     $("#frameValidation").textContent = "Face tracking required";
     setGate("distinct", "wait", "Waiting for tracked face");
@@ -565,7 +623,7 @@ async function validateFrameDifference() {
   frameValidationPassed = true;
   $("#frameValidation").textContent = `Distinct · ${(difference * 100).toFixed(1)}%`;
   setGate("distinct", "pass", `${(difference * 100).toFixed(1)}% difference`);
-  setOutputBadge(activeEngine === "lucy" ? "VERIFIED LUCY" : activeEngine === "avatar" ? "VERIFIED AVATAR" : "VERIFIED LOCAL", "good");
+  setOutputBadge(activeEngine === "puppet" ? "2D MOTION DEMO" : activeEngine === "lucy" ? "VERIFIED LUCY" : activeEngine === "avatar" ? "VERIFIED AVATAR" : "VERIFIED LOCAL", activeEngine === "puppet" ? "warn" : "good");
   if (!bridgePublisher && remoteStream) {
     await startBridge(remoteStream);
   }
@@ -771,6 +829,8 @@ async function startTransformation() {
     throw new Error("Virtual team output blocked: " + report.missing.join("; "));
   }
 
+  if (requestedEngine === "puppet") return startBodyPuppetDemo();
+
   if (requestedEngine === "local") {
     return startLocalTrustedTransformation("Trusted Local selected");
   }
@@ -828,7 +888,7 @@ async function waitForAutomatedReady(timeoutMs = 60000) {
       const transport = webRtcReady ? "WebRTC" : "compatibility relay";
       setGate("bridge", "pass", webRtcReady ? "Connected" : "Compatibility relay");
       $("#bridgeState").textContent = webRtcReady ? "connected" : "compatibility relay";
-      $("#sessionMessage").textContent = `READY · ${activeEngine === "lucy" ? "Lucy 2.5" : activeEngine === "avatar" ? "Local Avatar" : "Trusted Local"} → OBS Virtual Camera · ${transport}`;
+      $("#sessionMessage").textContent = `READY · ${activeEngine === "puppet" ? "2D MOTION DEMO" : activeEngine === "lucy" ? "Lucy 2.5" : activeEngine === "avatar" ? "Local Avatar" : "Trusted Local"} → OBS Virtual Camera · ${transport}`;
       beginTimer();
       toast("GEM live output ready");
       log(`Automated setup complete: verified ${activeEngine} output is live through OBS Virtual Camera using ${transport}. Session duration guard starts now.`, "success");
@@ -1161,6 +1221,7 @@ function bind() {
     $("#engineMode").dispatchEvent(new Event("change"));
   };
   $("#connect").onclick = connect;
+  $("#tryPuppet").onclick = () => { $("#engineMode").value = "puppet"; connect(); };
   $("#apply").onclick = applyChanges;
   $("#disconnect").onclick = () => disconnect();
   $("#prepareObs").onclick = ensureObs;
@@ -1177,7 +1238,7 @@ function bind() {
   });
 }
 
-initSceneControls({ isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream) });
+sceneState = initSceneControls({ isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream) });
 virtualTeam = initVirtualTeam({
   isBusy: () => startTransactionInProgress || Boolean(localStream || remoteStream),
   onSelect: (profile) => { if ($("#engineMode").value === "fullbody") $("#sessionMessage").textContent = profile ? profile.name + " selected. Live body animation is still being built." : "Select or create a virtual team member."; }
