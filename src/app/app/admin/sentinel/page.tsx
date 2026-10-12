@@ -234,6 +234,7 @@ export default function SentinelSecurityPage() {
             <h2 id="quick-title" className="text-2xl font-black">Quick access</h2>
             <p className="mt-2 text-sm text-slate-300">Move between GEM security services without losing your place.</p>
             <div className="mt-5 space-y-3">
+              <Link className={buttonBase+" w-full justify-between border border-[#ffbf00]/60 bg-[#ffbf00]/10 text-[#ffbf00] hover:bg-[#ffbf00]/20"} href="/app/admin/sentinel/readiness">Check Database Connection <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between bg-[#ffbf00] text-[#001f3f] hover:bg-[#ffe09b]"} href="/app/admin/sentinel/organizations">Authorize organizations <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between border border-white/25 bg-white/10 text-white hover:bg-white/20"} href="/app/admin">Admin Center <ArrowRight size={17}/></Link>
               <Link className={buttonBase+" w-full justify-between border border-white/25 bg-white/10 text-white hover:bg-white/20"} href="/app/command-center">Command Center <ArrowRight size={17}/></Link>
