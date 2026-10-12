@@ -29,6 +29,8 @@ try{
   Check "Node runtime" ([bool]$Node) "Node available"
   $Build=Join-Path $App "node_modules\esbuild\bin\esbuild"
   Check "Existing builder" (Test-Path -LiteralPath $Build) "esbuild installed; no new paid service needed"
+  $Memory=Get-CimInstance Win32_OperatingSystem
+  Check "Available memory" ($Memory.FreePhysicalMemory -ge 650000) "$([math]::Round($Memory.FreePhysicalMemory/1024)) MB free for model/build"
   if(-not $ValidateOnly){
     New-Item -ItemType Directory -Force -Path $Stage,$Backup|Out-Null
     foreach($Relative in $Files){
@@ -50,6 +52,9 @@ try{
       Move-Item -LiteralPath $Temporary -Destination $Model -Force
     }
     Check "Pose model" ((Get-Item -LiteralPath $Model).Length -eq 5777746) "Available locally"
+    $OldBundle=Join-Path $App "public\\assets\\studio.js"
+    $SavedBundle=Join-Path $Backup "studio.js.bundle.bak"
+    if(Test-Path -LiteralPath $OldBundle){Copy-Item -LiteralPath $OldBundle -Destination $SavedBundle -Force}
     foreach($Relative in $Files){
       $Original=Join-Path $App $Relative
       $Saved=Join-Path $Backup $Relative
@@ -66,6 +71,7 @@ try{
         $Saved=Join-Path $Backup $Relative
         if(Test-Path -LiteralPath $Saved){Copy-Item -LiteralPath $Saved -Destination (Join-Path $App $Relative) -Force}
       }
+      if(Test-Path -LiteralPath $SavedBundle){Copy-Item -LiteralPath $SavedBundle -Destination $OldBundle -Force}
       throw
     }finally{Pop-Location}
   }
