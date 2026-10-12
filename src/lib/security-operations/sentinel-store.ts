@@ -17,7 +17,7 @@ type SentinelConfigEnv = Partial<Pick<NodeJS.ProcessEnv,
   "DATABASE_URL" | "POSTGRES_URL" | "NEON_DATABASE_URL"
 >>;
 
-export function resolveSentinelStorageConfig(env: SentinelConfigEnv = process.env):
+export function resolveSentinelStorageConfig(env: SentinelConfigEnv = process.env as SentinelConfigEnv):
   { mode: "shared" } | { mode: "dedicated"; url: string } {
   const mode = env.SENTINEL_STORAGE_MODE?.trim() || "shared";
   const url = env.SENTINEL_DATABASE_URL?.trim() || "";
