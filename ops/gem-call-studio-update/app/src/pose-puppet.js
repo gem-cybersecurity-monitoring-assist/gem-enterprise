@@ -113,6 +113,9 @@ export async function createBodyPuppetProcessor({sourceVideo,referenceFile,backg
         asset=new Image();asset.src=assetUrl;await asset.decode();
       }
     }
+    const inferenceCanvas=document.createElement("canvas");
+    inferenceCanvas.width=320;inferenceCanvas.height=180;
+    const inferenceContext=inferenceCanvas.getContext("2d",{alpha:false});
     const canvas=document.createElement("canvas");
     canvas.width=960;canvas.height=540;
     const ctx=canvas.getContext("2d",{alpha:false,desynchronized:true});
@@ -127,7 +130,8 @@ export async function createBodyPuppetProcessor({sourceVideo,referenceFile,backg
       if(sourceVideo.readyState>=2 && t-at>=130) {
         at=t;
         try{
-          const next=tracker.detectForVideo(sourceVideo,t).landmarks?.[0];
+          inferenceContext.drawImage(sourceVideo,0,0,320,180);
+          const next=tracker.detectForVideo(inferenceCanvas,t).landmarks?.[0];
           if(visibleBody(next)){live=next;lastSeen=t;}
         }catch {live=null;}
       }
