@@ -89,6 +89,12 @@ export async function PATCH(request:NextRequest) {
     const securityDb=getSentinelDb();
     const dedicated=resolveSentinelStorageConfig().mode==="dedicated";
     const record=await securityDb.sentinelCollector.findUnique({where:{id:body.id}});
+    if(dedicated && body.action==="activate" && record) {
+      const tenant=await securityDb.sentinelTenant.findUnique({where:{id:record.tenantId}});
+      if(!tenant?.enabled || tenant.consentReference!==record.consentReference) {
+        return response({error:"Organization approval or consent is no longer valid"},403);
+      }
+    }
     if(!record) return response({error:"Collector not found"},404);
     if(body.action==="activate" && (record.revokedAt || record.expiresAt<=new Date() || record.consentReference!==body.consentReference)) {
       return response({error:"Collector cannot be activated without matching active consent"},409);
