@@ -51,10 +51,14 @@ export const profileStore = {
 export function initVirtualTeam({ onSelect = () => {}, isBusy = () => false } = {}) {
   const $ = id => document.getElementById(id);
   let profiles = [], selected = null, urls = [];
+  const selectionKey = "gem-selected-team-v1";
+  let restoredId = "";
+  try { restoredId = localStorage.getItem(selectionKey) || ""; } catch {}
   const status = message => { $("teamStatus").textContent = message; };
   function revoke() { urls.forEach(url => URL.revokeObjectURL(url)); urls = []; }
   function show(p) {
     revoke(); selected = p;
+    try { if (p) localStorage.setItem(selectionKey, p.id); else localStorage.removeItem(selectionKey); } catch {}
     const preview = $("teamPreview"); preview.replaceChildren();
     if (p) {
       for (const file of [...p.images, ...(p.background ? [p.background] : [])]) {
@@ -103,6 +107,6 @@ export function initVirtualTeam({ onSelect = () => {}, isBusy = () => false } = 
     try { await profileStore.remove(selected.id); await refresh(); } catch (error) { status(error.message); }
   };
   window.addEventListener("beforeunload", revoke);
-  refresh().catch(error => status(error.message));
+  refresh(restoredId).catch(error => status(error.message));
   return { selected: () => selected };
 }

@@ -8,6 +8,8 @@ ws.addEventListener("message",e=>{const m=JSON.parse(e.data);if(!m.id)return;con
 function send(method,params={}){return new Promise((r,j)=>{const n=++id;pending.set(n,{r,j});ws.send(JSON.stringify({id:n,method,params}));});}
 async function evaluate(expression){const r=await send("Runtime.evaluate",{expression,awaitPromise:true,returnByValue:true,userGesture:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text);return r.result?.value;}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function until(expression, label) { for(let n=0;n<120;n++){if(await evaluate(expression))return;await wait(250);} throw new Error(label); }
+const fixtureName="TEST virtual team "+Date.now();
 try {
  const active=await evaluate("Boolean(document.querySelector('#localVideo')?.srcObject||document.querySelector('#remoteVideo')?.srcObject)");
  if(active)throw new Error("Active studio session: reload deferred to preserve call");
@@ -21,7 +23,7 @@ try {
   const b=await new Promise(r=>c.toBlob(r,"image/png"));
   const refs=[new File([b],"test-front.png",{type:"image/png"}),new File([b],"test-body.png",{type:"image/png"})];
   const set=(id,files)=>{const d=new DataTransfer();files.forEach(f=>d.items.add(f));document.getElementById(id).files=d.files;};
-  document.getElementById("teamName").value="TEST virtual team validation";
+  document.getElementById("teamName").value=${JSON.stringify(fixtureName)};
   set("teamImages",refs);set("teamBackground",[refs[0]]);set("teamVoice",[new File([new Uint8Array(44)],"test.wav",{type:"audio/wav"})]);
   document.getElementById("teamAuthorized").checked=true;document.getElementById("teamFullBody").checked=true;
   document.getElementById("saveTeam").click();
@@ -30,17 +32,17 @@ try {
  })()`);
  if(save.count!==3)throw new Error("Multiple image/background preview failed");
  console.log("PROFILE_SAVED="+JSON.stringify(save));
- await send("Page.reload",{ignoreCache:true});await wait(1800);
- let persisted=false;
- for(let n=0;n<60;n++){persisted=await evaluate("Array.from(document.querySelector('#teamProfile')?.options||[]).some(o=>o.textContent==='TEST virtual team validation')");if(persisted)break;await wait(250);}
- if(!persisted)throw new Error("Profile persistence failed");
+ await send("Page.reload",{ignoreCache:true});
+ await until("document.querySelector('#teamProfile')?.value==="+JSON.stringify(save.id), "Selected profile restoration failed");
+ console.log("PROFILE_RESTORED="+save.id);
  await evaluate("document.querySelector('#teamProfile').value="+JSON.stringify(save.id)+";document.querySelector('#teamProfile').dispatchEvent(new Event('change'));document.querySelector('#consent').checked=true;document.querySelector('#connect').click();true");
  await wait(1500);
  const blocked=await evaluate("({message:document.querySelector('#sessionMessage').textContent,source:!!document.querySelector('#localVideo').srcObject,output:!!document.querySelector('#remoteVideo').srcObject})");
  if(blocked.source||blocked.output||!blocked.message.includes("Live body animation"))throw new Error("Unavailable engine did not fail closed");
  console.log("BLOCKED_OUTPUT="+JSON.stringify(blocked));
- await evaluate("document.querySelector('#deleteTeam').click();true");await wait(700);
- console.log("TEST_PROFILE_REMOVED="+await evaluate("!Array.from(document.querySelector('#teamProfile').options).some(o=>o.textContent==='TEST virtual team validation')"));
+ await evaluate("document.querySelector('#deleteTeam').click();true");
+ await until("!Array.from(document.querySelector('#teamProfile')?.options||[]).some(o=>o.value==="+JSON.stringify(save.id)+")","Test profile deletion timed out");
+ console.log("TEST_PROFILE_REMOVED="+await evaluate("!Array.from(document.querySelector('#teamProfile').options).some(o=>o.value==="+JSON.stringify(save.id)+")"));
 
  const scene=await evaluate(`(async()=>{
  const q=id=>document.getElementById(id);
@@ -55,11 +57,13 @@ try {
  throw new Error(q("sceneStatus").textContent);
  })()`);
  if(!scene.preview)throw new Error("Background preview failed");
- await send("Page.reload",{ignoreCache:true});await wait(1600);
+ await send("Page.reload",{ignoreCache:true});
+ await until("document.querySelector('#backgroundChoice')?.value==="+JSON.stringify(scene.id),"Background restoration timed out");
  const restored=await evaluate("({category:document.querySelector('#backgroundCategory').value,id:document.querySelector('#backgroundChoice').value,voiceOptions:document.querySelector('#voiceProvider').options.length})");
  if(restored.category!=="pool"||restored.id!==scene.id||restored.voiceOptions!==3)throw new Error("Scene/voice preferences failed");
  console.log("SCENE_PERSISTENCE="+JSON.stringify(restored));
- await evaluate("document.querySelector('#deleteBackground').click();true");await wait(500);
+ await evaluate("document.querySelector('#deleteBackground').click();true");
+ await until("!Array.from(document.querySelector('#backgroundChoice')?.options||[]).some(o=>o.value==="+JSON.stringify(scene.id)+")","Test scene deletion timed out");
  console.log("TEST_SCENE_REMOVED="+await evaluate("!document.querySelector('#backgroundChoice').value"));
 
  const layout=await evaluate("({cards:Array.from(document.querySelectorAll('.simple-choices > article')).map(e=>e.querySelector('h2').textContent),openAdvanced:document.querySelector('.advanced-settings').open,duplicates:Array.from(document.querySelectorAll('[id]')).map(e=>e.id).filter((x,i,a)=>a.indexOf(x)!==i)})");
