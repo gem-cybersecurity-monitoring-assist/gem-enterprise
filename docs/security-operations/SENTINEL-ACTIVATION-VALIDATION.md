@@ -53,3 +53,15 @@ Environment values were inspected only locally; temporary secret-bearing files w
 5. Validate the existing notification provider and approved retention schedule. Keep containment disabled until separately tested authorization and rollback controls exist.
 
 Do not restore, overwrite, or repurpose the unrelated inactive Supabase projects as a shortcut.
+
+## Continued registry completion — 2026-10-12
+
+The owner-only registry now returns up to 100 active organization identifiers for enrollment selection, without member names, emails or collector credential hashes. It also supplies server-derived `readinessStatus` for each collector: enabled, disabled, expired or revoked. Invalid expiry and missing/invalid consent dates fail closed.
+
+The additional registry suite covers owner-only reads and writes, active-organization selection, unavailable storage, unknown-organization rejection, disabled creation and hash-only storage, consent attestation, consent mismatch, revoked/expired activation rejection, audited activation/revocation and safe displayed readiness. 15/15 registry/readiness cases and 18/18 ingestion route cases passed; the existing foundation, flow, ingestion contract and credential suites passed 18/18 in a separate run (51/51 focused backend cases across six files). These route tests use mocked Prisma storage and do not replace real database acceptance.
+
+The newer dashboard work in PR #431 was discovered during deployment review and preserved. This update makes no page, navigation, layout or dashboard changes. Its `collectors` API contract remains backward compatible with that UI, while adding `organizations` and per-record `readinessStatus` for future consumption.
+
+Focused registry TypeScript validation, ESLint and git diff --check passed (exit 0). The wider repository typecheck limitation recorded above remains separate.
+
+Supabase permission was rechecked and still denied for the actual configured project. No provider migration or live sensor activation was possible. No paid setup was introduced.

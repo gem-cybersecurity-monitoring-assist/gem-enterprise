@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requirePlatformOwner } from "@/lib/api/auth-helpers";
 import { COLLECTOR_SOURCES, generateCollectorCredential } from "@/lib/security-operations/collector-auth";
+import { collectorStatus } from "@/lib/security-operations/collector-status";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,13 @@ export async function GET() {
       select:{id:true,tenantId:true,source:true,label:true,consentReference:true,consentVerifiedAt:true,enabled:true,revokedAt:true,expiresAt:true,createdAt:true},
       orderBy:{createdAt:"desc"},take:100,
     });
-    return response({collectors:records});
+    const members = await db.user.findMany({
+      where:{organizationId:{not:null},isActive:true},
+      distinct:["organizationId"],select:{organizationId:true},take:100,
+      orderBy:{organizationId:"asc"},
+    });
+    const organizations = members.flatMap(member=>member.organizationId?[member.organizationId]:[]);
+    return response({collectors:records.map(record=>({...record,readinessStatus:collectorStatus(record)})),organizations});
   } catch {
     return response({error:"Sentinel database is not provisioned"},503);
   }
