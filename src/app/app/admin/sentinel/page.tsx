@@ -6,7 +6,7 @@ import {
   Activity, AlertTriangle, ArrowRight, Check, ChevronRight, CircleHelp,
   ClipboardCheck, Copy, ExternalLink, Fingerprint, KeyRound, LockKeyhole,
   Plus, RefreshCw, Search, ServerCog, Settings2, ShieldAlert, ShieldCheck,
-  ShieldOff, Smartphone, X,
+  ShieldOff, X,
 } from "lucide-react";
 
 type SecurityEvent = {
