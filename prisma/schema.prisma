@@ -1447,7 +1447,7 @@ model SentinelTenant {
   id                String   @id
   name              String
   consentReference  String
-  consentVerifiedAt DateTime
+  consentVerifiedAt DateTime?
   registeredBy      String
   enabled           Boolean  @default(false)
   createdAt         DateTime @default(now())
