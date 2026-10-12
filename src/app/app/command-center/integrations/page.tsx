@@ -77,6 +77,14 @@ export default async function IntegrationsCommandCenterPage({
       readiness: "READY",
     },
     {
+      href: "/app/admin/sentinel",
+      title: "GEM Sentinel Security Operations",
+      description: "Platform Owner access to guided collector setup, secure registration, and actual incident records. Production sensor coverage is not verified.",
+      category: "Security",
+      status: "Collector registration and incident storage require verified database access and authorized test sensors",
+      readiness: "HUMAN_REQUIRED",
+    },
+    {
       href: "/intel",
       title: "GEM Sentinel Intelligence",
       description: "Open the native monitoring and intelligence environment used for project signals, news, notifications, and cross-domain situational awareness.",
