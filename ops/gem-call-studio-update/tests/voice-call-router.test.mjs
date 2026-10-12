@@ -47,6 +47,12 @@ test("sink failure leaves no attached audio source", async () => {
   assert.equal(f.players[0].muted, true); f.router.dispose();
 });
 
+test("accepts the signed Pack45 driver speaker endpoint name", async () => {
+  const f=fixture({devices:[{kind:"audiooutput",deviceId:"cable-45",label:"Speakers (VB-Audio Virtual Cable)"}]});
+  await f.router.connect(f.stream);
+  assert.equal(f.players[0].sinkId,"cable-45"); f.router.dispose();
+});
+
 test("stopping during an unfinished play cannot restart routing", async () => {
   let finish;
   const f = fixture({play: () => new Promise(r => { finish = r; })});

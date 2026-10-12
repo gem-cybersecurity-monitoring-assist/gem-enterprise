@@ -1,22 +1,26 @@
-# Voice routing — 12 October 2026
+# Verified voice routing — 12 October 2026
 
-The browser can now send its processed voice stream to the exact VB-CABLE playback endpoint. The calling application must select `CABLE Output (VB-Audio Virtual Cable)` as its microphone. Speaker/default-device fallback is prohibited. Disconnecting the cable or ending the source mutes and detaches the route. A physical microphone is selected instead of a virtual default input to avoid feedback.
+Installed on GEM-ASSIST. Select a voice style and press Start voice. The checked Send selected voice to calls option routes processed audio to VB-CABLE. The calling application must select CABLE Output (VB-Audio Virtual Cable) for its microphone and physical headphones for playback. Voicemod is not required.
 
-Eight focused automated checks pass: bounded presets, continuous finite worklet output, cable-only routing, rejected speaker/default fallbacks, failed sink cleanup, cancellation during startup, device removal, and ended source cleanup. These are simulated routing tests, not Windows loopback or customer-call evidence.
+## Evidence
 
-The browser regression image fixture was invalid and is replaced with a valid 20×40 PNG. Its earlier canvas-generated version was prone to stalls in a lingering headless browser. An old dedicated test browser process tree was closed; normal studio and OBS processes were preserved.
+- Official VB-CABLE Pack45 installer: valid Authenticode signature, BUREL VINCENT signer, exit code 0. Windows playback/recording endpoints healthy. No reboot initiated.
+- Complete profile/background browser check passed, including save, selected-profile restoration, scene restoration, fixture deletion, layout, blocked missing renderer, and automatic OBS status.
+- Windows suite: 35 tests passed. The additional pitch-frequency check passed in the focused three-test voice suite. All 10 focused voice/router checks passed in the development runtime.
+- Real Windows loopback between two separate browser clients: synthetic 440 Hz source through the processor and VB-CABLE measured 439.45 Hz at the receiver; lowering pitch five semitones measured 328.125 Hz; stopping produced silence. Both contexts ran at 48 kHz.
+- Actual UI: Deep preset, Start voice, connected route and live output; Stop ended output and released controls.
+- Simulated tests cover physical/default sink rejection, cancellation, failed connection cleanup, device removal, and source ending.
 
-## Windows installation evidence
+An initial loopback attempt with two full studio pages failed the frequency assertion. The isolated retest measured both processor and receiver and passed. This is a short functional check; sustained performance remains unverified.
 
-On GEM-ASSIST, the official VB-CABLE Pack45 archive was downloaded from VB-Audio. The installer Authenticode signature was valid and its signer was BUREL VINCENT. Installation was started through the signed installer. The host subsequently went offline, so its exit status and new audio endpoints remain unverified. Do not reinstall automatically without checking the existing installation. No reboot was initiated by this work.
+## Remaining limits
 
-The routing update in this commit is prepared but not yet installed on the host. Before installation, back up `app/public/index.html` and `app/public/voice-select.js`; add `voice-call-router.js`, replace the two updated files, and refresh the studio. The HTML uses a new voice script version to avoid stale cache. No browser bundle rebuild is required for the standalone voice module.
+Actual Zoom, Teams and WhatsApp calls, human speech quality, long-duration stability and delay remain untested. The built-in effect changes pitch and tone, not uploaded-voice cloning. Full-body photo animation, lip synchronization and independent live background compositing remain unfinished.
 
-## Required live checks
+The host has Intel HD Graphics 515 and Core m7-6Y75. About 1.3 GB free memory and 88% CPU load were observed during testing. No installed renderer meets the requested full-body quality and latency with verified evidence. Tencent MimicMotion is an offline GPU-generation workflow, not a live substitute: https://github.com/Tencent/MimicMotion.
 
-1. Confirm the VB-CABLE playback and recording endpoints, installer completion, and whether Windows needs a restart.
-2. With physical headphones selected for call playback, start a voice preset. Verify output through CABLE Output in a separate receiving client and confirm that changing pitch changes the received sound.
-3. Stop voice and verify silence. Remove the output device and verify no speaker or physical-microphone fallback.
-4. Rerun the profile/background browser checks using the corrected fixture and a single dedicated test browser.
+## Recovery and checks
 
-Full-body image animation, expressive lip synchronization, independent live background compositing, and two-client video-call acceptance remain unfinished. The Intel HD Graphics 515 host has no verified real-time renderer meeting the requested image quality. A connected OBS virtual camera alone does not satisfy those requirements.
+Host backup: C:/ProgramData/GEM Call Studio/backups/voice-routing-install-20261012. Restore index.html and voice-select.js to app/public to revert the UI integration. The new router is inactive when the old voice module is restored. Verify installed endpoints before considering driver reinstallation.
+
+The loopback test generates a synthetic tone and captures only the virtual cable. The UI test briefly opens the authorized physical microphone without recording. Test streams and dedicated browser clients are closed afterward.

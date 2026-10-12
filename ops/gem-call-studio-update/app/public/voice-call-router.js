@@ -1,7 +1,7 @@
 export function isCablePlayback(device) {
   return device?.kind === "audiooutput" &&
     !["", "default", "communications"].includes(device.deviceId) &&
-    /^CABLE Input \(VB-Audio Virtual Cable\)$/i.test(device.label || "");
+    /^(?:CABLE Input|Speakers) \(VB-Audio Virtual Cable\)$/i.test(device.label || "");
 }
 
 export class VoiceCallRouter {

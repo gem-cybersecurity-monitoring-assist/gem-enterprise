@@ -14,13 +14,13 @@ export function normalizeVoice(value={}) {
  return {pitch:clamp(value.pitch,-7,7,0),bass:clamp(value.bass,-8,8,0),treble:clamp(value.treble,-8,8,0),gain:clamp(value.gain,0.2,1.5,1)};
 }
 export class LocalVoiceProcessor {
- constructor(){this.generation=0;this.state="idle";this.source=null;this.context=null;}
+ constructor({capture=constraints=>navigator.mediaDevices.getUserMedia(constraints)}={}){this.capture=capture;this.generation=0;this.state="idle";this.source=null;this.context=null;}
  async start(deviceId,controls) {
   if(this.state!=="idle")throw new Error("Stop the active voice test first.");
   this.state="starting";const generation=++this.generation;
   let source,context;
   try {
-   source=await navigator.mediaDevices.getUserMedia({audio:{deviceId:deviceId?{exact:deviceId}:undefined,echoCancellation:true,noiseSuppression:true,autoGainControl:false},video:false});
+   source=await this.capture({audio:{deviceId:deviceId?{exact:deviceId}:undefined,echoCancellation:true,noiseSuppression:true,autoGainControl:false},video:false});
    if(generation!==this.generation){source.getTracks().forEach(t=>t.stop());return;}
    if(source.getAudioTracks().some(t=>/CABLE Output|Voicemeeter|Voicemod/i.test(t.label))) {
     source.getTracks().forEach(t=>t.stop());
