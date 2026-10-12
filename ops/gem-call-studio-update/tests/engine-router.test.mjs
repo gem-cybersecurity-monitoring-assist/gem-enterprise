@@ -49,7 +49,7 @@ test("automatic mode is free-first and prefers local avatar when a portrait is a
 });
 
 test("local avatar requires active face tracking before frame verification", () => {
-  assert.match(studio, /activeEngine === "avatar" && !avatarTrackingReady/);
+  assert.match(studio, /\(activeEngine === "avatar" \|\| activeEngine === "puppet"\) && !avatarTrackingReady/);
   assert.match(studio, /TRACKING WAIT/);
   assert.match(studio, /avatar tracking lost/);
 });
