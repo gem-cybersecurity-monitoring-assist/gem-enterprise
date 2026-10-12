@@ -167,7 +167,7 @@ export default function SentinelSecurityPage() {
               <p className="mt-3 text-sm font-semibold text-[#ffe3a0]">For authorized Platform Owners · No paid subscription required</p>
             </div>
             <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2 lg:grid-cols-1">
-              <button onClick={()=>{setView("connections");document.getElementById("sentinel-content")?.scrollIntoView({behavior:"smooth"});}}
+              <button onClick={()=>{setView("connections");document.getElementById("sentinel-content")?.scrollIntoView?.({behavior:"smooth"});}}
                 className={buttonBase+" bg-[#ffbf00] text-[#001f3f] hover:bg-[#ffe09b]"}>
                 <Plus size={20} aria-hidden="true"/> Set up protection <ArrowRight size={18} aria-hidden="true"/>
               </button>
