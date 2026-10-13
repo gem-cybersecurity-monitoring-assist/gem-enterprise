@@ -59,12 +59,12 @@ describe("GTM activation assets", () => {
   });
 
   it("routes Wix market entry through the canonical governed GEM pipeline", () => {
-    expect(utmContract.sources).toContain("wix");
-    expect(utmContract.mediums).toContain("referral");
+    expect(utmContract.sources).toContain("wix-gem-assist-1");
+    expect(utmContract.mediums).toContain("organic");
     expect(buildWixMarketEntryReviewUrl()).toBe(
       "https://www.gemcybersecurityassist.com/business-review?" +
-        "lead=campaign&campaign=founding-first-20&" +
-        "utm_source=wix&utm_medium=referral&utm_campaign=founding-first-20",
+        "lead=referral&campaign=founding-first-20&" +
+        "utm_source=wix-gem-assist-1&utm_medium=organic&utm_campaign=founding-first-20",
     );
   });
 
