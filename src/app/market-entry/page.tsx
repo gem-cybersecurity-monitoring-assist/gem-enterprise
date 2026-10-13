@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -112,7 +113,7 @@ const faqs = [
   },
 ] as const;
 
-function SectionEyebrow({ children }: { children: React.ReactNode }) {
+function SectionEyebrow({ children }: { children: ReactNode }) {
   return (
     <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
       {children}
