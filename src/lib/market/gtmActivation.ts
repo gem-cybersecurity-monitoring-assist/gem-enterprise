@@ -139,7 +139,7 @@ export const utmContract = {
     "telegram",
     "referral",
     "organic-search",
-    "wix",
+    "wix-gem-assist-1",
   ],
   mediums: [
     "hero",
@@ -150,7 +150,6 @@ export const utmContract = {
     "video",
     "community",
     "partner-referral",
-    "referral",
     "organic",
   ],
   rule: "Use lowercase stable source/medium values and the single founding-first-20 campaign identity. Preserve campaign attribution into GEM intake instead of creating provider-specific campaign names for the same experiment.",
@@ -177,9 +176,9 @@ export function buildBusinessReviewCampaignUrl(input: {
 /** A canonical, attributed handoff from the Wix market-entry website to the governed GEM intake. */
 export function buildWixMarketEntryReviewUrl(): string {
   return `https://www.gemcybersecurityassist.com${buildBusinessReviewCampaignUrl({
-    source: "wix",
-    medium: "referral",
-    leadSource: "campaign",
+    source: "wix-gem-assist-1",
+    medium: "organic",
+    leadSource: "referral",
   })}`;
 }
 
