@@ -20,7 +20,7 @@ describe("GEM Wix market-entry control hub", () => {
 
   it("preserves operator controls and exposes the hub only within admin navigation", () => {
     expect(page).toContain("15 serious findings");
-    expect(page).toContain("do not");
+    expect(page).toContain("Do not delete customer records");
     expect(nav).toContain('href: "/app/admin/market/wix"');
     expect(nav).toContain('label: "GEM Wix Control"');
     expect(page).not.toContain("fetch(");
