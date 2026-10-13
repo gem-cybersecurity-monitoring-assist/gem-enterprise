@@ -9,11 +9,13 @@
 
 ## Canonical tracked conversion URL
 
-`https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=wix&utm_medium=referral&utm_campaign=founding-first-20`
+`https://www.gemcybersecurityassist.com/business-review?lead=referral&campaign=founding-first-20&utm_source=wix-gem-assist-1&utm_medium=organic&utm_campaign=founding-first-20`
 
-This is constructed by `buildWixMarketEntryReviewUrl` using the existing `buildBusinessReviewCampaignUrl` helper; the `wix` source and `referral` medium are explicit approved values in `utmContract`.
+This is constructed by `buildWixMarketEntryReviewUrl` using the existing `buildBusinessReviewCampaignUrl` helper; the `wix-gem-assist-1` source and existing `organic` medium are explicit approved values in `utmContract`.
 
 The destination is the existing bounded **$199 founding GEM Business Security & Operations Review**. All booking fees shown separately by Wix continue to be whatever the existing Wix Bookings listing says. **Do not assume Wix consultation payments and the founding GEM review are the same product.** Do not generate a payment or entitlement on click.
+
+The published Wix Blog article **GEM Enterprise Security Readiness: First Steps for Business Owners** already includes a real button to the $199 Business Review and a second button to the free readiness checklist. The published Business Review link uses this exact attribution contract; preserve it rather than adding a separate campaign identity. The checklist link uses the same `utm_source` and `utm_campaign` with `utm_medium=organic`.
 
 ## Website conversion placement
 
