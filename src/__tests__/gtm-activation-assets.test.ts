@@ -4,6 +4,7 @@ import {
   activationGuardrails,
   alreadyATargetCampaign,
   buildBusinessReviewCampaignUrl,
+  buildWixMarketEntryReviewUrl,
   gtmCalendar,
   nurtureSequence,
   readinessChecklist,
@@ -55,6 +56,16 @@ describe("GTM activation assets", () => {
       expect(source).toContain("buildBusinessReviewCampaignUrl");
       expect(source).not.toContain("utm_campaign=founding-review");
     }
+  });
+
+  it("routes Wix market entry through the canonical governed GEM pipeline", () => {
+    expect(utmContract.sources).toContain("wix");
+    expect(utmContract.mediums).toContain("referral");
+    expect(buildWixMarketEntryReviewUrl()).toBe(
+      "https://www.gemcybersecurityassist.com/business-review?" +
+        "lead=campaign&campaign=founding-first-20&" +
+        "utm_source=wix&utm_medium=referral&utm_campaign=founding-first-20",
+    );
   });
 
   it("exposes native admin and public surfaces without auto-send code", () => {
