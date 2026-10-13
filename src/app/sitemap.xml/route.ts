@@ -10,6 +10,7 @@ const routes = [
   "/services/asset-recovery",
   "/services/federal-compliance",
   "/business-review",
+  "/market-entry",
   "/enterprise-solutions",
   "/intel",
   "/intel/news",
