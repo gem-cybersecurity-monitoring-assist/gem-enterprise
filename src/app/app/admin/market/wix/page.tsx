@@ -139,7 +139,7 @@ export default function WixMarketEntryConsolePage() {
                 for Wix&apos;s native dashboard or an automatic sync to Wix Editor.
               </p>
               <div className="flex flex-wrap gap-3">
-                <ExternalAction href={wix.dashboard}>Open Wix Editor access</ExternalAction>
+                <ExternalAction href={wix.dashboard}>Open Wix Dashboard</ExternalAction>
                 <Button asChild variant="outline" className="min-h-11 border-cyan-400/30 text-cyan-200">
                   <a href={wix.website} target="_blank" rel="noopener noreferrer">
                     Visit live site <ExternalLink className="ml-2 h-4 w-4" />
