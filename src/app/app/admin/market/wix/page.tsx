@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -72,6 +73,13 @@ const workspaces = [
     name: "GEM GTM activation",
     description: "Manage the already-built market-entry calendar, review offer, and acquisition plan.",
     href: "/app/admin/market/activation",
+    icon: Palette,
+    external: false,
+  },
+  {
+    name: "GEM Social Media Studio",
+    description: "Reuse the existing studio to prepare content and review provider readiness before approved distribution.",
+    href: "/app/social-media",
     icon: Palette,
     external: false,
   },
@@ -157,14 +165,17 @@ export default function WixMarketEntryConsolePage() {
               rel="noopener noreferrer"
               className="group relative block aspect-[4/3] overflow-hidden rounded-2xl border border-white/15 bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
               aria-label="Open illustrative GEM Security Operations Center artwork"
-              style={{
-                backgroundImage: `linear-gradient(180deg, transparent 60%, rgba(4,15,30,.75)), url("${wix.operationsArt}")`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
             >
+              <Image
+                src={wix.operationsArt}
+                alt="Illustration of a cybersecurity operations team reviewing digital security dashboards."
+                fill
+                unoptimized
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="object-contain"
+              />
               <span className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-slate-950/80 px-3 py-2 text-xs font-medium text-white">
-                <ImageIcon className="h-4 w-4 text-amber-300" /> Uploaded replacement image
+                <ImageIcon aria-hidden className="h-4 w-4 text-amber-300" /> Illustrative artwork
                 <ArrowUpRight className="h-3 w-3" />
               </span>
             </a>
@@ -212,6 +223,10 @@ export default function WixMarketEntryConsolePage() {
               Use the existing attributed Business Security &amp; Operations Review link for
               qualification and approvals. The standalone Wix form does not automatically become a GEM client record.
             </p>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              The $199 GEM Business Security &amp; Operations Review is separate from Wix consultations
+              listed at $200 and $300. A request is not an approval, service activation, or charge.
+            </p>
           </div>
           <ExternalAction href={wix.review}>View tracked review</ExternalAction>
         </div>
@@ -224,7 +239,8 @@ export default function WixMarketEntryConsolePage() {
         </div>
         <p className="text-sm text-slate-400">
           These are outstanding Editor actions, not completed changes or automatically checked live statuses.
-          The last accessibility assessment reported 15 serious findings across 20 pages.
+          The assessment completed on 13 October 2026 at 23:12 UTC reported 15 serious findings across 20 pages.
+          This is a dated baseline, not a current passing scan.
         </p>
         <div className="grid gap-3 lg:grid-cols-2">
           {gates.map((gate, i) => (
