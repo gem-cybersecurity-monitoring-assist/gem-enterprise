@@ -41,6 +41,6 @@ The current Wix classic-editor layout cannot be changed through the connected pu
 1. Verify the tracked CTA resolves to GEM's actual Business Review application and preserves source, medium, campaign and the privacy/consent UI.
 2. Test a true Wix-to-GEM submission with consent using approved test data; verify GEM intake attribution, not just Wix Forms submission.
 3. Review legal/privacy links, booking price distinctions and visitor routing.
-4. Complete Wix Editor visual changes and its accessibility scan before treating the Wix site as production redesigned (the latest scan of 31 pages found 40 serious findings).
+4. Complete Wix Editor visual changes and rerun its accessibility scan before treating the Wix site as production redesigned. The confirmed baseline scan `1eab0625-6908-4140-93de-27faeb79d2df`, completed 2026-10-13 at 23:12 UTC, processed all 20 pages with no failed pages and found 15 serious issues across 10 pages (6 alternative-text, 4 contrast, 5 heading-structure). This supersedes the older 40-findings/31-pages figure; it is not evidence that the draft redesign passes.
 5. Reconcile individual provider authorizations and check the existing GEM Social Media Studio release gates before distribution.
 6. Never auto-merge or deploy this integration solely because a GitHub pull request exists.
