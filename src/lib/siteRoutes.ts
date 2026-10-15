@@ -311,6 +311,18 @@ export const canonicalRoutes: SiteRoute[] = [
     showInFooter: true,
   },
   {
+    path: "/personal-security",
+    label: "Personal & Family Security",
+    category: "public",
+    description: "Personal cybersecurity, family device safety, identity-risk awareness, and scam prevention",
+    isPublic: true,
+    isCanonical: true,
+    menuGroup: "services",
+    owner: "marketing",
+    showInNav: false,
+    showInFooter: false,
+  },
+  {
     path: "/market-entry",
     label: "GEM Market Entry",
     category: "public",
