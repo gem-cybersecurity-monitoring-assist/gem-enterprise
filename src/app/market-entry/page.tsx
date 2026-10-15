@@ -399,6 +399,12 @@ export default function MarketEntryPage() {
           <span className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4" aria-hidden="true" /> Governed campaign attribution</span>
           <span className="inline-flex items-center gap-2"><FileCheck2 className="h-4 w-4" aria-hidden="true" /> Scope before engagement</span>
         </div>
+        <p className="mt-6 text-sm text-slate-400">
+          Looking for support for yourself or your family?{" "}
+          <Link href="/personal-security" className="font-semibold text-cyan-200 underline decoration-cyan-200/40 underline-offset-4 transition hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200">
+            Explore personal &amp; family security
+          </Link>
+        </p>
       </section>
     </div>
   );
