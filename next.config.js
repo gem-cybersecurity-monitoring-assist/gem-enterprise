@@ -3,6 +3,12 @@
 const nextConfig = {
   poweredByHeader: false,
 
+  // Local dev only: lets Turbopack follow a node_modules symlink that lives
+  // outside the project directory. Unset in Vercel builds.
+  ...(process.env.NEXT_DEV_TURBOPACK_ROOT
+    ? { turbopack: { root: process.env.NEXT_DEV_TURBOPACK_ROOT } }
+    : {}),
+
   experimental: {
     optimizePackageImports: [
       '@radix-ui/react-accordion',
