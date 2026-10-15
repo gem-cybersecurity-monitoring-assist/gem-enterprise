@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Check, Copy, Download, ExternalLink, FileImage, ShieldCheck } from "lucide-react";
 
 type MarketLaunchAsset = {
@@ -84,7 +85,7 @@ export function MarketLaunchPackPanel({ campaign }: { campaign: MarketLaunchMani
           {campaign.media.map((asset) => (
             <article key={asset.id} className="overflow-hidden rounded-2xl border border-white/10 bg-card/75">
               <div className="aspect-[4/5] overflow-hidden bg-slate-950">
-                <img src={asset.path} alt={asset.alt} className="h-full w-full object-contain" loading="lazy" />
+                <Image src={asset.path} alt={asset.alt} width={1080} height={asset.format === "1080x1920" ? 1920 : asset.format === "1080x1080" ? 1080 : 1350} unoptimized className="h-full w-full object-contain" loading="lazy" />
               </div>
               <div className="space-y-2 p-4">
                 <p className="font-semibold text-white">{asset.id.replaceAll("-", " ")}</p>
