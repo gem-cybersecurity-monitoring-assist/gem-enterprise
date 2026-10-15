@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { enterpriseApplicationSchema } from "@/lib/intake/schemas";
 import {
   activationGuardrails,
   alreadyATargetCampaign,
@@ -83,6 +84,37 @@ describe("GTM activation assets", () => {
     expect(intakeForm).toContain("privacyAccepted");
     expect(intakeForm).not.toContain("wixforms.com");
     expect(intakeForm).not.toContain("createClient(");
+
+    const parsed = enterpriseApplicationSchema.safeParse({
+      name: "Sample Owner",
+      email: "owner@example.com",
+      organization: "Sample Company",
+      title: "Owner",
+      jurisdiction: "United States",
+      subject: "[Founding Business Review] Account access and identity",
+      message: "Please review account access, identity controls, and operational readiness.",
+      consentGiven: true,
+      privacyAccepted: true,
+      startedAt: Date.now(),
+      organizationType: "company",
+      employeeRange: "1-10",
+      serviceAreas: ["cybersecurity", "advisory"],
+      leadSource: "referral",
+      campaignCode: "founding-first-20",
+      utmSource: "wix-gem-assist-1",
+      utmMedium: "organic",
+      utmCampaign: "founding-first-20",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data).toMatchObject({
+        leadSource: "referral",
+        campaignCode: "founding-first-20",
+        utmSource: "wix-gem-assist-1",
+        utmMedium: "organic",
+        utmCampaign: "founding-first-20",
+      });
+    }
   });
 
   it("exposes native admin and public surfaces without auto-send code", () => {
