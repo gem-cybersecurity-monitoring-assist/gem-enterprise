@@ -240,3 +240,22 @@ The safe order is: **(1)** complete production persistence/gateway and migration
 - [ ] Review reach, qualified visits, completed requests, qualification rate, and cost per qualified lead—not impressions alone.
 
 **Release note:** This file is an upload-ready content and review pack. It intentionally does not schedule, post, upload media to a social network, enable OAuth, activate billing, or change production configuration.
+
+
+## 8. Creative files and structured campaign package
+
+The repository now includes eight original editable vector assets and a structured JSON manifest. These are assets in the code repository; they have **not** been uploaded to an external social network or published.
+
+- Square business-readiness creative: `/images/market-launch/gem-business-readiness-square.svg`
+- Vertical story/reel/short creative: `/images/market-launch/gem-business-readiness-story.svg`
+- Six-slide Instagram carousel:
+  - `/images/market-launch/gem-readiness-carousel-01.svg`
+  - `/images/market-launch/gem-readiness-carousel-02.svg`
+  - `/images/market-launch/gem-readiness-carousel-03.svg`
+  - `/images/market-launch/gem-readiness-carousel-04.svg`
+  - `/images/market-launch/gem-readiness-carousel-05.svg`
+  - `/images/market-launch/gem-readiness-carousel-06.svg`
+- Structured draft manifest: `/market-launch/founding-first-20.json`
+- Manifest regression test: `src/__tests__/market-launch-manifest.test.ts`
+
+The manifest stores seven channel-specific draft captions, seven UTM-tracked business-review URLs, media references and alt text, plus explicit release gates. It intentionally marks every channel as `DRAFT`, requires owner approval, and preserves the existing Business Review route. Use the SVG files as editable source; before uploading to a provider that does not accept SVG, render them to the provider's required raster format and inspect the result at actual mobile size.
