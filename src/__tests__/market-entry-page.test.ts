@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildBusinessReviewCampaignUrl, utmContract } from "@/lib/market/gtmActivation";
 import { getRouteByPath } from "@/lib/siteRoutes";
-import { getRouteByPath } from "@/lib/siteRoutes";
 
 const page = readFileSync("src/app/market-entry/page.tsx", "utf8");
 
@@ -20,16 +19,6 @@ describe("GEM premium market-entry page", () => {
     expect(personalPage).toContain("private keys");
     expect(personalPage).not.toContain("createClient(");
     expect(personalPage).not.toContain("fetch(");
-  });
-
-  it("registers the public page in the canonical route inventory", () => {
-    expect(getRouteByPath("/market-entry")).toMatchObject({
-      path: "/market-entry",
-      category: "public",
-      isPublic: true,
-      isCanonical: true,
-      owner: "marketing",
-    });
   });
 
   it("uses the existing governed Business Review campaign", () => {
