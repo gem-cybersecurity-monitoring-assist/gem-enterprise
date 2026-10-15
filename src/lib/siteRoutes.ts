@@ -311,6 +311,18 @@ export const canonicalRoutes: SiteRoute[] = [
     showInFooter: true,
   },
   {
+    path: "/market-entry",
+    label: "GEM Market Entry",
+    category: "public",
+    description: "Business security and resilience market-entry page with governed inquiry and campaign attribution",
+    isPublic: true,
+    isCanonical: true,
+    menuGroup: "services",
+    owner: "marketing",
+    showInNav: false,
+    showInFooter: false,
+  },
+  {
     path: "/company",
     label: "Company",
     category: "public",
