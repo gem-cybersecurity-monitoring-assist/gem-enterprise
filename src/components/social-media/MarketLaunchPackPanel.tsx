@@ -116,12 +116,26 @@ export function MarketLaunchPackPanel({ campaign }: { campaign: MarketLaunchMani
               <div className="mt-4 flex flex-wrap gap-3">
                 <button type="button" onClick={() => void copyText(channel.provider, channel.caption)} className="inline-flex items-center gap-2 rounded-lg bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200">
                   {copied === channel.provider ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied === channel.provider ? "Copied" : "Copy caption"}
+                  {copied === channel.provider ? "Caption copied" : "Copy caption"}
                 </button>
-                {channel.mediaIds.length > 0 ? (
-                  <span className="inline-flex items-center gap-2 py-2 text-xs text-slate-400"><FileImage className="h-4 w-4" /> {channel.mediaIds.length} linked asset(s)</span>
+                {campaign.trackingLinks.some((link) => link.source === channel.source) ? (
+                  <button type="button" onClick={() => { const link = campaign.trackingLinks.find((item) => item.source === channel.source); if (link) void copyText(`${channel.provider}-link`, link.url); }} className="inline-flex items-center gap-2 rounded-lg border border-cyan-300/25 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/10">
+                    {copied === `${channel.provider}-link` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied === `${channel.provider}-link` ? "Link copied" : "Copy tracked CTA link"}
+                  </button>
                 ) : null}
               </div>
+              {channel.mediaIds.length > 0 ? (
+                <div className="mt-4 border-t border-white/10 pt-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Linked creative files</p>
+                  <div className="flex flex-wrap gap-3">
+                    {channel.mediaIds.map((assetId) => {
+                      const asset = campaign.media.find((item) => item.id === assetId);
+                      return asset ? <a key={assetId} href={asset.path} download className="inline-flex items-center gap-2 text-xs font-medium text-cyan-200 hover:text-cyan-100"><FileImage className="h-4 w-4" />{assetId}</a> : null;
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
