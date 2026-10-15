@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { gunzipSync } from "node:zlib";
 import { join } from "node:path";
 
-const isNix = existsSync("/etc/NIXOS") || /nixos/i.test(readFileSync("/etc/os-release", "utf8").toString?.() ?? "");
+const isNix = existsSync("/etc/os-release") && /^ID=nixos$/m.test(readFileSync("/etc/os-release", "utf8"));
 const env = { ...process.env, NEXT_DEV_TURBOPACK_ROOT: "/" };
 
 if (isNix) {
