@@ -55,6 +55,9 @@ describe("GEM market launch content package", () => {
     expect(panel).toContain('channel.status');
     expect(panel).toContain("Copy caption");
     expect(panel).toContain("Download SVG");
+    expect(panel).toContain("Copy tracked CTA link");
+    expect(panel).toContain('link.source === channel.source');
+    expect(panel).toContain('href={asset.path} download');
     expect(panel).not.toContain("/api/social-media/publishing");
     expect(panel).not.toContain("window.location.assign");
   });
