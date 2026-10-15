@@ -68,6 +68,23 @@ describe("GTM activation assets", () => {
     );
   });
 
+  it("passes approved campaign attribution from the landing URL into governed intake", () => {
+    const reviewPage = readFileSync("src/app/business-review/page.tsx", "utf8");
+    const intakeForm = readFileSync("src/components/market/BusinessReviewIntakeForm.tsx", "utf8");
+
+    for (const parameter of ["lead", "source", "utm_source", "utm_medium", "utm_campaign", "campaign"]) {
+      expect(reviewPage).toContain(`params.${parameter}`);
+    }
+    for (const field of ["leadSource", "campaignCode", "utmSource", "utmMedium", "utmCampaign"]) {
+      expect(intakeForm).toContain(`${field}: attribution.${field}`);
+    }
+    expect(intakeForm).toContain('fetch("/api/intake/enterprise"');
+    expect(intakeForm).toContain("consentGiven");
+    expect(intakeForm).toContain("privacyAccepted");
+    expect(intakeForm).not.toContain("wixforms.com");
+    expect(intakeForm).not.toContain("createClient(");
+  });
+
   it("exposes native admin and public surfaces without auto-send code", () => {
     const activation = readFileSync("src/app/app/admin/market/activation/page.tsx", "utf8");
     const checklist = readFileSync("src/app/resources/business-readiness-checklist/page.tsx", "utf8");
