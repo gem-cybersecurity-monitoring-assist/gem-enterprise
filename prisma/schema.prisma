@@ -200,6 +200,11 @@ model User {
   ownedOrganizationProjects OrganizationProject[]       @relation("OrganizationProjectOwner")
   authoredWorkspaceUpdates  WorkspaceWeeklyUpdate[]     @relation("WorkspaceUpdateAuthor")
   reviewedWorkspaceUpdates  WorkspaceWeeklyUpdate[]     @relation("WorkspaceUpdateReviewer")
+  communicationPreferences        CommunicationPreference[]      @relation("CommunicationPreferenceUser")
+  changedCommunicationPreferences CommunicationPreference[]      @relation("CommunicationPreferenceChangedBy")
+  communicationPreferenceEvents   CommunicationPreferenceEvent[] @relation("CommunicationPreferenceActor")
+  ownedCustomerSuccessProfiles CustomerSuccessProfile[]    @relation("CustomerSuccessOwner")
+  createdCustomerSuccessActions CustomerSuccessAction[]     @relation("CustomerSuccessActionCreator")
 
   @@map("users")
 }
@@ -769,6 +774,8 @@ model Workspace {
   serviceRequests            ServiceRequest[]
   organizationProjects       OrganizationProject[]
   weeklyUpdates              WorkspaceWeeklyUpdate[]
+  customerSuccessProfile      CustomerSuccessProfile?
+  customerSuccessActions      CustomerSuccessAction[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -792,6 +799,8 @@ model OrganizationProject {
   workspace Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   owner     User?                   @relation("OrganizationProjectOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   updates   WorkspaceWeeklyUpdate[]
+  customerSuccessProfiles CustomerSuccessProfile[]
+  customerSuccessActions  CustomerSuccessAction[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId, status])
@@ -1274,6 +1283,100 @@ model OAuthAuthorizationAttempt {
   @@index([workspaceId, actorId])
   @@index([consumedAt])
   @@map("tokmetric_oauth_authorization_attempts")
+}
+
+// ─── Customer Success Foundation ──────────────────────────────────────────
+model CustomerSuccessProfile {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  projectId         String?
+  ownerUserId       String?
+  lifecycleState    String   @default("ACTIVE")
+  healthStatus      String   @default("UNKNOWN")
+  outcomeStatus     String   @default("NOT_REVIEWED")
+  satisfactionScore Int?
+  outcomeSummary    String?
+  lastReviewAt      DateTime?
+  nextReviewAt      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   OrganizationProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  owner     User?                @relation("CustomerSuccessOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  actions   CustomerSuccessAction[]
+
+  @@unique([workspaceId])
+  @@index([healthStatus, nextReviewAt])
+  @@map("customer_success_profiles")
+}
+
+model CustomerSuccessAction {
+  id          String   @id @default(cuid())
+  profileId   String
+  workspaceId String
+  projectId   String?
+  createdById String?
+  actionType  String
+  status      String   @default("PLANNED")
+  title       String
+  notes       String?
+  dueAt       DateTime?
+  completedAt DateTime?
+  evidence    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile   CustomerSuccessProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  workspace Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   OrganizationProject?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy User?                  @relation("CustomerSuccessActionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status, dueAt])
+  @@index([profileId, actionType])
+  @@map("customer_success_actions")
+}
+
+// ─── Communication Governance ─────────────────────────────────────────────
+model CommunicationPreference {
+  id                    String   @id @default(cuid())
+  userId                String?
+  channel               String
+  destinationNormalized String
+  purpose               String
+  status                String   @default("PENDING")
+  basis                 String?
+  jurisdiction          String?
+  source                String
+  evidenceRef           String?
+  changedById           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user      User? @relation("CommunicationPreferenceUser", fields: [userId], references: [id], onDelete: SetNull)
+  changedBy User? @relation("CommunicationPreferenceChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+  events    CommunicationPreferenceEvent[]
+
+  @@unique([channel, destinationNormalized, purpose], map: "communication_preferences_channel_destination_purpose_key")
+  @@index([status, purpose, channel], map: "communication_preferences_status_purpose_idx")
+  @@index([userId], map: "communication_preferences_userId_idx")
+  @@map("communication_preferences")
+}
+
+model CommunicationPreferenceEvent {
+  id           String   @id @default(cuid())
+  preferenceId String
+  eventType    String
+  actorUserId  String?
+  source       String
+  evidence     Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  preference CommunicationPreference @relation(fields: [preferenceId], references: [id], onDelete: Restrict)
+  actorUser   User? @relation("CommunicationPreferenceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([preferenceId, createdAt], map: "communication_preference_events_preferenceId_createdAt_idx")
+  @@map("communication_preference_events")
 }
 
 // ─── Separated Intake Models ────────────────────────────────────────────────
