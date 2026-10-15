@@ -259,3 +259,27 @@ The repository now includes eight original editable vector assets and a structur
 - Manifest regression test: `src/__tests__/market-launch-manifest.test.ts`
 
 The manifest stores seven channel-specific draft captions, seven UTM-tracked business-review URLs, media references and alt text, plus explicit release gates. It intentionally marks every channel as `DRAFT`, requires owner approval, and preserves the existing Business Review route. Use the SVG files as editable source; before uploading to a provider that does not accept SVG, render them to the provider's required raster format and inspect the result at actual mobile size.
+
+
+## 9. Current release checkpoint — 2026-10-15
+
+The public business-review page is discoverable at `https://www.gemcybersecurityassist.com/business-review` and presents the bounded $199 offer and qualification form. The public resources index also exposes the business-readiness checklist. This confirms public page presence, **not** successful form submission, durable storage, email delivery, or a production deployment of this branch.
+
+The repository's enterprise intake handler validates the submission, applies rate limiting and anti-bot checks, and calls the durable intake repository. If that store is unavailable, it is designed to return `503 INTAKE_STORAGE_NOT_READY`. A source-code review cannot establish that the live store is configured or that a real request was persisted.
+
+### Release gate — must pass before the first promotional post
+
+1. **Deployment identity:** identify the existing Vercel project serving `gemcybersecurityassist.com` and verify its Git commit. Do not create a replacement project.
+2. **Intake acceptance:** submit one clearly labelled owner-controlled test request through the live form; record its reference and verify it appears in the authorized qualification queue. Confirm no duplicate record on refresh/retry.
+3. **Contact and privacy:** confirm the live privacy link, consent wording, and a working monitored contact route.
+4. **Attribution:** open the LinkedIn campaign URL from the manifest and verify the form retains the expected UTM/campaign fields in the resulting record.
+5. **Rollback and ownership:** identify who receives new requests and who can pause the campaign if intake fails.
+
+### Current stop conditions
+
+- The connected Vercel integration previously returned HTTP 403 when listing the known production project/team. Until access is restored, the deployment and environment configuration cannot be independently verified from this workflow.
+- Do not merge this draft-only PR solely to bypass the access issue; verify the canonical project's actual branch and release controls first.
+- Do not publish through the social automation console or enable paid delivery until the transactional publishing gateway, provider authorization/scopes, and owner approval are independently verified.
+- The individual/family route remains a separate release gate; do not advertise it until its route is present in the canonical production build and smoke-tested.
+
+**Decision:** the business content pack is prepared, and the public landing page is present. First promotional publication is **not yet release-cleared** until the live intake test and deployment identity checks above are evidenced.
