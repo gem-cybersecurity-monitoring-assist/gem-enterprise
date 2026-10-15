@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "node scripts/vercel-build.mjs",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
