@@ -1,3 +1,4 @@
+import type { SocialEnvSource } from "@/lib/social-media/autopilot/policy";
 import { createHash } from "node:crypto";
 import type { SharedSocialPublishingProvider } from "@/lib/social-media/publishing/types";
 import { getSocialAutopilotProviderPolicy } from "./policy";
@@ -34,7 +35,7 @@ export function buildSocialAutopilotSlots(input: {
   planDate: Date;
   count?: number;
   now?: Date;
-  env?: NodeJS.ProcessEnv;
+  env?: SocialEnvSource;
 }) {
   const policy = getSocialAutopilotProviderPolicy(
     input.provider,
