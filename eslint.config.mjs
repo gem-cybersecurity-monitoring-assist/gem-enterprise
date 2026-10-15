@@ -5,6 +5,7 @@ import tsPlugin from "eslint-config-next/typescript";
 // eslint-config-next 16.x ships native flat-config arrays.
 // Spread the shared config then layer project-specific rule overrides.
 const eslintConfig = [
+  { ignores: ["src/integrations/**"] },
   ...nextPlugin,
   ...coreWebVitals,
   ...tsPlugin,
