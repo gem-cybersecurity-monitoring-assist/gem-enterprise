@@ -51,7 +51,7 @@ describe("GEM market launch content package", () => {
     const panel = readFileSync(join(root, "src/components/social-media/MarketLaunchPackPanel.tsx"), "utf8");
 
     expect(contentPage).toContain("MarketLaunchPackPanel campaign={campaign}");
-    expect(panel).toContain('campaign.status === "DRAFT_NOT_PUBLISHED"');
+    expect(panel).toContain("Draft · not published");
     expect(panel).toContain('channel.status');
     expect(panel).toContain("Copy caption");
     expect(panel).toContain("Download SVG");
