@@ -1,0 +1,215 @@
+{
+  "campaignId": "founding-first-20",
+  "campaignName": "GEM Business Security & Operations Review — Organic Soft Launch",
+  "status": "DRAFT_NOT_PUBLISHED",
+  "ownerApprovalRequired": true,
+  "createdDate": "2026-10-15",
+  "primaryLandingPage": "https://www.gemcybersecurityassist.com/business-review",
+  "priceUSD": 199,
+  "offerScope": "Bounded initial review for qualified businesses; scope confirmed before engagement. Not a penetration test, certification, or guarantee of continuous monitoring.",
+  "media": [
+    {
+      "id": "square-01",
+      "path": "/images/market-launch/gem-business-readiness-square.svg",
+      "format": "1080x1350",
+      "placement": [
+        "LinkedIn",
+        "Facebook"
+      ],
+      "alt": "GEM Enterprise business security and operations review: practical first review for security and resilience."
+    },
+    {
+      "id": "carousel-01",
+      "path": "/images/market-launch/gem-readiness-carousel-01.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "Know what to fix first: practical business security readiness."
+    },
+    {
+      "id": "carousel-02",
+      "path": "/images/market-launch/gem-readiness-carousel-02.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "Review who can still sign in and remove access when roles change."
+    },
+    {
+      "id": "carousel-03",
+      "path": "/images/market-launch/gem-readiness-carousel-03.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "Enable multi-factor authentication and know who controls account recovery."
+    },
+    {
+      "id": "carousel-04",
+      "path": "/images/market-launch/gem-readiness-carousel-04.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "Verify payment-detail changes through a separate trusted channel."
+    },
+    {
+      "id": "carousel-05",
+      "path": "/images/market-launch/gem-readiness-carousel-05.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "Know which files matter and test restoring from backups."
+    },
+    {
+      "id": "carousel-06",
+      "path": "/images/market-launch/gem-readiness-carousel-06.svg",
+      "format": "1080x1350",
+      "placement": [
+        "Instagram carousel"
+      ],
+      "alt": "A bounded initial review for qualified businesses with scope confirmed before engagement."
+    },
+    {
+      "id": "story-01",
+      "path": "/images/market-launch/gem-business-readiness-story.svg",
+      "format": "1080x1920",
+      "placement": [
+        "TikTok",
+        "Instagram Reels",
+        "YouTube Shorts"
+      ],
+      "alt": "Four practical checks: account recovery, MFA, payment verification, and backup restoration."
+    }
+  ],
+  "channels": [
+    {
+      "provider": "LINKEDIN_COMPANY",
+      "source": "linkedin",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "Security readiness does not have to start with a giant program. Start with practical questions: who controls business email and account recovery, is MFA enabled on important accounts, are payment changes independently verified, and have critical files been restored from backup? GEM's Business Security & Operations Review is a bounded first step for qualified businesses. The founding review is $199, subject to qualification and agreed scope. It is not a penetration test, certification, or guarantee of continuous monitoring. A request does not activate a paid service.",
+      "mediaIds": [
+        "square-01"
+      ]
+    },
+    {
+      "provider": "FACEBOOK_PAGE",
+      "source": "facebook",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "If your business email stopped working tomorrow, would you know how to recover it? Know who controls your domain and email, enable MFA on important accounts, verify unusual payment-change requests separately, and test whether key files can be restored. GEM offers a bounded $199 Business Security & Operations Review for qualified businesses, subject to agreed scope. An inquiry does not activate a service or charge.",
+      "mediaIds": [
+        "square-01"
+      ]
+    },
+    {
+      "provider": "INSTAGRAM_PROFESSIONAL",
+      "source": "instagram",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "Good security starts with clear operating habits, not panic. Save this checklist and choose one item to verify this week. GEM's bounded Business Security & Operations Review helps qualified small businesses identify priorities and next actions. It is not a certification or guarantee of protection. Request a review through the link in the authorized GEM profile.",
+      "mediaIds": [
+        "carousel-01",
+        "carousel-02",
+        "carousel-03",
+        "carousel-04",
+        "carousel-05",
+        "carousel-06"
+      ]
+    },
+    {
+      "provider": "X",
+      "source": "x",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "Small-business security often starts with ordinary operating questions. Who controls your domain and recovery methods? Is MFA enabled on email and admin accounts? Are payment changes verified separately? Have backups been tested? GEM offers a bounded $199 Business Security & Operations Review for qualified businesses, subject to scope. Not a certification or guaranteed monitoring service.",
+      "mediaIds": [
+        "square-01"
+      ]
+    },
+    {
+      "provider": "YOUTUBE",
+      "source": "youtube",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "Four practical business-readiness checks: recovery ownership, multi-factor authentication, payment-change verification, and backup restoration. GEM's review is subject to qualification and scope; it is not a certification or guarantee of continuous monitoring.",
+      "mediaIds": [
+        "story-01"
+      ]
+    },
+    {
+      "provider": "TIKTOK",
+      "source": "tiktok",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "If your business email stopped working tomorrow, would you know how to recover it? Check account recovery, MFA, payment-change verification, and backups. GEM's bounded $199 Business Security & Operations Review is for qualified businesses, subject to scope.",
+      "mediaIds": [
+        "story-01"
+      ]
+    },
+    {
+      "provider": "TELEGRAM",
+      "source": "telegram",
+      "medium": "organic-social",
+      "status": "DRAFT",
+      "caption": "Welcome to GEM's security and operational-readiness channel. We share practical guidance on account safety, scam awareness, business continuity, and sensible next steps. Never post passwords, recovery codes, private keys, identity documents, or bank details in this channel. General questions do not activate monitoring or incident response.",
+      "mediaIds": []
+    }
+  ],
+  "trackingLinks": [
+    {
+      "source": "linkedin",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=linkedin&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "facebook",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=facebook&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "instagram",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=instagram&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "x",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=x&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "youtube",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=youtube&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "tiktok",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=tiktok&utm_medium=organic-social&utm_campaign=founding-first-20"
+    },
+    {
+      "source": "telegram",
+      "medium": "organic-social",
+      "campaign": "founding-first-20",
+      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=telegram&utm_medium=organic-social&utm_campaign=founding-first-20"
+    }
+  ],
+  "releaseGates": [
+    "Canonical production route and privacy/contact links browser-tested",
+    "One approved test inquiry confirmed in authoritative intake with expected attribution",
+    "Official company account and provider authorization independently verified",
+    "Production transactional social gateway and queue schema verified",
+    "Exact content version, destination, rights, compliance, and human approval recorded",
+    "Explicit owner approval for the specific external publish action",
+    "Paid advertising additionally requires approved market, audience, billing, positive budget, and Ads Manager preview"
+  ]
+}
