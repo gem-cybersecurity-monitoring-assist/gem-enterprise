@@ -200,8 +200,6 @@ model User {
   ownedOrganizationProjects OrganizationProject[]       @relation("OrganizationProjectOwner")
   authoredWorkspaceUpdates  WorkspaceWeeklyUpdate[]     @relation("WorkspaceUpdateAuthor")
   reviewedWorkspaceUpdates  WorkspaceWeeklyUpdate[]     @relation("WorkspaceUpdateReviewer")
-  setCapabilityReadinessOverrides CapabilityReadinessOverride[]
-  changedLifecycleFunnelStates    LifecycleFunnelState[]
 
   @@map("users")
 }
@@ -734,7 +732,6 @@ model Organization {
 
   workspaces      Workspace[]
   serviceAccounts ServiceAccount[]
-  lifecycleFunnelState LifecycleFunnelState?
 
   @@map("tokmetric_organizations")
 }
@@ -772,7 +769,6 @@ model Workspace {
   serviceRequests            ServiceRequest[]
   organizationProjects       OrganizationProject[]
   weeklyUpdates              WorkspaceWeeklyUpdate[]
-  capabilityReadinessOverrides CapabilityReadinessOverride[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -1342,45 +1338,4 @@ model IntakeStatusEvent {
   @@index([submissionId, createdAt])
   @@index([actorId, createdAt])
   @@map("intake_status_events")
-}
-
-// ─── Unified Client Workspace OS ────────────────────────────────────────────
-// WS-F (data model) workstream. Additive-only section: new tables only, plus
-// the back-reference lines Prisma requires on Workspace/User/Organization
-// (new lines appended to existing models; no existing line was modified, so
-// the marker-based promotion scripts in scripts/apply-*-prisma.mjs keep their
-// anchors). CapabilityState values are defined in src/lib/capabilityReadiness.ts
-// (TypeScript union); the SQL migration enforces them with CHECK constraints.
-
-model CapabilityReadinessOverride {
-  id          String   @id @default(cuid())
-  workspaceId String
-  moduleId    String
-  state       String   @default("UNAVAILABLE")
-  reason      String?
-  setById     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  setBy     User?     @relation(fields: [setById], references: [id], onDelete: SetNull)
-
-  @@unique([workspaceId, moduleId])
-  @@index([workspaceId])
-  @@map("capability_readiness_overrides")
-}
-
-model LifecycleFunnelState {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  stage          String   @default("LEAD")
-  reason         String?
-  changedById    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  changedBy    User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
-
-  @@map("lifecycle_funnel_states")
 }

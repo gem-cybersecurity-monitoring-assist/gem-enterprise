@@ -1,6 +1,7 @@
+import type { SocialEnvSource } from "@/lib/social-media/autopilot/policy";
 import { createHash } from "node:crypto";
 import type { SharedSocialPublishingProvider } from "@/lib/social-media/publishing/types";
-import { getSocialAutopilotProviderPolicy, type SocialEnvSource } from "./policy";
+import { getSocialAutopilotProviderPolicy } from "./policy";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -93,11 +94,7 @@ export function buildSocialAutopilotSlots(input: {
       slots.length > 0
         ? slots[slots.length - 1].getTime() + policy.minSpacingMinutes * 60_000
         : earliest.getTime();
-    // Preserve room for every remaining slot even when deterministic jitter
-    // would otherwise push the last slot beyond the permitted daily window.
-    const latest = lastWindow.getTime() -
-      (count - index - 1) * policy.minSpacingMinutes * 60_000;
-    candidate.setTime(Math.min(Math.max(candidate.getTime(), minimum), latest));
+    candidate.setTime(Math.max(candidate.getTime(), minimum));
     if (candidate > lastWindow || candidate >= dayEnd) break;
     slots.push(candidate);
   }
