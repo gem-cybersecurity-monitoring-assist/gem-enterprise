@@ -35,6 +35,7 @@ describe("GEM premium market-entry page", () => {
     expect(query.get("utm_campaign")).toBe("founding-first-20");
     expect(page).toContain("buildBusinessReviewCampaignUrl");
     expect(page).toContain("foundingBusinessReviewOffer");
+    expect(page).toContain('href="/personal-security"');
   });
 
   it("preserves the canonical platform, public inquiry, and accessibility safeguards", () => {
