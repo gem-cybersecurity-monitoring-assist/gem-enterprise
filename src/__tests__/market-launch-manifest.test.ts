@@ -46,6 +46,19 @@ describe("GEM market launch content package", () => {
     }
   });
 
+  it("surfaces the launch pack in the existing Social Media content workspace without publishing", () => {
+    const contentPage = readFileSync(join(root, "src/app/app/social-media/content/page.tsx"), "utf8");
+    const panel = readFileSync(join(root, "src/components/social-media/MarketLaunchPackPanel.tsx"), "utf8");
+
+    expect(contentPage).toContain("MarketLaunchPackPanel campaign={campaign}");
+    expect(panel).toContain('campaign.status === "DRAFT_NOT_PUBLISHED"');
+    expect(panel).toContain('channel.status');
+    expect(panel).toContain("Copy caption");
+    expect(panel).toContain("Download SVG");
+    expect(panel).not.toContain("/api/social-media/publishing");
+    expect(panel).not.toContain("window.location.assign");
+  });
+
   it("requires backend, account, content, and explicit publish gates", () => {
     expect(manifest.releaseGates.some((gate) => /transactional social gateway/i.test(gate))).toBe(true);
     expect(manifest.releaseGates.some((gate) => /explicit owner approval/i.test(gate))).toBe(true);
