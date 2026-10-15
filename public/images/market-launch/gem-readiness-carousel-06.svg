@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+<title id="title">Request a bounded review</title>
+<desc id="desc">Business readiness carousel slide introducing GEM's bounded $199 initial review.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0B1320"/><stop offset="100%" stop-color="#172637"/></linearGradient>
+  <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#52E5F2" stop-opacity=".22"/><stop offset="100%" stop-color="#52E5F2" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="1080" height="1350" fill="url(#bg)"/>
+<circle cx="925" cy="170" r="310" fill="url(#glow)"/>
+<path d="M0 910 C250 760 470 1100 740 930 S970 820 1080 870" fill="none" stroke="#5AE8F3" stroke-opacity=".12" stroke-width="3"/>
+<path d="M0 970 C270 820 460 1160 740 990 S990 880 1080 930" fill="none" stroke="#5AE8F3" stroke-opacity=".08" stroke-width="2"/>
+<rect x="70" y="70" width="940" height="7" rx="3.5" fill="#5AE8F3"/>
+<text x="90" y="145" fill="#72EEF6" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700" letter-spacing="5">NEXT STEP · GEM ENTERPRISE</text>
+<text x="90" y="385" fill="#F8FAFC" font-family="Inter,Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="-2">Build a prioritized plan.</text>
+<text x="90" y="505" fill="#D7E1EA" font-family="Inter,Arial,sans-serif" font-size="34">A bounded initial review for</text>
+<text x="90" y="566" fill="#D7E1EA" font-family="Inter,Arial,sans-serif" font-size="34">qualified small businesses.</text>
+<text x="90" y="627" fill="#D7E1EA" font-family="Inter,Arial,sans-serif" font-size="34">Scope confirmed before engagement.</text>
+<rect x="90" y="1081" width="310" height="76" rx="18" fill="#5AE8F3"/><text x="120" y="1130" fill="#06121F" font-family="Inter,Arial,sans-serif" font-size="32" font-weight="800">$199 · QUALIFIED BUSINESSES</text>
+<rect x="70" y="1124" width="940" height="2" fill="#FFFFFF" fill-opacity=".14"/>
+<text x="90" y="1178" fill="#E5EEF5" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700">GEM ENTERPRISE</text>
+<text x="90" y="1218" fill="#8FA3B6" font-family="Inter,Arial,sans-serif" font-size="20">gemcybersecurityassist.com/business-review</text>
+<text x="990" y="1218" text-anchor="end" fill="#6BE7F2" font-family="Inter,Arial,sans-serif" font-size="20">06 / 06</text>
+</svg>
