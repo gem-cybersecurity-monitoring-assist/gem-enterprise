@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "NEXT_DEV_TURBOPACK_ROOT=/ next dev",
     "build": "node scripts/vercel-build.mjs",
+    "build:dev": "next build",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
     "typecheck": "tsc --noEmit",
