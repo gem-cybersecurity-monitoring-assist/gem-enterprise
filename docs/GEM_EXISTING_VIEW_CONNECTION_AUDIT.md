@@ -6,7 +6,7 @@
 
 ## Executive finding
 
-The repository already contains a substantial established application. At the audited commit there are 253 App Router page files and 224 route-handler files (477 source-file rows, not 477 distinct public URLs). The current primary navigation is implemented in `src/components/Navigation.tsx` and includes Home, Intel, News, Services, Store, Community, Hub, Resources, and Company sections. Existing routes include extensive client/admin workspaces, ATR pages, community pages, social-media operations, store pages, and APIs.
+The repository already contains a substantial established application. At the audited commit there are 254 App Router page files and 224 route-handler files (478 source-file rows, not 477 distinct public URLs). The current primary navigation is implemented in `src/components/Navigation.tsx` and includes Home, Intel, News, Services, Store, Community, Hub, Resources, and Company sections. Existing routes include extensive client/admin workspaces, ATR pages, community pages, social-media operations, store pages, and APIs.
 
 The correct next step is to reconcile and test these existing surfaces—not redesign them or create duplicate replacements.
 
