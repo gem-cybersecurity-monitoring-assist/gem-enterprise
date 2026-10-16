@@ -77,6 +77,75 @@ const redirects = [...nextConfig.matchAll(/\{\s*source:\s*['"]([^'"]+)['"],\s*de
 const rewrites = [...nextConfig.matchAll(/\{\s*source:\s*['"]([^'"]+)['"],\s*destination:\s*['"]([^'"]+)['"]\s*\}/g)]
   .map(m => ({ source: m[1], destination: m[2], source_file: "next.config.js", status: "REQUIRES_MANUAL_CLASSIFICATION" }));
 const cronJobs = (vercel.crons || []).map(c => ({ path: c.path, schedule: c.schedule, source_file: "vercel.json", status: "CONFIGURED_NOT_RUNTIME_VERIFIED" }));
+const proxyPath = path.join(root, "src", "proxy.ts");
+const proxySource = fs.existsSync(proxyPath) ? fs.readFileSync(proxyPath, "utf8") : "";
+function parseProxyArray(name, active = new Set()) {
+  if (active.has(name)) return [];
+  const next = new Set(active); next.add(name);
+  const match = proxySource.match(new RegExp("\\bconst\\s+" + name + "\\s*=\\s*\\[([\\s\\S]*?)\\];"));
+  if (!match) return [];
+  const values = [];
+  const tokenPattern = /"([^"]+)"|'([^']+)'|\.\.\.\s*([A-Z][A-Z0-9_]*)/g;
+  let token;
+  while ((token = tokenPattern.exec(match[1])) !== null) {
+    if (token[3]) values.push(...parseProxyArray(token[3], next));
+    else values.push(token[1] ?? token[2]);
+  }
+  return [...new Set(values)];
+}
+const proxyRouting = [];
+function addProxyRouting(rule_type, pattern, condition, authorization_behavior, notes) {
+  proxyRouting.push({
+    record_id: "PROXY:" + rule_type + ":" + pattern,
+    rule_type, pattern, source_file: "src/proxy.ts", source_branch: "working-copy", source_commit: commit,
+    condition, authorization_behavior, behavior_status: "SOURCE_ONLY_NOT_RUNTIME_VERIFIED", notes
+  });
+}
+for (const pattern of parseProxyArray("ALWAYS_PUBLIC")) {
+  addProxyRouting("ALWAYS_PUBLIC_ALLOWLIST", pattern,
+    "Exact pathname; evaluated after static/API bypass, except auth routes",
+    "Proxy allows anonymous page request",
+    "Source allowlist entry only; API handlers must enforce their own authorization.");
+}
+for (const pattern of parseProxyArray("PROTECTED_PREFIXES")) {
+  addProxyRouting("PROTECTED_PREFIX", pattern,
+    "Exact pathname or pathname starts with prefix plus slash",
+    "Session required; unauthenticated requests redirect according to loginPathFor",
+    "Proxy gate only; verify API handlers independently for authentication, permission and tenant isolation.");
+}
+for (const pattern of parseProxyArray("ADMIN_PREFIXES")) {
+  addProxyRouting("ADMIN_ROLE_GATE", pattern,
+    "Exact pathname or pathname starts with prefix plus slash",
+    "Requires role admin, super_admin or internal",
+    "Source rule only; validate role access at runtime.");
+}
+for (const pattern of parseProxyArray("REVIEW_PREFIXES")) {
+  addProxyRouting("REVIEW_ROLE_GATE", pattern,
+    "Exact pathname or pathname starts with prefix plus slash",
+    "Requires role analyst, admin, super_admin or internal",
+    "Source rule only; validate role access at runtime.");
+}
+addProxyRouting("STATIC_API_DOT_BYPASS", "/_next*; /api/*; any pathname containing a dot",
+  "isStaticOrApiPath(pathname)",
+  "Proxy returns NextResponse.next without its session gate; ATR rewrite also skips these paths",
+  "Dotted paths bypass this proxy gate; verify sensitive routes and API handlers have independent server-side authorization.");
+addProxyRouting("ATR_HOST_REWRITE", "/*",
+  "isAtrManagedHost(host) and path is not static/API",
+  "Rewrites pathname using toAtrInternalPath(pathname)",
+  "Host-dependent rewrite is source-derived; verify allowed hosts and destinations at runtime.");
+addProxyRouting("AUTH_ROUTE_HANDLING", "/login; /client-login; /team-login; /admin-login; /super-admin-login",
+  "Exact pathname and isAuthRoute(pathname)",
+  "Authenticated session redirects to resolveAccessDestination; anonymous auth page receives portal/protection headers",
+  "Test redirects with anonymous and each supported role.");
+addProxyRouting("PROTECTED_IDENTITY_HEADERS", "Protected prefixes",
+  "After session and role checks",
+  "Forwards protected marker, user id/email/role, KYC status, entitlements and optional KYC/portfolio/organization IDs as request headers",
+  "Confirm downstream code trusts identity headers only when inserted by this proxy and does not accept spoofed client values.");
+addProxyRouting("FALLTHROUGH", "Other page pathnames",
+  "No prior matching public, auth or protected rule",
+  "NextResponse.next()",
+  "Test unmatched page access against the intended route policy.");
+
 const originMap = new Map();
 for (const file of files) {
   const relative = rel(file);
@@ -102,9 +171,9 @@ const origins = [...originMap.values()].map(o => ({
 const inventory = {
   metadata: { generated_at: generatedAt, repository: "support371/gem-enterprise", source_branch: "working-copy", source_commit: commit,
     source_files_scanned: files.length, app_router_page_files: pageFiles.length, app_router_handler_files: handlerFiles.length,
-    route_records: routes.length, external_origins: origins.length, env_example_key_names: envKeyNames.length, cron_entries: cronJobs.length,
+    route_records: routes.length, external_origins: origins.length, env_example_key_names: envKeyNames.length, cron_entries: cronJobs.length, proxy_routing_records: proxyRouting.length,
     safety: "Local source inventory only. No network, deployment, provider calls, write endpoints, DB mutations, or secret values." },
-  routes, redirects, rewrites, cron_jobs: cronJobs, external_origins: origins, environment_key_names_only: envKeyNames,
+  routes, redirects, rewrites, cron_jobs: cronJobs, proxy_routing: proxyRouting, external_origins: origins, environment_key_names_only: envKeyNames,
   package_scripts: pkg.scripts || {},
   sitemap_note: "Compare explicit sitemap allowlist with the route register; sitemap is not the complete application inventory.",
   verification_fields: ["requirement_status","behavior_status","data_mode","auth_level","provider_dependency","deployment_status","owner","blocker","evidence_link","acceptance_test","rollback_plan"]
@@ -114,6 +183,7 @@ fs.writeFileSync(path.join(outputDir, "GEM_ROUTE_INVENTORY.local.json"), JSON.st
 fs.writeFileSync(path.join(outputDir, "GEM_ROUTE_INVENTORY.local.csv"), csv(routes, ["record_id","record_type","path","source_file","domain","source_branch","source_commit","implementation_status","behavior_status","deployment_status","requirement_status","notes"]), "utf8");
 fs.writeFileSync(path.join(outputDir, "GEM_EXTERNAL_ORIGINS.local.csv"), csv(origins, ["origin","hostname","protocol","evidence_files","evidence_count","sample_contexts","classification","runtime_status","next_action"]), "utf8");
 fs.writeFileSync(path.join(outputDir, "GEM_REDIRECT_REWRITE_CRON.local.json"), JSON.stringify({ metadata: inventory.metadata, redirects, rewrites, cron_jobs: cronJobs }, null, 2) + "\n", "utf8");
+fs.writeFileSync(path.join(outputDir, "GEM_PROXY_ROUTING.local.csv"), csv(proxyRouting, ["record_id","rule_type","pattern","source_file","source_branch","source_commit","condition","authorization_behavior","behavior_status","notes"]), "utf8");
 console.log("GEM local inventory generated.");
 console.log("Commit: " + commit);
 console.log("Source files scanned: " + files.length);
@@ -122,6 +192,8 @@ console.log("Route-handler files: " + handlerFiles.length);
 console.log("External origins to classify: " + origins.length);
 console.log(".env.example key names only: " + envKeyNames.length);
 console.log("Configured cron entries: " + cronJobs.length);
+console.log("Proxy routing/access records: " + proxyRouting.length);
 console.log("Outputs: docs/generated/GEM_ROUTE_INVENTORY.local.{json,csv}");
 console.log("         docs/generated/GEM_EXTERNAL_ORIGINS.local.csv");
 console.log("         docs/generated/GEM_REDIRECT_REWRITE_CRON.local.json");
+console.log("         docs/generated/GEM_PROXY_ROUTING.local.csv");
