@@ -14,7 +14,7 @@
 
 GEM is not a simple brochure website. The canonical repository contains a Next.js application, client and admin surfaces, onboarding and review flows, service and intelligence content, ATR real-estate surfaces, a community preview, store/request-only commerce, social publishing orchestration, TokMetric, agent/API bridges, evidence controls, scheduled jobs, and operations tooling.
 
-The repository tree at the inspected commit contains **2,149 entries**, **253 page files** and **224 route-handler files** under the source App Router scan. These are file counts, not unique URLs or proof of completeness. Dynamic routes can serve many URL instances; route handlers are API endpoints; aliases, rewrites and redirects can cause multiple paths to resolve to the same page.
+The repository tree at the inspected commit contains **2,149 entries**, **254 page files** and **224 route-handler files** under the source App Router scan. These are file counts, not unique URLs or proof of completeness. Dynamic routes can serve many URL instances; route handlers are API endpoints; aliases, rewrites and redirects can cause multiple paths to resolve to the same page.
 
 The correct build target is therefore not “make every source file live.” It is to reconcile:
 1. the business capability that must exist;
@@ -164,9 +164,9 @@ The source-generated sitemap explicitly lists the above routes plus selected sub
 ### 4.7 API surface
 The source inventory lists all 224 route-handler files from the inspected commit. Major API families include:
 - `/api/auth/**`, `/api/admin/**`, `/api/agent/**`, `/api/assistant/**`
-- `/api/kyc/**`, `/api/atr/**`, `/api/community/**`, `/api/portfolios/**`
+- `/api/kyc/**`, `/api/atr/**`, `/api/digital-hub/community/**`, `/api/portfolios/**`
 - `/api/documents/**`, `/api/notifications/**`, `/api/meetings/**`, `/api/support/**`
-- `/api/social-media/**`, `/api/tokmetric/**`, `/api/store/**`, `/api/commerce/**`
+- `/api/social-media/**`, `/api/tokmetric/**`, `/api/store/**`, `/api/market/** (checkout/webhook routes)`
 - `/api/verify/**`, `/api/internal/**`, OpenAPI and status/readiness endpoints.
 
 Do not execute write endpoints during reconnaissance. Use GET/HEAD/read-only smoke checks first and use isolated test credentials and test data for write-path verification.
@@ -182,10 +182,10 @@ The following connections were observed in repository configuration or code. “
 | Vercel project `prj_VDGqnA7wZt2E65LLvT94ZOpnYc2Z` | `docs/VERCEL_CANONICAL_PROJECT.md` | Sole authorized production deploy target | Check live project/domain association and deployment SHA; avoid duplicate project deployments |
 | Supabase/PostgreSQL | Prisma/schema, `.env.example`, database and social docs | Persistent application data, workspace and provider state | Confirm project URL, migrations, RLS, backups, gateway compatibility, production credentials in secret store |
 | TikTok OAuth / TikTok Shop | `docs/tokmetric/**`, `.env.example`, callback paths | Account authorization, content operations, shop/storefront integration | Register exact redirect URI and scopes; obtain platform approvals; verify token encryption; keep publishing disabled until owner approves |
-| Google Merchant | `vercel.json`, store/agent schema, readiness docs | Approved Google storefront destination and commerce status | Account authorization and product eligibility; confirm no write path enabled by assumption |
+| Google Merchant | `vercel.json`, store/agent schema, readiness docs; `GOOGLE_MERCHANT_ACCOUNT_CONNECTED=false` | Feed/storefront integration candidate; account is not recorded as connected or approved | Verify account ownership, connection state, merchant eligibility and product feed; do not label it approved until evidence exists |
 | Meta / Facebook Page / Instagram Professional | social provider configuration and orchestration | Social publishing and analytics | OAuth scopes, business/page ownership, test post/read-only checks, production approval |
 | X, LinkedIn Company, YouTube, Nextdoor | social provider configuration and orchestrator | Social content distribution | Per-provider OAuth/scopes, account authorization, limits, sandbox/read-only verification |
-| Metricool tracker | `next.config.js` CSP allows `https://tracker.metricool.com` | Analytics/tracking integration candidate | Confirm consent/privacy disclosures, loaded script and account owner; CSP allowance alone does not prove integration |
+| Metricool tracker | `src/app/layout.tsx` loads `/metricool-init.js`, which references `https://tracker.metricool.com` | Source-present web analytics/tracking integration; production delivery is unverified | Verify consent/privacy disclosures, runtime loading, non-protected-page behavior and account owner; source presence alone does not prove production delivery |
 | OpenAI-hosted Sites command center | `src/lib/enterpriseInquiryHandoff.ts` hardcodes `https://gem-social-command-center.p6kwdvjbpp.chatgpt.site/api/internal/enterprise-inquiry` | Signed, consent-checked enterprise inquiry handoff to external lead intake | Confirm owner/admin access, API contract, signature validation, replay/idempotency, PII retention, availability, and approved processing agreement |
 | OpenAI/Custom GPT or agent client | `openapi/**`, `docs/platform-operations-agent-*.md` | Read-only GEM platform operations and TokMetric action schemas | Check deployed OpenAPI URLs, bearer scopes, no write operations accidentally exposed, and exact canonical server URL |
 | SMTP provider | `.env.example`, `docs/RELEASE3_SMTP_ACTIVATION.md` | Intake notifications, password/reset and business communications | Verify sender/domain, SPF/DKIM/DMARC, deliverability, reply-to, suppression, credentials; never reuse historical exposed credentials |
@@ -233,7 +233,7 @@ The user has explicitly said Crypto Signal Board belongs to another project/agen
 
 ## 7. Routing, domain, and navigation risks to resolve
 
-1. **Sitemap is partial by design.** `src/app/sitemap.xml/route.ts` hardcodes a curated list; it does not enumerate all 253 page files. Compare sitemap entries with approved public/indexable pages, not all app/admin/API routes.
+1. **Sitemap is partial by design.** `src/app/sitemap.xml/route.ts` hardcodes a curated list; it does not enumerate all 254 page files. Compare sitemap entries with approved public/indexable pages, not all app/admin/API routes.
 2. **Rewrites alter served implementation.** `/hub`, `/company`, and `/request-access` are rewritten to controlled variants. Trace rewrite targets before changing visible route files.
 3. **Redirect aliases create route duplicates.** `/community`, `/register`, `/blog`, `/enterprise-demo`, `/preview`, `/tokmetric/review-demo`, `/command-center`, `/admin-command` and `/alliance-trust-realty` have redirect/alias behavior. Maintain one canonical URL per user task.
 4. **Root domains differ.** Canonical site uses `www` and apex. The OpenAPI docs specifically warn that an apex redirect can strip bearer authorization headers; machine calls should use the canonical `www` host unless a tested API subdomain is approved.
@@ -292,11 +292,12 @@ The target is repeatable automation that produces the same build result from a c
 ### Phase B — Generate machine-readable inventory
 1. Enumerate `src/app/**/page.*` and `src/app/**/route.*`.
 2. Parse `next.config.js` redirects and rewrites.
-3. Parse `vercel.json` domains/env keys/crons (do not output secret values).
-4. Extract OAuth callbacks, webhook destinations, external API origins and email sender domains from source/docs.
-5. Generate JSON + CSV with path, method, file, route family, auth hint, dependencies and unknown status.
-6. Compare generated routes with sitemap, navigation config and docs/routes.md; produce drift report.
-7. Generate a separate list of all external repositories and origins requiring owner confirmation.
+3. Parse `src/proxy.ts` public/protected prefixes, admin/review role gates, static/API/dot-path bypasses, host-dependent ATR rewrite and identity-header forwarding into a separate proxy-routing CSV; these are source rules, not runtime authorization proof.
+4. Parse `vercel.json` domains/env keys/crons (do not output secret values).
+5. Extract OAuth callbacks, webhook destinations, external API origins and email sender domains from source/docs.
+6. Generate JSON + CSV with path, method, file, route family, auth hint, dependencies and unknown status, plus `GEM_PROXY_ROUTING.local.csv`.
+7. Compare generated routes with sitemap, navigation config and docs/routes.md; produce drift report.
+8. Generate a separate list of all external repositories and origins requiring owner confirmation.
 
 ### Phase C — Verification, no production writes
 1. Run Prisma/schema checks, claims check, lint, typecheck and Vitest.
@@ -339,32 +340,51 @@ Run from PowerShell in the canonical local repository. These commands inspect st
 ```powershell
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== Environment ==="
-$PSVersionTable.PSVersion
-git --version
-node --version
-corepack --version
-
-Write-Host "=== Repository identity ==="
-git remote -v
-git branch --show-current
-git rev-parse HEAD
-git status --short
-
-Write-Host "=== Package manager ==="
-corepack pnpm --version
-
-Write-Host "=== Install locked dependencies ==="
-corepack pnpm install --frozen-lockfile
-
-Write-Host "=== Full verification ==="
-corepack pnpm run verify
-if ($LASTEXITCODE -ne 0) {
-  throw "GEM verification failed. Do not deploy."
+function Invoke-CheckedNative {
+    param(
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][scriptblock]$Command
+    )
+    & $Command
+    $code = $LASTEXITCODE
+    if ($code -ne 0) {
+        throw "$Label failed with exit code $code. Stop here."
+    }
 }
+
+Write-Host "=== Environment ===" -ForegroundColor Cyan
+Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
+Invoke-CheckedNative "Git version" { git --version }
+Invoke-CheckedNative "Node.js version" { node --version }
+Invoke-CheckedNative "Corepack version" { corepack --version }
+
+Write-Host "=== Repository identity ===" -ForegroundColor Cyan
+Invoke-CheckedNative "Repository root" { git rev-parse --show-toplevel }
+Invoke-CheckedNative "Repository remote" { git remote -v }
+Invoke-CheckedNative "Current branch" { git branch --show-current }
+Invoke-CheckedNative "Current commit" { git log -1 --format="%H%n%cs%n%s" }
+Invoke-CheckedNative "Working-tree status" { git status --short --branch }
+
+Write-Host "=== Package manager ===" -ForegroundColor Cyan
+Invoke-CheckedNative "pnpm version" { corepack pnpm --version }
+
+Write-Host "=== Install locked dependencies ===" -ForegroundColor Cyan
+Invoke-CheckedNative "Frozen-lockfile install" { corepack pnpm install --frozen-lockfile }
+
+Write-Host "=== Read-only / non-production verification ===" -ForegroundColor Cyan
+Invoke-CheckedNative "Schema checks" { corepack pnpm run db:schema:check }
+Invoke-CheckedNative "Public-claims check" { corepack pnpm run claims:check }
+Invoke-CheckedNative "Lint" { corepack pnpm run lint }
+Invoke-CheckedNative "Typecheck" { corepack pnpm run typecheck }
+Invoke-CheckedNative "Tests" { corepack pnpm run test }
+
+Write-Host "=== Build after checks pass ===" -ForegroundColor Cyan
+Invoke-CheckedNative "Production bundle build" { corepack pnpm run build }
+
+Write-Host "All listed local checks exited successfully. This is not production-release approval." -ForegroundColor Green
 ```
 
-Only run the above after confirming the current directory is the canonical `support371/gem-enterprise` checkout. If the worktree is dirty, stop and review before install/build. The next automation artifact should generate the route CSV/JSON, not directly change production.
+Run only after confirming the current directory is the canonical `support371/gem-enterprise` checkout and reviewing the working-tree status. If it is dirty, stop and preserve the changes before installing/building. This sequence deliberately avoids `pnpm run verify`: the current package script invokes `db:generate`, which chains schema-promotion scripts. Do not run `db:generate`, `db:schema:promote`, `db:push`, or `db:migrate` until side effects are reviewed and the operation is specifically approved. No deployment or production mutation is part of this sequence.
 
 ## 12. Unresolved owner/external inputs
 
