@@ -15,6 +15,8 @@ Outputs:
 - `docs/generated/GEM_REDIRECT_REWRITE_CRON.local.json`: redirects/rewrites detected in Next config and cron entries from Vercel config.
 - `docs/generated/GEM_PROXY_ROUTING.local.csv`: proxy public/protected prefixes, role gates, bypasses, ATR host rewrites and identity-header rules derived from `src/proxy.ts`.
 
+The `*.local.*` outputs are gitignored. The committed `*.main.*` files are reviewed snapshots pinned to the commit recorded inside them; the route inventory snapshot predates the current column layout, so compare it with fresh output by `source_file` rather than line-by-line.
+
 Limitations:
 - URL extraction is a discovery aid; it can include documentation links, examples, and obsolete endpoints. Every origin needs classification.
 - Redirect/rewrite parsing is conservative and is not a full JavaScript parser.

@@ -53,7 +53,17 @@ Use the generator after the inventory pull request is merged or after the genera
 Invoke-CheckedNative "Generate route and connection inventory" { node scripts/generate-gem-route-inventory.mjs }
 ```
 
-Record the generated files and review them. Confirm that local environment secret files are not included. Compare the fresh route list with the committed inventory and document any differences; source counts are not live URL counts.
+Record the generated files and review them. Confirm that local environment secret files are not included. The `*.local.*` outputs are gitignored; do not force-add them. Compare the fresh route list with the committed inventory and document any differences; source counts are not live URL counts.
+
+The committed `GEM_ROUTE_INVENTORY.main.*` snapshots predate the generator's current column layout (`API` rows are now `ROUTE_HANDLER`, and column names changed), so a line diff will not match. Compare by `source_file` instead:
+
+```powershell
+$committed = Import-Csv docs/generated/GEM_ROUTE_INVENTORY.main.csv | ForEach-Object source_file
+$fresh = Import-Csv docs/generated/GEM_ROUTE_INVENTORY.local.csv | ForEach-Object source_file
+Compare-Object $committed $fresh
+```
+
+No output means the same page and route-handler files exist in both.
 
 ## 3. Install dependencies without changing application data
 
@@ -85,12 +95,21 @@ Invoke-CheckedNative "Production bundle build" { corepack pnpm run build }
 
 The repository's build script may require environment configuration; use non-production test credentials only. This runbook intentionally avoids `pnpm run verify`: the current script invokes `db:generate`, which chains schema-promotion scripts. Do not run `db:generate`, `db:schema:promote`, `db:push`, or `db:migrate` during the baseline. Never run a production database migration or schema push as part of this pass.
 
+The build itself runs the same schema-promotion scripts, but only against the local `prisma/schema.prisma` file, then `prisma validate`/`prisma generate`; it does not connect to a database. It leaves `prisma/schema.prisma` and `next-env.d.ts` modified. If both were clean before the build, restore them afterward and confirm the tree is clean:
+
+```powershell
+Invoke-CheckedNative "Restore build-generated files" { git restore prisma/schema.prisma next-env.d.ts }
+Invoke-CheckedNative "Working-tree status" { git status --short }
+```
+
+Run the build through `corepack pnpm run build`, not `node scripts/vercel-build.mjs` directly: on Windows the build script locates pnpm through the `npm_execpath` that `pnpm run` sets.
+
 ## 5. Validate existing views and route behavior
 
 Start the local app only with safe non-production configuration:
 
 ```powershell
-pnpm run dev
+corepack pnpm run dev
 ```
 
 Use the local browser and record evidence for the existing views, preserving layout and content. Test:
