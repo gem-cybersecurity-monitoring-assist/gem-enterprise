@@ -1,4 +1,5 @@
 id,record_type,path,source_file,method,domain,branch,commit,deployment_status,behavior_status,requirement_status,notes
+PAGE:/,PAGE,/,src/app/page.tsx,,public-root,main,9f1da4f0921ff44b9f895dd911075aba972514ad,SOURCE_ONLY,UNTESTED,RECONCILE,Derived from App Router page file; runtime and production not verified.
 PAGE:/about,PAGE,/about,src/app/about/page.tsx,,about,main,9f1da4f0921ff44b9f895dd911075aba972514ad,SOURCE_ONLY,UNTESTED,RECONCILE,Derived from App Router page file; runtime and production not verified.
 PAGE:/access/continue,PAGE,/access/continue,src/app/access/continue/page.tsx,,access,main,9f1da4f0921ff44b9f895dd911075aba972514ad,SOURCE_ONLY,UNTESTED,RECONCILE,Derived from App Router page file; runtime and production not verified.
 PAGE:/admin-access/authorize,PAGE,/admin-access/authorize,src/app/admin-access/authorize/page.tsx,,admin-access,main,9f1da4f0921ff44b9f895dd911075aba972514ad,SOURCE_ONLY,UNTESTED,RECONCILE,Derived from App Router page file; runtime and production not verified.
