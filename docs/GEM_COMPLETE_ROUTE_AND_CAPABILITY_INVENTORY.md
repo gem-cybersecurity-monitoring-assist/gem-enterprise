@@ -13,7 +13,7 @@
 ## Source inventory counts
 
 - Total repository tree entries: **2149**
-- App Router page files: **253**
+- App Router page files: **254**
 - API/route-handler files: **224**
 - Page routes and API handlers are listed separately below.
 
@@ -49,8 +49,9 @@ For each route, record: **path; route kind (page/API/static); domain; source fil
 ## A. Next.js page routes in `main`
 
 
-### Public marketing & company (59)
+### Public marketing & company (60)
 
+- `/` — `src/app/page.tsx`
 - `/about` — `src/app/about/page.tsx`
 - `/access/continue` — `src/app/access/continue/page.tsx`
 - `/admin-access/authorize` — `src/app/admin-access/authorize/page.tsx`
