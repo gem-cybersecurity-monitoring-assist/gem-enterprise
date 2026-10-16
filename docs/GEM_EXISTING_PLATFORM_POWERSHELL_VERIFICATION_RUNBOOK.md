@@ -9,16 +9,31 @@
 Open PowerShell in the existing repository folder. Do not create a new project folder if the real checkout already exists.
 
 ```powershell
-git rev-parse --show-toplevel
-git status --short --branch
-git remote -v
-git branch --show-current
-git log -1 --format="%H%n%cs%n%s"
-node --version
-pnpm --version
+$ErrorActionPreference = "Stop"
+
+function Invoke-CheckedNative {
+    param(
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][scriptblock]$Command
+    )
+    & $Command
+    $code = $LASTEXITCODE
+    if ($code -ne 0) {
+        throw "$Label failed with exit code $code. Stop here."
+    }
+}
+
+Invoke-CheckedNative "Repository root" { git rev-parse --show-toplevel }
+Invoke-CheckedNative "Repository remote" { git remote -v }
+Invoke-CheckedNative "Current branch" { git branch --show-current }
+Invoke-CheckedNative "Current commit" { git log -1 --format="%H%n%cs%n%s" }
+Invoke-CheckedNative "Working-tree status" { git status --short --branch }
+Invoke-CheckedNative "Node.js version" { node --version }
+Invoke-CheckedNative "Corepack version" { corepack --version }
+Invoke-CheckedNative "pnpm version" { corepack pnpm --version }
 ```
 
-Expected: the remote identifies `support371/gem-enterprise`, the working tree status is understood, and Node matches the repository's declared Node 24.x requirement. If the checkout is dirty, preserve those changes; do not reset or clean them.
+Expected: the remote identifies `support371/gem-enterprise`, the working-tree status is understood, Node matches the repository's declared Node 24.x requirement, and Corepack/pnpm are available. Keep this PowerShell session open so `Invoke-CheckedNative` remains defined. If the checkout is dirty, preserve those changes; do not reset or clean them. Do not switch branches or build until dirty files are reviewed.
 
 ## 1. Create a safe working branch
 
@@ -35,7 +50,7 @@ If that branch already exists, switch to it instead of creating a duplicate. Do 
 Use the generator after the inventory pull request is merged or after the generator file is present in the checked-out branch:
 
 ```powershell
-node scripts/generate-gem-route-inventory.mjs
+Invoke-CheckedNative "Generate route and connection inventory" { node scripts/generate-gem-route-inventory.mjs }
 ```
 
 Record the generated files and review them. Confirm that local environment secret files are not included. Compare the fresh route list with the committed inventory and document any differences; source counts are not live URL counts.
@@ -43,7 +58,7 @@ Record the generated files and review them. Confirm that local environment secre
 ## 3. Install dependencies without changing application data
 
 ```powershell
-pnpm install --frozen-lockfile
+Invoke-CheckedNative "Frozen-lockfile install" { corepack pnpm install --frozen-lockfile }
 ```
 
 If this fails, capture the full error and stop. Do not delete the lockfile or change dependency versions as a workaround.
@@ -53,11 +68,11 @@ If this fails, capture the full error and stop. Do not delete the lockfile or ch
 Check that the required environment variables point only to local or dedicated non-production services before running application tests. Do not paste secrets into logs, tickets or chat.
 
 ```powershell
-pnpm run db:schema:check
-pnpm run claims:check
-pnpm run lint
-pnpm run typecheck
-pnpm run test
+Invoke-CheckedNative "Schema checks" { corepack pnpm run db:schema:check }
+Invoke-CheckedNative "Public-claims check" { corepack pnpm run claims:check }
+Invoke-CheckedNative "Lint" { corepack pnpm run lint }
+Invoke-CheckedNative "Typecheck" { corepack pnpm run typecheck }
+Invoke-CheckedNative "Tests" { corepack pnpm run test }
 ```
 
 Record each command's exit code and output. Stop at the first failure, diagnose it, and repair the underlying existing implementation on the working branch. Do not mask failures or skip checks merely to get a green build.
@@ -65,10 +80,10 @@ Record each command's exit code and output. Stop at the first failure, diagnose 
 Build only after the checks pass:
 
 ```powershell
-pnpm run build
+Invoke-CheckedNative "Production bundle build" { corepack pnpm run build }
 ```
 
-The repository's build script may require environment configuration; use non-production test credentials only. Never run a production database migration or schema push as part of this baseline pass.
+The repository's build script may require environment configuration; use non-production test credentials only. This runbook intentionally avoids `pnpm run verify`: the current script invokes `db:generate`, which chains schema-promotion scripts. Do not run `db:generate`, `db:schema:promote`, `db:push`, or `db:migrate` during the baseline. Never run a production database migration or schema push as part of this pass.
 
 ## 5. Validate existing views and route behavior
 
