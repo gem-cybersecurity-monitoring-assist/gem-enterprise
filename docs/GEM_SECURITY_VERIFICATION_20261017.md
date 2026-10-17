@@ -45,14 +45,20 @@ The fixes change no application URLs.
 
 ## 4. Newly discovered issues
 
-1. **Migrations cannot build a database from empty.** `20260712225500_add_atomic_admin_access_consumer` references `public.admin_access_tokens`, which no migration, schema model or `supabase/migrations` file creates. Migrations also require Supabase objects (`storage.buckets`, `pg_cron`, `pg_net`, roles). This blocks disaster-recovery rebuilds and full-fidelity test databases. **Owner action:** export the production DDL for the missing objects into a reviewed migration.
-2. **Login rate limit trusts `x-forwarded-for`.** `getRequestContext` takes the first `x-forwarded-for` value. On Vercel the platform sets this header. On any self-hosted `next start` deployment, a client could rotate the header to bypass the 10-per-5-minutes login limit. **Low on Vercel; document or restrict to trusted proxies.**
-3. **82 of 102 protected pages rely on the proxy only.** This is safe with fix §1, but any future proxy regression exposes them. Keep the proxy tests.
-4. **`recovery-readiness` disclosure.** See §2 (decision required).
+1. **Migrations cannot build a database from empty.** Root cause and the recovery plan are in `docs/GEM_MIGRATION_INTEGRITY_20261017.md`.
+   - `public.admin_access_tokens` was created by hand in the Supabase SQL editor and has never been defined in any commit on any branch.
+   - Two migrations depend on it through `%rowtype`.
+   - Production is also shaped by `db push` (6 tables, 66–76 column differences).
+   - **Owner action:** read-only schema capture of production, then baseline migrations generated from that capture.
+2. **Potential critical, unverified: RLS-less tables under Supabase default privileges.** 56 public tables (including `users`, `user_sessions` and `kyc_*`) have no RLS, and the migration chain defines 0 policies. In a MOCK simulation of Supabase's default grants, `anon` could read and write 55 of them, including `users."passwordHash"`. Production state is unknown. **Owner action:** run the read-only queries in the migration report, §6.
+3. **`pnpm run db:push` / `db:migrate` are destructive against real databases.** `db push` would drop 29–33 raw-SQL-managed tables; `migrate dev` may offer a reset. `CLAUDE.md` §10 now restricts both to disposable databases.
+4. **Login rate limit trusts `x-forwarded-for`.** `getRequestContext` takes the first `x-forwarded-for` value. On Vercel the platform sets this header. On any self-hosted `next start` deployment, a client could rotate the header to bypass the 10-per-5-minutes login limit. **Low on Vercel; document or restrict to trusted proxies.**
+5. **82 of 102 protected pages rely on the proxy only.** This is safe with fix §1, but any future proxy regression exposes them. Keep the proxy tests.
+6. **`recovery-readiness` disclosure.** See §2 (decision required).
 
 ## 5. Outstanding authorization tests
 
-- Database-layer controls (RLS, triggers, CHECKs). These need a Supabase-compatible database built from complete migrations (blocked by issue 1).
+- Database-layer controls. The replayed chain contains them for inspection (32 RLS-enabled tables, 0 policies, 11 `SECURITY DEFINER` functions, 5 triggers). It is **not** the production configuration, so production RLS, grants and default privileges remain **unverified** (issues 1–2).
 - Organization/workspace tenant isolation for workspace-scoped data (`WorkspaceMember`, organization projects, scoped service requests, TokMetric workspaces). Only cross-user ownership was tested.
 - Supabase-gateway sessions (`authSource: supabase_gateway`) and every gateway-delegated admin route under real configuration.
 - The 8 fail-closed worker/bridge endpoints and cron routes with real secrets.
@@ -71,6 +77,7 @@ The fixes change no application URLs.
 
 - `a72f063` (Lovable merge, 2026-10-15) reverted 303 files from `9f1da4f`: workflow SHA pins (fixed by PR #443), `production-readonly-smoke.yml`, 4 Prisma migrations and schema models, and 40 test files (1186 → 774 tests). An owner must decide which lineage is canonical before the PR #440-lineage fixes can target `main`.
 - After PR #443 merges, re-run PR #440's checks.
+- Root cause proven: the tree of `a72f063` is byte-identical to Lovable's parent `77d3796`. The dependency-ordered repair (backups → read-only capture → exposure fix → `git revert -m 1 a72f063` → baselines) is in `docs/GEM_MIGRATION_INTEGRITY_20261017.md` §5. Recommended canonical lineage: `9f1da4f` / PR #440.
 
 ## 8. PC-only validation
 
