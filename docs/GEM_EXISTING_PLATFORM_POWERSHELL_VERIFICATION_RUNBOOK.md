@@ -122,6 +122,14 @@ Use the local browser and record evidence for the existing views, preserving lay
 
 Do not use real customer records or production credentials in local tests.
 
+For the anonymous-access part of this step, run the read-only probe against the local server. It only accepts loopback URLs and sends cookie-less GET requests. Add `--include-api` only against a disposable non-production server.
+
+```powershell
+Invoke-CheckedNative "Anonymous route-access probe" { node scripts/verify-local-route-access.mjs --base http://127.0.0.1:3000 }
+```
+
+It exits 1 if a protected page is served to an anonymous visitor. Results and the last recorded run are in `docs/GEM_LOCAL_ROUTE_ACCESS_VERIFICATION.md`.
+
 ## 6. Evidence format for each route or feature
 
 Create one record per view/flow with:
