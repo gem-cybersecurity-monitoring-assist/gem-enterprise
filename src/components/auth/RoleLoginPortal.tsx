@@ -11,8 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-export type LoginPortalKind = "client" | "team" | "admin" | "super_admin";
+import type { LoginPortalKind } from "@/lib/authPortal";
 
 const portalConfig = {
   client: { eyebrow: "Client access", title: "Client & organization portal", description: "Open the organization, projects, services, documents, and reporting assigned to your account.", Icon: Building2, iconClass: "border-cyan-400/20 bg-cyan-400/10 text-cyan-300" },
@@ -34,16 +33,6 @@ function safeRedirectTarget(value: string | null | undefined) {
   return value;
 }
 
-function canUseRequestedDestination(role: string | undefined, destination: string) {
-  if (destination.startsWith("/app/admin") || destination.startsWith("/app/command-center")) {
-    return role === "admin" || role === "super_admin" || role === "internal";
-  }
-  if (destination.startsWith("/review")) {
-    return role === "analyst" || role === "admin" || role === "super_admin" || role === "internal";
-  }
-  return true;
-}
-
 export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
   const config = portalConfig[portal];
   const Icon = config.Icon;
@@ -56,15 +45,18 @@ export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
   async function onSubmit(data: LoginFormData) {
     setServerError(null);
     try {
-      const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: data.email, password: data.password }) });
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password, portal }),
+      });
       const body = (await response.json().catch(() => ({}))) as LoginResponse;
       if (!response.ok) {
-        setServerError(body.error || "Invalid credentials. Check your email and password.");
+        setServerError(body.error || "This account is not assigned to this access portal.");
         return;
       }
-      const requested = safeRedirectTarget(searchParams.get("next"));
       const authoritative = safeRedirectTarget(body.redirect) ?? "/access/continue";
-      router.replace(requested && canUseRequestedDestination(body.role, requested) ? requested : authoritative);
+      router.replace(authoritative);
       router.refresh();
     } catch {
       setServerError("The sign-in service could not be reached. Please try again.");
@@ -85,7 +77,7 @@ export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
         <section className="hidden rounded-3xl border border-white/10 bg-white/[0.035] p-8 lg:block">
           <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[.18em] text-cyan-300"><ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> GEM Enterprise</span>
           <p className="mt-8 max-w-xl text-4xl font-bold leading-tight text-white">One platform. Separate authority. Clear workspaces.</p>
-          <p className="mt-5 max-w-xl text-base leading-8 text-slate-400">Your credentials determine your real role on the server. This page only opens the correct doorway; it cannot grant permissions, memberships, or administrative authority.</p>
+          <p className="mt-5 max-w-xl text-base leading-8 text-slate-400">Each doorway accepts only the account role assigned to that portal. Client, team, admin, and Super Admin access stay separate at sign-in and on the server.</p>
           <div className="mt-10 grid gap-3 sm:grid-cols-2">{["Role-specific navigation", "Membership-scoped projects", "Dedicated tool environments", "Audited owner controls"].map((item) => <div key={item} className="rounded-xl border border-white/10 bg-black/15 p-4 text-sm font-medium text-slate-200">{item}</div>)}</div>
         </section>
 
@@ -105,7 +97,7 @@ export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
               <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor={`${portal}-password`}>Password</Label><Link href="/forgot-password" className="text-xs text-cyan-300 hover:underline">Forgot password?</Link></div><Input id={`${portal}-password`} type="password" autoComplete="current-password" placeholder="••••••••" {...register("password")} aria-invalid={Boolean(errors.password)} className="min-h-11 border-white/10 bg-white/5" />{errors.password ? <p className="text-xs text-red-300">{errors.password.message}</p> : null}</div>
               <Button type="submit" disabled={isSubmitting} className="min-h-11 w-full bg-cyan-300 font-semibold text-slate-950 hover:bg-cyan-200">{isSubmitting ? "Verifying access…" : `Continue to ${config.title}`}</Button>
             </form>
-            <p className="mt-5 text-center text-xs leading-5 text-slate-500">Official access is resolved from the authenticated account and active workspace membership.</p>
+            <p className="mt-5 text-center text-xs leading-5 text-slate-500">Only accounts assigned to this portal can create a session here.</p>
           </div>
         </section>
       </div>

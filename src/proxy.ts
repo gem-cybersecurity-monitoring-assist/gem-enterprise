@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest, resolveAccessDestination } from "@/lib/auth";
 import { isAtrManagedHost, toAtrInternalPath } from "@/lib/atrOperationalConfig";
 
+const SUPER_ADMIN_PREFIXES = ["/app/super-admin"];
 const ADMIN_PREFIXES = [
   "/app/admin",
   "/app/command-center",
@@ -26,6 +27,7 @@ const PROTECTED_PREFIXES = [
   "/community-hub/profile",
   "/community-hub/settings",
   "/community-hub/opportunities",
+  ...SUPER_ADMIN_PREFIXES,
   ...ADMIN_PREFIXES,
   ...REVIEW_PREFIXES,
 ];
@@ -70,6 +72,10 @@ function isProtected(pathname: string): boolean {
   return matchesPrefix(pathname, PROTECTED_PREFIXES);
 }
 
+function isSuperAdminRoute(pathname: string): boolean {
+  return matchesPrefix(pathname, SUPER_ADMIN_PREFIXES);
+}
+
 function isAdminRoute(pathname: string): boolean {
   return matchesPrefix(pathname, ADMIN_PREFIXES);
 }
@@ -83,6 +89,7 @@ function isAuthRoute(pathname: string): boolean {
 }
 
 function loginPathFor(pathname: string): string {
+  if (isSuperAdminRoute(pathname)) return "/super-admin-login";
   if (
     pathname.startsWith("/app/admin/workspace-access") ||
     pathname.startsWith("/app/admin/plan-workspaces")
@@ -144,6 +151,16 @@ export async function proxy(request: NextRequest) {
       const loginUrl = new URL(loginPathFor(pathname), request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (pathname === "/app/admin" && session.role === "super_admin") {
+      return NextResponse.redirect(new URL("/app/super-admin", request.url));
+    }
+
+    if (isSuperAdminRoute(pathname) && session.role !== "super_admin") {
+      return NextResponse.redirect(
+        new URL(resolveAccessDestination(session), request.url),
+      );
     }
 
     if (

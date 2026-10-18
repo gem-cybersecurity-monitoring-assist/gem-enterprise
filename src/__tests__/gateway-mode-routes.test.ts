@@ -127,6 +127,7 @@ describe("gateway-mode production routes", () => {
       post("/api/auth/login", {
         email: "admin@gemcybersecurityassist.com",
         password: "Strong-Password-For-Test-2026!",
+        portal: "admin",
       }),
     );
     const body = await response.json();
@@ -139,6 +140,22 @@ describe("gateway-mode production routes", () => {
     expect(gatewayMocks.login).toHaveBeenCalledOnce();
     expect(dbMocks.userFindUnique).not.toHaveBeenCalled();
     expect(dbMocks.userUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a valid gateway account at the wrong portal", async () => {
+    const response = await login(
+      post("/api/auth/login", {
+        email: "admin@gemcybersecurityassist.com",
+        password: "Strong-Password-For-Test-2026!",
+        portal: "client",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("ROLE_PORTAL_MISMATCH");
+    expect(response.headers.get("x-test-session-token")).toBeNull();
+    expect(dbMocks.userFindUnique).not.toHaveBeenCalled();
   });
 
   it("fails closed when a gateway login lacks sessionVersion", async () => {
@@ -159,6 +176,7 @@ describe("gateway-mode production routes", () => {
       post("/api/auth/login", {
         email: "admin@gemcybersecurityassist.com",
         password: "Strong-Password-For-Test-2026!",
+        portal: "admin",
       }),
     );
 

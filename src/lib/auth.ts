@@ -246,9 +246,8 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
 }
 
 export function resolveAccessDestination(session: SessionPayload): string {
-  if (["admin", "super_admin", "internal"].includes(session.role)) {
-    return "/app/admin";
-  }
+  if (session.role === "super_admin") return "/app/super-admin";
+  if (["admin", "internal"].includes(session.role)) return "/app/admin";
   if (session.role === "analyst") return "/review/verification";
   if (session.kycStatus === "not_started") return "/kyc/start";
   if (

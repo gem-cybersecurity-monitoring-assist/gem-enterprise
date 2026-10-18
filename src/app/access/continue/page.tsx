@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSession, resolveAccessDestination } from "@/lib/auth";
+import { getGatewaySessionToken, getSession, resolveAccessDestination } from "@/lib/auth";
 import type { SessionPayload, KYCStatus, AuthRole } from "@/lib/auth";
 import { resolveWorkspaceAccess } from "@/lib/workspaceAccess";
-import { getGatewaySessionToken } from "@/lib/auth";
 import { workspaceGateway } from "@/lib/supabase-gateway";
 
 export const dynamic = "force-dynamic";
@@ -27,12 +26,17 @@ export default async function AccessContinuePage() {
     entitlements: [],
   };
 
+  if (session.role !== "client") {
+    redirect(resolveAccessDestination(session));
+  }
+
   const gatewayToken = session.authSource === "supabase_gateway" ? await getGatewaySessionToken() : null;
   const workspaceAccess = gatewayToken
     ? await workspaceGateway<{workspaces:Array<{id:string}>}>("access",gatewayToken).then(({workspaces})=>({workspaces,selected:workspaces[0]??null,requestedWorkspaceId:null,requestedDenied:false}))
     : await resolveWorkspaceAccess(userId);
-  if (workspaceAccess.selected) {
-    redirect(`/app/workspace?workspace=${encodeURIComponent(workspaceAccess.selected.id)}`);
+
+  if (workspaceAccess.workspaces.length > 0) {
+    redirect("/app/workspace");
   }
 
   const destination = resolveAccessDestination(session);

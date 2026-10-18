@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowRight,
+  ArrowLeft,
   Building2,
   CheckCircle2,
   ClipboardList,
@@ -15,13 +15,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { isPlatformOwnerRole, requireSession } from "@/lib/api/auth-helpers";
+import { requireSession } from "@/lib/api/auth-helpers";
 import { resolveWorkspaceAccess } from "@/lib/workspaceAccess";
 import { cn } from "@/lib/utils";
 import { getOrganizationWorkspaceOverview } from "@/lib/organizationWorkspace";
 import { OrganizationWorkspaceOperatingSystem } from "@/components/workspace/OrganizationWorkspaceOperatingSystem";
 import { WorkspaceDirectory } from "@/components/workspace/WorkspaceDirectory";
-import { getGatewaySessionToken } from "@/lib/auth";
+import { getGatewaySessionToken, resolveAccessDestination } from "@/lib/auth";
 import { workspaceGateway } from "@/lib/supabase-gateway";
 
 export const metadata: Metadata = {
@@ -65,7 +65,10 @@ function ControlState({ locked }: { locked: boolean }) {
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
   const gate = await requireSession();
   if (!gate.ok) {
-    redirect("/client-login?next=/app/workspace");
+    redirect("/client-login");
+  }
+  if (gate.session.role !== "client") {
+    redirect(resolveAccessDestination(gate.session));
   }
   if (gate.accountStatus !== "active") {
     redirect("/client-login?status=account-review");
@@ -88,10 +91,54 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
     redirect("/app/workspace?access=denied");
   }
 
+  if (!requestedWorkspaceId && resolution.workspaces.length > 0) {
+    return (
+      <div className="space-y-6 pb-10">
+        {accessNotice === "denied" && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] p-4 text-sm text-amber-100">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            The requested workspace is not assigned to this client account. Choose from the workspaces shown below.
+          </div>
+        )}
+
+        <section className="overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_38%),linear-gradient(145deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] p-5 sm:p-7">
+          <div className="max-w-4xl">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-200">
+                <Building2 className="mr-1.5 h-3.5 w-3.5" /> Workspace Directory
+              </Badge>
+              <Badge variant="outline" className="border-white/15 text-slate-300">
+                Client account · assigned access only
+              </Badge>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">GEM Enterprise Workspace OS</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-4xl">Manage every service in one flow.</h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
+              Each workspace is its own dedicated dashboard. Choose where you want to work first; GEM opens only workspaces assigned to this client account and does not silently switch you into another portal or organization.
+            </p>
+          </div>
+        </section>
+
+        <WorkspaceDirectory workspaces={resolution.workspaces} />
+
+        <Card className="border-cyan-400/15 bg-cyan-400/[0.035]">
+          <CardContent className="flex gap-3 p-5">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
+            <div>
+              <p className="font-semibold text-white">Assigned access only</p>
+              <p className="mt-1 text-sm leading-6 text-slate-400">
+                Directory cards come from active workspace memberships. Searching or opening this page never creates a role, membership, entitlement, or access to another organization.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const selected = resolution.selected;
 
   if (!selected) {
-    const owner = isPlatformOwnerRole(gate.session.role);
     return (
       <div className="mx-auto max-w-3xl space-y-6 py-8">
         <Card className="border-amber-400/20 bg-amber-400/[0.04]">
@@ -103,26 +150,14 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
           </CardHeader>
           <CardContent className="space-y-5">
             <p className="text-sm leading-7 text-slate-300">
-              Your account is authenticated, but it is not currently assigned to an active
-              organization workspace. GEM does not create a synthetic client membership or expose
-              another organization as a fallback.
+              This client account is authenticated, but it is not currently assigned to an active organization workspace. GEM does not create a synthetic membership or expose another organization as a fallback.
             </p>
             <div className="rounded-xl border border-white/10 bg-black/15 p-4 text-sm leading-6 text-slate-400">
-              Workspace access begins only after an administrator assigns your account to a real
-              organization workspace with an active membership and role.
+              Workspace access begins only after an administrator assigns this client account to a real organization workspace with an active membership and role.
             </div>
-            <div className="flex flex-wrap gap-3">
-              {owner && (
-                <Button asChild className="bg-cyan-300 text-slate-950 hover:bg-cyan-200">
-                  <Link href="/app/admin/plan-workspaces">
-                    Open owner plan preview <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
-              <Button asChild variant="outline" className="border-white/15 text-slate-200">
-                <Link href="/app/support">Contact workspace support</Link>
-              </Button>
-            </div>
+            <Button asChild variant="outline" className="border-white/15 text-slate-200">
+              <Link href="/app/support">Contact workspace support</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -153,14 +188,6 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
 
   return (
     <div className="space-y-6 pb-10">
-      {accessNotice === "denied" && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] p-4 text-sm text-amber-100">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-          The requested workspace was not assigned to your account. Your first active membership is
-          shown instead.
-        </div>
-      )}
-
       <section className="overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_38%),linear-gradient(145deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] p-5 sm:p-7">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
@@ -169,7 +196,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
                 <ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Membership scoped
               </Badge>
               <Badge variant="outline" className="border-white/15 text-slate-300">
-                Real organization workspace
+                Dedicated workspace
               </Badge>
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
@@ -179,21 +206,25 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
               {selected.name}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              This page is resolved from your active workspace membership. It does not use the
-              synthetic Basic, Professional, or Enterprise preview records.
+              You are inside one assigned workspace. Projects, services, team, tools, reporting, AI, and integrations remain scoped to this workspace and its recorded permissions.
             </p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4 xl:min-w-[280px]">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Assigned role</p>
-            <p className="mt-2 font-semibold text-white">{selected.role.name}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
-              {selected.role.description ?? "No additional role description is recorded."}
-            </p>
+          <div className="space-y-3 xl:min-w-[280px]">
+            <Button asChild variant="outline" className="w-full justify-start border-white/15 text-slate-200">
+              <Link href="/app/workspace">
+                <ArrowLeft className="mr-2 h-4 w-4" /> All workspaces
+              </Link>
+            </Button>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs uppercase tracking-wider text-slate-500">Assigned role</p>
+              <p className="mt-2 font-semibold text-white">{selected.role.name}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                {selected.role.description ?? "No additional role description is recorded."}
+              </p>
+            </div>
           </div>
         </div>
       </section>
-
-      <WorkspaceDirectory workspaces={resolution.workspaces} selectedId={selected.id} />
 
       <section className="grid gap-4 sm:grid-cols-3">
         {metrics.map(({ label, value, Icon }) => (
@@ -250,8 +281,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
               </div>
             ) : (
               <p className="rounded-xl border border-white/8 bg-white/[0.02] p-4 text-sm leading-6 text-slate-400">
-                No explicit permission labels are attached to this membership role. Protected
-                actions remain unavailable unless an authoritative server-side gate permits them.
+                No explicit permission labels are attached to this membership role. Protected actions remain unavailable unless an authoritative server-side gate permits them.
               </p>
             )}
           </CardContent>
@@ -259,19 +289,14 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
       </section>
 
       <Card className="border-cyan-400/15 bg-cyan-400/[0.035]">
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <CardContent className="flex gap-3 p-5">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
           <div>
             <p className="font-semibold text-white">Data boundary</p>
             <p className="mt-1 text-sm leading-6 text-slate-400">
-              Workspace selection is validated on the server from your active memberships. Platform
-              owner status alone does not expose another client's workspace through this route.
+              Workspace selection is validated on the server from this client account’s active memberships. Another portal role cannot enter the Client Workspace through this route.
             </p>
           </div>
-          {isPlatformOwnerRole(gate.session.role) && (
-            <Button asChild variant="outline" className="shrink-0 border-cyan-400/25 text-cyan-200">
-              <Link href="/app/admin/plan-workspaces">Open synthetic plan preview</Link>
-            </Button>
-          )}
         </CardContent>
       </Card>
     </div>

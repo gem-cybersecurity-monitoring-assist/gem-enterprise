@@ -5,10 +5,14 @@ import { db } from "@/lib/db";
 import {
   signSession,
   setSessionCookie,
-  resolveAccessDestination,
   type IssuedSessionPayload,
   type SessionPayload,
 } from "@/lib/auth";
+import {
+  homeForRole,
+  isRoleAllowedForPortal,
+  type LoginPortalKind,
+} from "@/lib/authPortal";
 import { emitAuditLog } from "@/lib/audit";
 import { getRequestContext } from "@/lib/api/auth-helpers";
 import { rateLimit, rateLimitedResponse } from "@/lib/api/rate-limit";
@@ -22,9 +26,14 @@ import {
 const loginSchema = z.object({
   email: z.string().email("Invalid email address").max(254),
   password: z.string().min(1, "Password is required").max(256),
+  portal: z.enum(["client", "team", "admin", "super_admin"]),
 });
 
 const INVALID_CREDENTIALS = { error: "Invalid credentials" };
+const WRONG_PORTAL = {
+  error: "This account is not assigned to this access portal.",
+  code: "ROLE_PORTAL_MISMATCH",
+};
 
 type CanonicalUser = Awaited<ReturnType<typeof findCanonicalUser>>;
 
@@ -99,7 +108,7 @@ async function issueCanonicalSession(
     success: true,
     role: sessionPayload.role,
     kycStatus: sessionPayload.kycStatus,
-    redirect: resolveAccessDestination(sessionPayload),
+    redirect: homeForRole(sessionPayload.role),
   });
   return setSessionCookie(response, token);
 }
@@ -110,7 +119,7 @@ function issueGatewaySession(session: IssuedSessionPayload, token: string) {
       success: true,
       role: session.role,
       kycStatus: session.kycStatus,
-      redirect: resolveAccessDestination(session),
+      redirect: homeForRole(session.role),
     },
     { headers: { "Cache-Control": "no-store" } },
   );
@@ -120,6 +129,7 @@ function issueGatewaySession(session: IssuedSessionPayload, token: string) {
 async function localLogin(
   email: string,
   password: string,
+  portal: LoginPortalKind,
   ipAddress: string,
   userAgent: string,
 ) {
@@ -154,6 +164,25 @@ async function localLogin(
     return NextResponse.json(INVALID_CREDENTIALS, { status: 401 });
   }
 
+  const role = user.role as IssuedSessionPayload["role"];
+  if (!isRoleAllowedForPortal(role, portal)) {
+    await emitAuditLog({
+      userId: user.id,
+      action: "failed_login",
+      resource: "auth",
+      resourceId: user.id,
+      metadata: {
+        email: user.email,
+        reason: "role_portal_mismatch",
+        attemptedPortal: portal,
+        assignedRole: role,
+      },
+      ipAddress,
+      userAgent,
+    });
+    return NextResponse.json(WRONG_PORTAL, { status: 403 });
+  }
+
   return issueCanonicalSession(user, ipAddress, userAgent, "local_password");
 }
 
@@ -181,11 +210,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, portal } = parsed.data;
 
   if (!shouldUseSupabaseGateway()) {
     try {
-      return await localLogin(email, password, ipAddress, userAgent);
+      return await localLogin(email, password, portal, ipAddress, userAgent);
     } catch (error) {
       console.error("[POST /api/auth/login local]", error);
       return NextResponse.json(
@@ -203,6 +232,12 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(INVALID_CREDENTIALS, {
         status: 401,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+    if (!isRoleAllowedForPortal(result.session.role, portal)) {
+      return NextResponse.json(WRONG_PORTAL, {
+        status: 403,
         headers: { "Cache-Control": "no-store" },
       });
     }

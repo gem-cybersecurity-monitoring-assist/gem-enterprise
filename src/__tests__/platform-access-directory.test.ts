@@ -16,10 +16,10 @@ describe("GEM platform access directory", () => {
     ]);
     expect(accessPortalEntries.map((portal) => portal.href)).toEqual([
       "/login",
-      "/client-login?next=%2Fapp%2Fworkspace",
-      "/team-login?next=%2Fapp%2Fworkspace",
-      "/admin-login?next=%2Fapp%2Fadmin",
-      "/super-admin-login?next=%2Fapp%2Fadmin",
+      "/client-login",
+      "/team-login",
+      "/admin-login",
+      "/super-admin-login",
     ]);
   });
 

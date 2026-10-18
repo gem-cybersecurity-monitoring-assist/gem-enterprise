@@ -26,7 +26,7 @@ async function login(origin: string, email: string, password: string) {
   const response = await fetch(`${origin}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, portal: "admin" }),
     cache: "no-store",
     redirect: "manual",
   });

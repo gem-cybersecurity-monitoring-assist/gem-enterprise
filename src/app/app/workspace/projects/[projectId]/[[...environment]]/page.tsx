@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ProjectWorkspaceShell } from "@/components/workspace/ProjectWorkspaceShell";
 import { requireSession } from "@/lib/api/auth-helpers";
+import { resolveAccessDestination } from "@/lib/auth";
 import { getOrganizationProjectWorkspace } from "@/lib/organizationWorkspace";
 import { canOpenProjectEnvironment, isProjectEnvironment, projectEnvironments } from "@/lib/projectWorkspace";
 
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ProjectWorkspacePage({params}:{params:Promise<{projectId:string;environment?:string[]}>}) {
   const gate = await requireSession();
-  if (!gate.ok) redirect("/client-login?next=/app/workspace");
+  if (!gate.ok) redirect("/client-login");
+  if (gate.session.role !== "client") redirect(resolveAccessDestination(gate.session));
   if (gate.accountStatus !== "active") redirect("/client-login?status=account-review");
   const {projectId,environment:parts} = await params;
   const requested = parts?.[0] ?? "overview";

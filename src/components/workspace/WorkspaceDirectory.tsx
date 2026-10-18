@@ -29,10 +29,10 @@ export interface WorkspaceDirectoryItem {
 
 interface WorkspaceDirectoryProps {
   workspaces: WorkspaceDirectoryItem[];
-  selectedId: string;
+  selectedId?: string | null;
 }
 
-export function WorkspaceDirectory({ workspaces, selectedId }: WorkspaceDirectoryProps) {
+export function WorkspaceDirectory({ workspaces, selectedId = null }: WorkspaceDirectoryProps) {
   const [query, setQuery] = useState("");
   const normalized = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -56,7 +56,7 @@ export function WorkspaceDirectory({ workspaces, selectedId }: WorkspaceDirector
             Workspace directory
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-            Open only the organizations assigned to this account. Search changes the directory view; it never grants workspace access.
+            Choose one of the workspaces assigned to this account. Search changes only this directory view and never grants workspace access.
           </p>
         </div>
         <label className="relative block w-full lg:max-w-sm">
@@ -74,7 +74,7 @@ export function WorkspaceDirectory({ workspaces, selectedId }: WorkspaceDirector
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
         {filtered.map((workspace) => {
-          const active = workspace.id === selectedId;
+          const active = Boolean(selectedId && workspace.id === selectedId);
           return (
             <Link
               key={workspace.id}
