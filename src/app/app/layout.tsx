@@ -90,6 +90,7 @@ function navigationForRole(role: string | null): PlatformNavGroup[] {
         items: items([
           "/app/command-center",
           "/app/command-center/monitoring",
+          "/app/ai-services",
           "/app/command-center/agents",
           "/app/command-center/integrations",
         ]),
@@ -116,7 +117,7 @@ function navigationForRole(role: string | null): PlatformNavGroup[] {
   }
 
   return [
-    { label: "Workspace", items: items(["/app/workspace", "/app/dashboard", "/app/services", "/app/social-media"]) },
+    { label: "Workspace", items: items(["/app/workspace", "/app/dashboard", "/app/ai-services", "/app/integrations", "/app/services", "/app/social-media"]) },
     { label: "Project operations", items: items(["/app/requests", "/app/documents", "/app/meetings", "/app/messages"]) },
     { label: "Account", items: items(["/app/notifications", "/app/support", "/app/profile", "/app/security", "/app/settings"]) },
   ];

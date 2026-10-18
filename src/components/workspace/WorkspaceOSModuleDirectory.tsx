@@ -34,7 +34,9 @@ const moduleDestinations: Record<string, { href: string; label: string }> = {
   weekly_updates: { href: "#workspace-weekly-reporting", label: "Open reporting" },
   requests: { href: "/app/requests", label: "Open requests" },
   documents: { href: "/app/documents", label: "Open documents" },
-  integrations: { href: "/app/command-center/integrations", label: "Review integrations" },
+  reports: { href: "/app/dashboard", label: "Open reporting" },
+  automations: { href: "/app/ai-services", label: "Review AI services" },
+  integrations: { href: "/app/integrations", label: "Review integrations" },
 };
 
 function stateLabel(state: string) {

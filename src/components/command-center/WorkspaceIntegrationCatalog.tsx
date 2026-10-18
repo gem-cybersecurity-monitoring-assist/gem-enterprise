@@ -20,6 +20,8 @@ export interface WorkspaceIntegrationItem {
   category: string;
   status: string;
   readiness: "READY" | "PARTIAL" | "HUMAN_REQUIRED" | "BLOCKED";
+  capabilities?: readonly string[];
+  activationRequirements?: readonly string[];
 }
 
 export function WorkspaceIntegrationCatalog({
@@ -93,6 +95,8 @@ export function WorkspaceIntegrationCatalog({
           <DialogDescription className="text-sm leading-7 text-slate-300">{selected.description}</DialogDescription>
         </DialogHeader>
         <div className="rounded-xl border border-white/10 bg-white/[.025] p-4"><p className="text-xs uppercase tracking-wide text-slate-500">Current readiness</p><div className="mt-2 flex items-center justify-between gap-3"><span className="text-sm text-slate-300">{selected.status}</span><Badge className={readinessClass(selected.readiness)}>{selected.readiness.replaceAll("_"," ")}</Badge></div></div>
+        {selected.capabilities?.length ? <div><p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Capabilities</p><div className="mt-2 flex flex-wrap gap-2">{selected.capabilities.map((capability)=><Badge key={capability} variant="outline" className="border-cyan-400/15 text-cyan-100">{capability}</Badge>)}</div></div> : null}
+        {selected.activationRequirements?.length ? <div><p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Activation requirements</p><ul className="mt-2 space-y-2">{selected.activationRequirements.map((requirement)=><li key={requirement} className="rounded-lg border border-amber-400/15 bg-amber-400/[.035] px-3 py-2 text-xs leading-5 text-slate-300">{requirement}</li>)}</ul></div> : null}
         <Link href={scoped(selected.href)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200">Open governed surface <ArrowRight className="h-4 w-4"/></Link>
       </DialogContent>}
     </Dialog>

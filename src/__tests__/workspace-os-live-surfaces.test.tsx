@@ -37,7 +37,7 @@ describe("Workspace OS authoritative project surfaces", () => {
     expect(screen.getByRole("heading", { name: "Governed integration catalogue" })).toBeTruthy();
     expect(screen.getByText("GEM TikTok")).toBeTruthy();
     expect(screen.getByText("CONNECTED")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Integration command center/ }).getAttribute("href"))
+    expect(screen.getByRole("link", { name: /Workspace integration catalogue/ }).getAttribute("href"))
       .toContain("workspace=workspace-1&project=project-1");
   });
 

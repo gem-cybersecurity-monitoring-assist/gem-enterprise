@@ -64,8 +64,8 @@ const moduleDestinations: Record<string, string> = {
   requests: "/app/requests",
   documents: "/app/documents",
   reports: "#workspace-weekly-reporting",
-  automations: "/app/command-center/integrations",
-  integrations: "/app/command-center/integrations",
+  automations: "/app/ai-services",
+  integrations: "/app/integrations",
 };
 
 function scoped(href: string, workspaceId: string) {
@@ -124,9 +124,9 @@ export function OrganizationWorkspaceCommandLayer({
       ...moduleItems,
       {
         id: "platform:integrations",
-        label: "Integration command center",
-        description: "Inspect governed connector readiness and provider authorization state.",
-        href: scoped("/app/command-center/integrations", workspaceId),
+        label: "Workspace integrations",
+        description: "Inspect the membership-safe connector directory and provider activation requirements.",
+        href: scoped("/app/integrations", workspaceId),
         category: "Platform" as const,
       },
       {

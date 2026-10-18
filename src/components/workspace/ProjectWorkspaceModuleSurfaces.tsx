@@ -72,10 +72,10 @@ export function ProjectWorkspaceModuleSurfaces({
             </p>
           </div>
           <Link
-            href={scoped("/app/command-center/integrations", workspaceId, projectId)}
+            href={scoped("/app/integrations", workspaceId, projectId)}
             className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/[.05] px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
-            Integration command center
+            Workspace integration catalogue
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>

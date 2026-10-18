@@ -82,9 +82,9 @@ export function WorkspaceOSCommandLayer({
       },
       {
         id: "platform:integrations",
-        label: "Integration command center",
-        description: "Inspect governed connector readiness and authorization state.",
-        href: appendScope("/app/command-center/integrations", workspaceId, projectId),
+        label: "Workspace integrations",
+        description: "Inspect governed connector capabilities, readiness, and activation requirements.",
+        href: appendScope("/app/integrations", workspaceId, projectId),
         category: "Platform" as const,
       },
       {

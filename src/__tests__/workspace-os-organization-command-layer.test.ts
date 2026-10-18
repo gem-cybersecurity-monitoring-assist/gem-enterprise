@@ -26,7 +26,10 @@ describe("Workspace OS organization command layer", () => {
     expect(commandLayer).toContain('module.state === "AVAILABLE"');
     expect(commandLayer).toContain('module.state === "SETUP_IN_PROGRESS"');
     expect(commandLayer).toContain("The module remains fail-closed.");
-    expect(commandLayer).toContain('/app/command-center/integrations');
+    expect(commandLayer).toContain('automations: "/app/ai-services"');
+    expect(commandLayer).toContain('integrations: "/app/integrations"');
+    expect(commandLayer).toContain('href: scoped("/app/integrations", workspaceId)');
+    expect(commandLayer).not.toContain('href: scoped("/app/command-center/integrations", workspaceId)');
     expect(commandLayer).toContain('/app/social-media/video');
     expect(commandLayer).toContain('/app/command-center/integrations/news');
     expect(commandLayer).toContain('/app/support');

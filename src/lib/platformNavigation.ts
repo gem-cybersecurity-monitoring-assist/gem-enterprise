@@ -113,6 +113,18 @@ export const clientPortalNavGroups: PlatformNavGroup[] = [
           "Social accounts, content, governed video, TokMetric, approvals, scheduling, and analytics.",
       },
       {
+        href: "/app/ai-services",
+        icon: "Bot",
+        label: "AI Services",
+        description: "Governed assistance, intelligence, agent, automation, and AI-media surfaces.",
+      },
+      {
+        href: "/app/integrations",
+        icon: "Plug",
+        label: "Integrations",
+        description: "Read-only governed connector directory and activation requirements.",
+      },
+      {
         href: "/app/portfolios",
         icon: "Briefcase",
         label: "Portfolios",
