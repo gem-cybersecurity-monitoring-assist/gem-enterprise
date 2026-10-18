@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ExternalLink,
   Film,
@@ -43,22 +43,6 @@ type PreviewResponse = {
   error?: { message?: string };
 };
 
-type VideoLibraryWorkspace = {
-  id: string;
-  name: string;
-  contents: Array<{
-    id: string;
-    title: string;
-    mediaAssets: Array<{ id: string; fileName: string }>;
-  }>;
-};
-
-type VideoLibraryResponse = {
-  ok?: boolean;
-  data?: { workspaces: VideoLibraryWorkspace[] };
-  error?: { message?: string };
-};
-
 function formatBytes(value: number) {
   if (!Number.isFinite(value) || value <= 0) return "Unknown size";
   const units = ["B", "KB", "MB", "GB"];
@@ -76,17 +60,27 @@ function label(value: string | null | undefined, fallback: string) {
 export function GovernedVideoPreviewPanel() {
   const [workspaceId, setWorkspaceId] = useState("");
   const [contentId, setContentId] = useState("");
-  const [workspaces, setWorkspaces] = useState<VideoLibraryWorkspace[]>([]);
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(
-    "Loading the approved video library for your authorized workspaces…",
+    "Enter a finalized video content ID to load its authorized workspace preview.",
   );
 
-  const fetchPreview = useCallback(async (nextWorkspaceId: string, nextContentId: string) => {
-    if (!nextWorkspaceId.trim() || !nextContentId.trim()) {
+  useEffect(() => {
+    const saved = window.localStorage.getItem("gem-social-workspace-id");
+    if (saved) setWorkspaceId(saved);
+  }, []);
+
+  useEffect(() => {
+    if (workspaceId) {
+      window.localStorage.setItem("gem-social-workspace-id", workspaceId);
+    }
+  }, [workspaceId]);
+
+  async function loadPreview() {
+    if (!workspaceId.trim() || !contentId.trim()) {
       setPreview(null);
-      setMessage("Select an approved video from an authorized workspace.");
+      setMessage("Enter both the workspace ID and the video content ID.");
       return;
     }
 
@@ -94,7 +88,7 @@ export function GovernedVideoPreviewPanel() {
     setMessage("");
     try {
       const response = await fetch(
-        `/api/video/content/${encodeURIComponent(nextContentId.trim())}/preview?workspaceId=${encodeURIComponent(nextWorkspaceId.trim())}`,
+        `/api/video/content/${encodeURIComponent(contentId.trim())}/preview?workspaceId=${encodeURIComponent(workspaceId.trim())}`,
         { cache: "no-store" },
       );
       const payload = (await response.json()) as PreviewResponse;
@@ -116,60 +110,6 @@ export function GovernedVideoPreviewPanel() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    async function loadLibrary() {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/tokmetric/publishing/context", { cache: "no-store" });
-        const payload = (await response.json()) as VideoLibraryResponse;
-        if (!response.ok || !payload.data) {
-          throw new Error(payload.error?.message || "The approved video library could not be loaded.");
-        }
-        if (!active) return;
-        const available = payload.data.workspaces.filter((workspace) => workspace.contents.length > 0);
-        setWorkspaces(available);
-        const savedWorkspaceId = window.localStorage.getItem("gem-social-workspace-id");
-        const initialWorkspace = available.find((workspace) => workspace.id === savedWorkspaceId) ?? available[0];
-        const initialContent = initialWorkspace?.contents[0];
-        setWorkspaceId(initialWorkspace?.id ?? "");
-        setContentId(initialContent?.id ?? "");
-        if (initialWorkspace && initialContent) {
-          void fetchPreview(initialWorkspace.id, initialContent.id);
-        } else {
-          setMessage("No approved video is available yet. Finalize a render and complete exact-version approval first.");
-        }
-      } catch (error) {
-        if (active) setMessage(error instanceof Error ? error.message : "The approved video library could not be loaded.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    void loadLibrary();
-    return () => { active = false; };
-  }, [fetchPreview]);
-
-  useEffect(() => {
-    if (workspaceId) window.localStorage.setItem("gem-social-workspace-id", workspaceId);
-  }, [workspaceId]);
-
-  const selectedWorkspace = workspaces.find((workspace) => workspace.id === workspaceId);
-
-  function changeWorkspace(nextWorkspaceId: string) {
-    const nextWorkspace = workspaces.find((workspace) => workspace.id === nextWorkspaceId);
-    const nextContentId = nextWorkspace?.contents[0]?.id ?? "";
-    setWorkspaceId(nextWorkspaceId);
-    setContentId(nextContentId);
-    setPreview(null);
-    if (nextContentId) void fetchPreview(nextWorkspaceId, nextContentId);
-  }
-
-  function changeContent(nextContentId: string) {
-    setContentId(nextContentId);
-    setPreview(null);
-    if (nextContentId) void fetchPreview(workspaceId, nextContentId);
   }
 
   return (
@@ -191,25 +131,24 @@ export function GovernedVideoPreviewPanel() {
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-        <select
+        <input
           value={workspaceId}
-          onChange={(event) => changeWorkspace(event.target.value)}
+          onChange={(event) => setWorkspaceId(event.target.value)}
+          placeholder="TokMetric workspace ID"
           className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500/40"
-        >
-          <option value="">Select workspace</option>
-          {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
-        </select>
-        <select
+        />
+        <input
           value={contentId}
-          onChange={(event) => changeContent(event.target.value)}
+          onChange={(event) => setContentId(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void loadPreview();
+          }}
+          placeholder="Finalized video content ID"
           className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500/40"
-        >
-          <option value="">Select approved video</option>
-          {selectedWorkspace?.contents.map((content) => <option key={content.id} value={content.id}>{content.title}</option>)}
-        </select>
+        />
         <button
           type="button"
-          onClick={() => void fetchPreview(workspaceId, contentId)}
+          onClick={loadPreview}
           disabled={loading}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-400 px-4 py-2.5 text-sm font-semibold text-black hover:bg-violet-300 disabled:opacity-50"
         >

@@ -9,6 +9,7 @@ let intersectionCallback: IntersectionObserverCallback | null = null;
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root = null;
   readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
   readonly thresholds = [0.55];
   constructor(callback: IntersectionObserverCallback) {
     intersectionCallback = callback;

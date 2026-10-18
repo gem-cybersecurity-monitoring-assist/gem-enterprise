@@ -1,25 +1,33 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/auth-helpers";
-import { deploymentPlan, platformConfigurationEvidence } from "@/lib/platformEnvironment";
+import { getSession } from "@/lib/auth";
+import { deploymentPlan } from "@/lib/platformEnvironment";
 
 export async function GET() {
-  const gate = await requireAdmin();
-  if (!gate.ok) return gate.response;
+  const session = await getSession();
 
-  return NextResponse.json({ deploymentPlan, evidence: platformConfigurationEvidence() }, { headers: { "Cache-Control": "no-store" } });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({ deploymentPlan });
 }
 
 export async function POST() {
-  const gate = await requireAdmin();
-  if (!gate.ok) return gate.response;
+  const session = await getSession();
 
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.role !== "admin" && session.role !== "super_admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   return NextResponse.json(
     {
       error: "Deployment plan creation should be persisted and reviewed before production deployment actions are enabled.",
       deploymentPlan,
-      evidence: platformConfigurationEvidence(),
     },
-    { status: 501, headers: { "Cache-Control": "no-store" } },
+    { status: 501 },
   );
 }

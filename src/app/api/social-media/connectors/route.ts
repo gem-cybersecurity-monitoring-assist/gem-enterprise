@@ -15,8 +15,6 @@ import {
   disconnectSocialConnector,
   listSocialConnectors,
 } from "@/lib/social-media/oauth/connectors";
-import { getPausedSocialProviders } from "@/lib/social-media/oauth/provider-pause";
-import { readLiveProbeSignal } from "@/lib/social-media/oauth/probes";
 
 const disconnectSchema = z.object({
   workspaceId: z.string().trim().min(1),
@@ -50,21 +48,8 @@ export async function GET(request: NextRequest) {
     }
     await requireWorkspaceAccess(workspaceId, session);
     const connectors = await listSocialConnectors(workspaceId);
-    const pausedProviders = await getPausedSocialProviders(workspaceId);
-    const paused = new Set(pausedProviders);
-    const enriched = connectors.map((connector) => ({
-      ...connector,
-      providerPaused: paused.has(connector.provider),
-      liveProbe: readLiveProbeSignal(connector.safeMetadata),
-    }));
     return NextResponse.json(
-      {
-        ok: true,
-        correlationId: cid,
-        connectors: enriched,
-        pausedProviders,
-        externalActionTaken: false,
-      },
+      { ok: true, correlationId: cid, connectors, externalActionTaken: false },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
@@ -97,10 +82,7 @@ export async function DELETE(request: NextRequest) {
       sourceChannel: "website",
       metadata: {
         credentialDeleted: true,
-        externalRevocationAttempted: result.externalRevocationAttempted,
-        externalRevocationOutcome: result.externalRevocationOutcome,
-        externalRevocationAt: result.externalRevocationAt,
-        externalRevocationError: result.externalRevocationError || null,
+        externalRevocationAttempted: false,
         externalPublishingEnabled: false,
       },
     });
