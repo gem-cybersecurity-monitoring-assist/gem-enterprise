@@ -40,6 +40,7 @@ export interface DailyContentOrchestrationInput {
   localContext?: string;
   minimumTikTokItems?: number;
   maxItemsPerOtherProvider?: number;
+  // Accepted for API compatibility while AUTO_POLICY orchestration remains fail-closed.
   providerTargets?: Partial<Record<SocialMediaProviderId, number>>;
   approvalMode?: "HUMAN" | "AUTO_POLICY";
   freshnessWindowDays?: number | null;
@@ -74,15 +75,8 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
-function dailyCampaignTitle(
-  planDate: Date,
-  approvalMode: "HUMAN" | "AUTO_POLICY" = "HUMAN",
-) {
-  const prefix =
-    approvalMode === "AUTO_POLICY"
-      ? "GEM Social Autopilot Plan"
-      : "GEM Adaptive Content Plan";
-  return `${prefix} ${planDate.toISOString().slice(0, 10)}`;
+function dailyCampaignTitle(planDate: Date) {
+  return `GEM Adaptive Content Plan ${planDate.toISOString().slice(0, 10)}`;
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -111,7 +105,7 @@ async function existingDailyPlan(input: DailyContentOrchestrationInput) {
   const campaign = await db.campaign.findFirst({
     where: {
       workspaceId: input.workspaceId,
-      title: dailyCampaignTitle(input.planDate, input.approvalMode),
+      title: dailyCampaignTitle(input.planDate),
     },
     include: {
       contents: {
@@ -139,17 +133,12 @@ async function existingDailyPlan(input: DailyContentOrchestrationInput) {
       const review = content.reviews[0];
       if (!contentProvider || !fingerprint || !review) return [];
       const approval = content.approvals[0];
-      const autoPolicy =
-        orchestration.approvalMode === "AUTO_POLICY" &&
-        ["PASS", "PASS_WITH_DISCLOSURE"].includes(review.result);
       const state: MaterializedContentResult["state"] =
         review.result === "BLOCKED" || review.result === "CHANGES_REQUIRED"
           ? "COMPLIANCE_BLOCKED"
-          : autoPolicy
-            ? "AUTO_POLICY_READY"
-            : approval
-              ? "AWAITING_HUMAN_APPROVAL"
-              : "COMPLIANCE_REVIEW_REQUIRED";
+          : approval
+            ? "AWAITING_HUMAN_APPROVAL"
+            : "COMPLIANCE_REVIEW_REQUIRED";
       return [
         {
           contentId: content.id,
@@ -178,18 +167,11 @@ async function existingDailyPlan(input: DailyContentOrchestrationInput) {
     approvalRequired: true as const,
     complianceReviewRequired: true as const,
     externalActionTaken: false as const,
-    humanInteraction:
-      input.approvalMode === "AUTO_POLICY"
-        ? {
-            required: false,
-            responseMode: "AUTOMATED" as const,
-            livePerformanceReviewRequired: false,
-          }
-        : {
-            required: true,
-            responseMode: "REAL_TIME" as const,
-            livePerformanceReviewRequired: true,
-          },
+    humanInteraction: {
+      required: true as const,
+      responseMode: "REAL_TIME" as const,
+      livePerformanceReviewRequired: true as const,
+    },
   }));
 
   return {
@@ -209,18 +191,10 @@ async function createDailyCampaign(input: {
   actorId: string;
   correlationId: string;
   plan: DailyContentPlan;
-  approvalMode: "HUMAN" | "AUTO_POLICY";
 }) {
-  const title = dailyCampaignTitle(
-    new Date(`${input.plan.planDate}T00:00:00.000Z`),
-    input.approvalMode,
-  );
+  const title = dailyCampaignTitle(new Date(`${input.plan.planDate}T00:00:00.000Z`));
   const payload = {
-    type:
-      input.approvalMode === "AUTO_POLICY"
-        ? "AUTONOMOUS_DAILY_SOCIAL_CONTENT"
-        : "ADAPTIVE_DAILY_SOCIAL_CONTENT",
-    approvalMode: input.approvalMode,
+    type: "ADAPTIVE_DAILY_SOCIAL_CONTENT",
     planDate: input.plan.planDate,
     draftFingerprints: input.plan.drafts.map((draft) => draft.fingerprint),
     rejectedReasons: input.plan.rejectedReasons,
@@ -322,8 +296,6 @@ export async function orchestrateDailyContent(
     enabledProviders: input.enabledProviders,
     minimumTikTokItems: input.minimumTikTokItems,
     maxItemsPerOtherProvider: input.maxItemsPerOtherProvider,
-    providerTargets: input.providerTargets,
-    approvalMode: input.approvalMode,
     freshnessWindowDays: input.freshnessWindowDays,
   });
 
@@ -341,7 +313,6 @@ export async function orchestrateDailyContent(
     actorId: input.actorId,
     correlationId: input.correlationId,
     plan,
-    approvalMode: input.approvalMode ?? "HUMAN",
   });
   const sourcesById = new Map(approvedSources.map((source) => [source.id, source]));
   const signalsById = new Map(learnedSignals.map((signal) => [signal.id, signal]));
@@ -362,7 +333,6 @@ export async function orchestrateDailyContent(
       source,
       signal,
       localContext: draft.provider === "NEXTDOOR" ? input.localContext : undefined,
-      approvalMode: input.approvalMode ?? "HUMAN",
     });
     const settings = {
       title: contentPackage.title,
@@ -387,7 +357,6 @@ export async function orchestrateDailyContent(
         sourceMaterialId: draft.sourceMaterialId,
         signalId: draft.signalId,
         humanInteraction: draft.humanInteraction,
-        approvalMode: input.approvalMode ?? "HUMAN",
       },
       videoRecipe: contentPackage.shortVideo,
       visualBrief: contentPackage.visualBrief,
@@ -441,12 +410,9 @@ export async function orchestrateDailyContent(
       state:
         review.result === "BLOCKED" || review.result === "CHANGES_REQUIRED"
           ? "COMPLIANCE_BLOCKED"
-          : input.approvalMode === "AUTO_POLICY" &&
-              ["PASS", "PASS_WITH_DISCLOSURE"].includes(review.result)
-            ? "AUTO_POLICY_READY"
-            : approvalRequestId
-              ? "AWAITING_HUMAN_APPROVAL"
-              : "COMPLIANCE_REVIEW_REQUIRED",
+          : approvalRequestId
+            ? "AWAITING_HUMAN_APPROVAL"
+            : "COMPLIANCE_REVIEW_REQUIRED",
     });
   }
 
