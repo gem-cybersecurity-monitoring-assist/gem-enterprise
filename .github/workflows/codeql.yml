@@ -1,7 +1,15 @@
-name: Manual CodeQL Analysis
+name: CodeQL Analysis
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "17 5 * * 1"
 
 permissions:
   contents: read
@@ -10,13 +18,13 @@ permissions:
   security-events: write
 
 concurrency:
-  group: manual-codeql-${{ github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
 
     strategy:

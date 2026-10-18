@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "video:worker": "tsx scripts/video-render-worker.ts",
     "video:worker:once": "tsx scripts/video-render-worker.ts --once",
     "video:worker:check": "tsx scripts/video-render-worker.ts --check",
