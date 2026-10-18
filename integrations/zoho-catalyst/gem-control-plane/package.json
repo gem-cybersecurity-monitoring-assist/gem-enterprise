@@ -1,0 +1,13 @@
+{
+  "name": "gem_control_plane",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test --test-concurrency=1"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "zcatalyst-sdk-node": "^2.2.0"
+  }
+}

@@ -1,0 +1,36 @@
+# Development-only deployment pipeline for PR #351 / Project-Rainfall.
+# Do not promote this workflow to Production before the Development smoke-test gate passes.
+version: 1
+
+jobs:
+  validate_and_deploy_gem_control_plane:
+    steps:
+      - >-
+        set -eu;
+        ROOT="$(pwd)";
+        cd "$ROOT/integrations/zoho-catalyst/gem-control-plane";
+        npm install;
+        npm test;
+        cd "$ROOT";
+        npm install -g zcatalyst-cli@1.27.2;
+        catalyst --version;
+        rm -rf "$ROOT/.catalyst-deploy";
+        mkdir -p "$ROOT/.catalyst-deploy";
+        cd "$ROOT/.catalyst-deploy";
+        catalyst init -ni --project 85214000000014023 --org 939258801 --token << env.CATALYST_TOKEN >> --force;
+        catalyst pull -ni functions --resource gem_control_plane --overwrite --project 85214000000014023 --org 939258801 --token << env.CATALYST_TOKEN >>;
+        cp "$ROOT/integrations/zoho-catalyst/gem-control-plane/index.js" functions/gem_control_plane/index.js;
+        cp "$ROOT/integrations/zoho-catalyst/gem-control-plane/bridge.js" functions/gem_control_plane/bridge.js;
+        cp "$ROOT/integrations/zoho-catalyst/gem-control-plane/package.json" functions/gem_control_plane/package.json;
+        rm -rf functions/gem_control_plane/test;
+        cp -R "$ROOT/integrations/zoho-catalyst/gem-control-plane/test" functions/gem_control_plane/test;
+        cd functions/gem_control_plane;
+        npm install;
+        npm test;
+        cd "$ROOT/.catalyst-deploy";
+        catalyst deploy --only functions:gem_control_plane --project 85214000000014023 --org 939258801 --token << env.CATALYST_TOKEN >>;
+
+stages:
+  - name: validate-and-deploy-development
+    jobs:
+      - validate_and_deploy_gem_control_plane
