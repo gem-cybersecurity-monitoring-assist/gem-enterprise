@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { clientWorkspaceModules } from "@/lib/clientWorkspaceCatalog";
 
 export function isSameOriginWorkspaceRequest(origin: string | null, requestOrigin: string) {
   if (!origin) return false;
@@ -87,7 +86,16 @@ export async function getOrganizationWorkspaceOverview(userId: string, workspace
     members,
     roles,
     viewerUserId: userId,
-    modules: clientWorkspaceModules,
+    modules: [
+      { id: "projects", label: "Projects", state: "AVAILABLE" },
+      { id: "team", label: "Team", state: "AVAILABLE" },
+      { id: "weekly_updates", label: "Weekly updates", state: "AVAILABLE" },
+      { id: "requests", label: "Service requests", state: "AVAILABLE" },
+      { id: "documents", label: "Documents", state: "SETUP_IN_PROGRESS" },
+      { id: "reports", label: "Reports", state: "SETUP_IN_PROGRESS" },
+      { id: "automations", label: "Automations", state: "NOT_ACTIVATED" },
+      { id: "integrations", label: "Integrations", state: "NOT_ACTIVATED" },
+    ],
   };
 }
 

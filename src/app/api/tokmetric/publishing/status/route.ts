@@ -4,8 +4,7 @@ import {
   correlationId,
   parseJson,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireSameOriginRequest,
+  requireTokMetricSession,
   requireWorkspaceAccess,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -24,8 +23,7 @@ type PublishStatusPayload = {
 export async function POST(request: NextRequest) {
   const cid = correlationId(request);
   try {
-    requireSameOriginRequest(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireTokMetricSession(request);
     const input = await parseJson(request, schema) as PublishStatusPayload;
     const membership = await requireWorkspaceAccess(input.workspaceId, session);
     requirePermission(membership, "publish", "content");

@@ -3,23 +3,25 @@ import type {
   SocialPublishingAdapterInput,
   SocialPublishingAdapterResult,
 } from "./types";
-import type { YouTubePrivacyStatus } from "./provider-uploads";
-import {
-  linkedInUgcPostBody,
-  uploadMediaToLinkedIn,
-  uploadVideoToYouTube,
-  uploadMediaToX,
-  youtubePrivacyStatus,
-} from "./provider-uploads";
-import { markYoutubeUploadCertified } from "./capabilities";
-import { resolveNextdoorPublishEndpoint } from "./nextdoor";
-import { telegramPublishingAdapter } from "@/lib/social-media/providers/telegram";
-
-import { SocialPublishingAdapterError } from "./errors";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
 type JsonRecord = Record<string, unknown>;
+
+export class SocialPublishingAdapterError extends Error {
+  constructor(
+    public code: string,
+    message: string,
+    public options: {
+      retryable?: boolean;
+      reauthorizationRequired?: boolean;
+      providerStatusCode?: number;
+      safeMetadata?: Record<string, unknown>;
+    } = {},
+  ) {
+    super(message);
+  }
+}
 
 export interface SocialPublishingAdapter {
   publish(input: SocialPublishingAdapterInput): Promise<SocialPublishingAdapterResult>;
@@ -314,7 +316,6 @@ async function xCreatePost(input: {
   accessToken: string;
   text: string;
   replyTo?: string;
-  mediaIds?: string[];
 }) {
   const response = await fetch("https://api.x.com/2/tweets", {
     method: "POST",
@@ -325,9 +326,6 @@ async function xCreatePost(input: {
     },
     body: JSON.stringify({
       text: input.text,
-      ...(input.mediaIds && input.mediaIds.length > 0
-        ? { media: { media_ids: input.mediaIds } }
-        : {}),
       ...(input.replyTo
         ? { reply: { in_reply_to_tweet_id: input.replyTo } }
         : {}),
@@ -355,24 +353,11 @@ async function xCreatePost(input: {
 
 const xAdapter: SocialPublishingAdapter = {
   async publish(input) {
-    const mediaUrls = (input.job.payload.mediaUrls || []).filter(
-      (url): url is string => typeof url === "string" && url.trim().length > 0,
-    );
-    if (mediaUrls.length > 4) {
+    if ((input.job.payload.mediaUrls || []).length > 0) {
       throw new SocialPublishingAdapterError(
-        "X_MEDIA_COUNT_INVALID",
-        "X publishing supports at most four media attachments per post.",
+        "X_MEDIA_UPLOAD_NOT_CERTIFIED",
+        "X media upload is not certified for this publishing worker.",
       );
-    }
-    // Two-phase upload (INIT -> APPEND -> FINALIZE) before the tweet exists.
-    const uploaded: string[] = [];
-    for (const [index, mediaUrl] of mediaUrls.entries()) {
-      const result = await uploadMediaToX({
-        accessToken: input.accessToken,
-        mediaUrl,
-        field: `mediaUrls[${index}]`,
-      });
-      uploaded.push(result.mediaId);
     }
     const messages = input.job.contentType === "THREAD"
       ? input.job.payload.thread || []
@@ -387,13 +372,11 @@ const xAdapter: SocialPublishingAdapter = {
     const ids: string[] = [];
     let replyTo: string | undefined;
     let providerStatusCode: number | undefined;
-    for (const [index, text] of messages.entries()) {
+    for (const text of messages) {
       const created = await xCreatePost({
         accessToken: input.accessToken,
         text: text.trim(),
         replyTo,
-        // Media attaches to the first post of the thread only.
-        mediaIds: index === 0 ? uploaded : undefined,
       });
       ids.push(created.id);
       replyTo = created.id;
@@ -403,54 +386,19 @@ const xAdapter: SocialPublishingAdapter = {
       externalPostId: ids[0]!,
       externalPostUrl: `https://x.com/i/web/status/${ids[0]}`,
       providerStatusCode,
-      safeMetadata: {
-        postIds: ids,
-        threadLength: ids.length,
-        mediaIds: uploaded,
-      },
+      safeMetadata: { postIds: ids, threadLength: ids.length },
     };
   },
 };
 
-async function linkedInCreateUgcPost(input: {
-  accessToken: string;
-  body: Record<string, unknown>;
-}) {
-  const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${input.accessToken}`,
-      "Content-Type": "application/json",
-      "X-Restli-Protocol-Version": "2.0.0",
-    },
-    body: JSON.stringify(input.body),
-    cache: "no-store",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }).catch(() => {
-    throw new SocialPublishingAdapterError(
-      "LINKEDIN_REQUEST_UNAVAILABLE",
-      "LinkedIn publishing is temporarily unavailable.",
-      { retryable: true },
-    );
-  });
-  const payload = await responsePayload(response);
-  if (!response.ok) providerFailure("LINKEDIN_COMPANY", response, payload);
-  const id =
-    response.headers.get("x-restli-id")?.trim() ||
-    stringValue(payload.id) ||
-    stringValue(payload.urn);
-  if (!id) {
-    throw new SocialPublishingAdapterError(
-      "LINKEDIN_PUBLISH_RESPONSE_INVALID",
-      "LinkedIn did not return a post identifier.",
-    );
-  }
-  return { id, status: response.status };
-}
-
 const linkedInAdapter: SocialPublishingAdapter = {
   async publish(input) {
+    if ((input.job.payload.mediaUrls || []).length > 0) {
+      throw new SocialPublishingAdapterError(
+        "LINKEDIN_MEDIA_UPLOAD_NOT_CERTIFIED",
+        "LinkedIn media upload is not certified for this publishing worker.",
+      );
+    }
     const commentary = joinedMessage(
       input.job.payload.text,
       input.job.payload.linkUrl,
@@ -461,135 +409,91 @@ const linkedInAdapter: SocialPublishingAdapter = {
         "LinkedIn publishing requires approved commentary.",
       );
     }
-    const author = `urn:li:organization:${input.externalAccountId}`;
-    const mediaUrls = (input.job.payload.mediaUrls || []).filter(
-      (url): url is string => typeof url === "string" && url.trim().length > 0,
-    );
-    if (mediaUrls.length > 1) {
+    const version = process.env.LINKEDIN_API_VERSION?.trim();
+    if (!version) {
       throw new SocialPublishingAdapterError(
-        "LINKEDIN_MEDIA_COUNT_INVALID",
-        "LinkedIn publishing supports one image or video per post; multi-image carousels are not implemented.",
+        "LINKEDIN_API_VERSION_NOT_CONFIGURED",
+        "LinkedIn API version is not configured.",
       );
     }
-
-    let uploadedUrn: string | undefined;
-    let mediaKind: "image" | "video" | undefined;
-    if (mediaUrls.length === 1) {
-      const kind =
-        input.job.contentType === "SHORT_VIDEO" ||
-        input.job.contentType === "LONG_VIDEO"
-          ? ("video" as const)
-          : ("image" as const);
-      const uploaded = await uploadMediaToLinkedIn({
-        accessToken: input.accessToken,
-        externalAccountId: input.externalAccountId,
-        mediaUrl: mediaUrls[0]!,
-        field: "mediaUrls[0]",
-        kind,
-      });
-      uploadedUrn = uploaded.urn;
-      mediaKind = kind;
+    const author = `urn:li:organization:${input.externalAccountId}`;
+    const response = await fetch("https://api.linkedin.com/rest/posts", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${input.accessToken}`,
+        "Content-Type": "application/json",
+        "LinkedIn-Version": version,
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+      body: JSON.stringify({
+        author,
+        commentary,
+        visibility: "PUBLIC",
+        distribution: {
+          feedDistribution: "MAIN_FEED",
+          targetEntities: [],
+          thirdPartyDistributionChannels: [],
+        },
+        lifecycleState: "PUBLISHED",
+        isReshareDisabledByAuthor: false,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }).catch(() => {
+      throw new SocialPublishingAdapterError(
+        "LINKEDIN_REQUEST_UNAVAILABLE",
+        "LinkedIn publishing is temporarily unavailable.",
+        { retryable: true },
+      );
+    });
+    const payload = await responsePayload(response);
+    if (!response.ok) providerFailure("LINKEDIN_COMPANY", response, payload);
+    const id =
+      response.headers.get("x-restli-id")?.trim() ||
+      stringValue(payload.id) ||
+      stringValue(payload.urn);
+    if (!id) {
+      throw new SocialPublishingAdapterError(
+        "LINKEDIN_PUBLISH_RESPONSE_INVALID",
+        "LinkedIn did not return a post identifier.",
+      );
     }
-
-    const body = linkedInUgcPostBody({
-      author,
-      commentary,
-      mediaUrn: uploadedUrn,
-      mediaKind,
-      mediaTitle: input.job.payload.title,
-    });
-
-    const created = await linkedInCreateUgcPost({
-      accessToken: input.accessToken,
-      body,
-    });
     return {
-      externalPostId: created.id,
-      providerStatusCode: created.status,
-      safeMetadata: { author, mediaUrn: uploadedUrn },
+      externalPostId: id,
+      providerStatusCode: response.status,
+      safeMetadata: { author },
     };
   },
 };
 
 const youtubeAdapter: SocialPublishingAdapter = {
-  async publish(input) {
-    const metadata = object(input.job.payload.metadata);
-    if (
-      metadata.aigcDisclosureRequired === true &&
-      input.job.payload.syntheticContentDisclosure !== true
-    ) {
-      throw new SocialPublishingAdapterError(
-        "YOUTUBE_SYNTHETIC_CONTENT_DISCLOSURE_REQUIRED",
-        "YouTube synthetic-content disclosure must be applied before upload.",
-      );
-    }
-    const { job, accessToken } = input;
-    if (job.contentType !== "SHORT_VIDEO" && job.contentType !== "LONG_VIDEO") {
-      throw new SocialPublishingAdapterError(
-        "YOUTUBE_VIDEO_REQUIRED",
-        "YouTube publishing requires an approved video content type.",
-      );
-    }
-    const mediaUrls = (job.payload.mediaUrls || []).filter(
-      (url): url is string => typeof url === "string" && url.trim().length > 0,
+  async publish() {
+    throw new SocialPublishingAdapterError(
+      "YOUTUBE_UPLOAD_PIPELINE_NOT_CERTIFIED",
+      "YouTube upload requires the certified resumable media pipeline before publishing can be enabled.",
     );
-    if (mediaUrls.length !== 1) {
-      throw new SocialPublishingAdapterError(
-        "YOUTUBE_MEDIA_REQUIRED",
-        "YouTube publishing requires exactly one approved video URL.",
-      );
-    }
-    const title =
-      job.payload.title?.trim() ||
-      job.payload.text?.trim().split("\n")[0]?.trim() ||
-      "";
-    const description =
-      job.payload.description?.trim() ||
-      [job.payload.text?.trim(), job.payload.linkUrl?.trim()]
-        .filter(Boolean)
-        .join("\n\n");
-    const privacyStatus: YouTubePrivacyStatus = youtubePrivacyStatus(
-      job.payload.visibility,
-    );
-
-    const uploaded = await uploadVideoToYouTube({
-      accessToken,
-      mediaUrl: mediaUrls[0]!,
-      field: "mediaUrls[0]",
-      title,
-      description,
-      privacyStatus,
-    });
-
-    // Certification is honest by construction: markYoutubeUploadCertified is a
-    // no-op in test environments, so mocked HTTP can never claim it.
-    markYoutubeUploadCertified();
-
-    return {
-      externalPostId: uploaded.videoId,
-      externalPostUrl: uploaded.watchUrl,
-      safeMetadata: {
-        destination: "YOUTUBE",
-        videoId: uploaded.videoId,
-        processingStatus: uploaded.processingStatus,
-        privacyStatus,
-        byteLength: uploaded.byteLength,
-      },
-    };
   },
 };
 
 const nextdoorAdapter: SocialPublishingAdapter = {
   async publish(input) {
-    // BLOCKED-until-approved: the endpoint must be explicitly approved by a
-    // human operator on this workspace's connector (HUMAN_REQUIRED). The
-    // template lives server-side on the connector and is never sent to the
-    // browser.
-    const { endpoint, approvedBy, approvedAt } =
-      resolveNextdoorPublishEndpoint({
-        connectorMetadata: input.connectorMetadata,
-        externalAccountId: input.externalAccountId,
-      });
+    const template = process.env.NEXTDOOR_PUBLISH_URL_TEMPLATE?.trim();
+    if (!template || !template.includes("{profileId}")) {
+      throw new SocialPublishingAdapterError(
+        "NEXTDOOR_PUBLISH_ENDPOINT_NOT_APPROVED",
+        "Nextdoor publishing remains blocked until an approved Publish API endpoint is configured.",
+      );
+    }
+    const endpoint = new URL(
+      template.replace("{profileId}", encodeURIComponent(input.externalAccountId)),
+    );
+    if (endpoint.protocol !== "https:") {
+      throw new SocialPublishingAdapterError(
+        "NEXTDOOR_PUBLISH_ENDPOINT_INVALID",
+        "Nextdoor publishing endpoint must use HTTPS.",
+      );
+    }
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -625,11 +529,7 @@ const nextdoorAdapter: SocialPublishingAdapter = {
       externalPostId: id,
       externalPostUrl: stringValue(payload.url),
       providerStatusCode: response.status,
-      safeMetadata: {
-        destination: "NEXTDOOR",
-        endpointApprovedBy: approvedBy,
-        endpointApprovedAt: approvedAt,
-      },
+      safeMetadata: { destination: "NEXTDOOR" },
     };
   },
 };
@@ -641,7 +541,6 @@ const adapters: Record<SharedSocialPublishingProvider, SocialPublishingAdapter> 
   LINKEDIN_COMPANY: linkedInAdapter,
   YOUTUBE: youtubeAdapter,
   NEXTDOOR: nextdoorAdapter,
-  TELEGRAM: telegramPublishingAdapter,
 };
 
 export function getSocialPublishingAdapter(
@@ -649,5 +548,3 @@ export function getSocialPublishingAdapter(
 ) {
   return adapters[provider];
 }
-
-export { SocialPublishingAdapterError } from "./errors";

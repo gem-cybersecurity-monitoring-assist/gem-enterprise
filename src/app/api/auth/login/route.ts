@@ -159,12 +159,12 @@ async function localLogin(
 
 export async function POST(request: NextRequest) {
   const { ipAddress, userAgent } = getRequestContext(request);
-  const limit = await rateLimit(ipAddress, {
+  const limit = rateLimit(ipAddress, {
     key: "auth:login",
     windowMs: 5 * 60_000,
     max: 10,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
 
   let body: unknown;
   try {

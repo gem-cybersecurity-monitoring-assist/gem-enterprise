@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gatewayVerificationUnavailable } from "@/lib/kyc/gateway-guard";
 import { z } from "zod";
 import { emitAuditLog } from "@/lib/audit";
 import {
@@ -26,7 +25,6 @@ function json(body: unknown, status = 200) {
 export async function POST(request: NextRequest) {
   const gate = await requireSession();
   if (!gate.ok) return gate.response;
-  if (gate.session.authSource === "supabase_gateway") return gatewayVerificationUnavailable();
 
   let body: unknown;
   try {
