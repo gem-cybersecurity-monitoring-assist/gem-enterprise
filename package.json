@@ -36,7 +36,8 @@
     "db:push": "pnpm run db:schema:promote && prisma validate && prisma db push",
     "db:migrate": "pnpm run db:schema:promote && prisma validate && prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "pnpm run db:schema:promote && prisma studio"
+    "db:studio": "pnpm run db:schema:promote && prisma studio",
+    "postinstall": "node scripts/lovable-prisma-engines.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

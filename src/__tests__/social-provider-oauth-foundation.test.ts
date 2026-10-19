@@ -185,12 +185,12 @@ describe("cross-platform social OAuth foundation", () => {
     const callback = source("src/app/api/social-media/oauth/[provider]/callback/route.ts");
     const connectors = source("src/app/api/social-media/connectors/route.ts");
     const store = source("src/lib/social-media/oauth/store.ts");
-    expect(start).toContain("requireTokMetricSession");
+    expect(start).toContain("requireActiveTokMetricSession");
     expect(start).toContain('requirePermission(membership, "manage", "connectors")');
     expect(start).toContain('enforceEmergencyLocks(params.workspaceId, "connector")');
     expect(start).toContain("createSocialOAuthAuthorizationAttempt");
     expect(start).toContain('response.headers.set("Cache-Control", "no-store, max-age=0")');
-    expect(callback).toContain("getSessionFromRequest(request)");
+    expect(callback).toContain("requireActiveTokMetricSession");
     expect(callback).toContain("session.userId !== actorId");
     expect(callback).toContain('requirePermission(membership, "manage", "connectors")');
     expect(callback).toContain('enforceEmergencyLocks(state.workspaceId, "connector")');

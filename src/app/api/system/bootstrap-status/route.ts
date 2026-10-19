@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api/auth-helpers";
 import {
   bootstrapGatewayStatus,
   evidenceGatewayHealth,
@@ -17,7 +18,7 @@ function configuredAny(names: string[]) {
   return names.some(configured);
 }
 
-export async function GET() {
+async function collectBootstrapStatus() {
   const appUrlConfigured = configured("NEXT_PUBLIC_APP_URL");
   const databaseUrlConfigured = hasDirectDatabaseConfiguration();
   const directDatabaseUrlExplicitlyConfigured = configuredAny([
@@ -88,94 +89,110 @@ export async function GET() {
     missingCore.push("JWT_SECRET");
   }
 
+  return {
+    ok: true,
+    service: "gem-enterprise-bootstrap-status",
+    evaluatedAt: new Date().toISOString(),
+    deployment: {
+      commitSha: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? null,
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? null,
+      projectIdMatchesCanonical:
+        !process.env.VERCEL_PROJECT_ID ||
+        process.env.VERCEL_PROJECT_ID ===
+          "prj_VDGqnA7wZt2E65LLvT94ZOpnYc2Z",
+    },
+    core: {
+      ready: coreReady,
+      activeBackend,
+      gateway: {
+        selected: gatewaySelected,
+        operational: gatewayOperational,
+        diagnostic: gatewayDiagnostic,
+        administratorConfigured,
+      },
+      prisma: {
+        databaseUrlConfigured,
+        runtimeReady: localPrismaReady,
+        directDatabaseUrlExplicitlyConfigured,
+        databaseAdministrationReady:
+          databaseUrlConfigured && directDatabaseUrlExplicitlyConfigured,
+      },
+      authenticationConfigured: gatewayOperational || jwtSecretConfigured,
+      authenticationSource: gatewayOperational
+        ? "supabase_gateway"
+        : jwtSecretConfigured
+          ? "local_jwt"
+          : "missing",
+      passwordResetSigningConfigured: passwordResetSecretConfigured,
+      appUrlConfigured,
+      smtpConfigured,
+      missing: missingCore,
+    },
+    evidenceVault: {
+      infrastructureReady: evidenceGatewayOperational,
+      backend: "supabase_edge_gateway",
+      gateway: {
+        operational: evidenceGatewayOperational,
+        diagnostic: evidenceGatewayDiagnostic,
+        service: "gem-verify-evidence-gateway",
+        privateServiceRoleHeldInSupabase: true,
+        vercelServiceRoleRequired: false,
+        vercelScannerSecretsRequired: false,
+      },
+      activationReady: false,
+      activationState: "requires_authenticated_governance_check",
+      controls: [
+        "approved_active_retention_policy",
+        "operational_approval",
+        "different_administrator_upload_activation",
+      ],
+      uploadsFailClosed: true,
+      staleScanScheduler: {
+        provider: "supabase_pg_cron",
+        expectedIntervalMinutes: 10,
+        requiresVercelSecret: false,
+      },
+    },
+    scanner: {
+      backend: "supabase_edge_gateway",
+      engine: "gem-supabase-static-safety-v1",
+      assurance: "structural_file_safety_only",
+      antivirusEquivalent: false,
+      biometricAnalysis: false,
+      syntheticSelfTestEndpoint:
+        "https://www.gemcybersecurityassist.com/api/verify/evidence/internal-scanner/self-test",
+    },
+    safety: {
+      secretValuesExposed: false,
+      demoDataEnabled: process.env.SEED_DEMO_DATA === "true",
+      automaticDatabasePushEnabled: process.env.AUTO_DB_PUSH === "true",
+      automaticDatabaseSeedEnabled: process.env.AUTO_DB_SEED === "true",
+      automaticMigrationEnabled: process.env.RUN_DB_MIGRATIONS === "true",
+    },
+  };
+}
+
+const headers = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+};
+
+/**
+ * Anonymous callers get liveness and overall readiness only. Deployment metadata,
+ * backend topology, configuration posture and safety flags require an administrator.
+ */
+export async function GET() {
+  const [gate, status] = await Promise.all([requireAdmin(), collectBootstrapStatus()]);
+  if (gate.ok) return NextResponse.json(status, { status: 200, headers });
+
   return NextResponse.json(
     {
       ok: true,
-      service: "gem-enterprise-bootstrap-status",
-      evaluatedAt: new Date().toISOString(),
-      deployment: {
-        commitSha: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? null,
-        environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? null,
-        projectIdMatchesCanonical:
-          !process.env.VERCEL_PROJECT_ID ||
-          process.env.VERCEL_PROJECT_ID ===
-            "prj_VDGqnA7wZt2E65LLvT94ZOpnYc2Z",
-      },
-      core: {
-        ready: coreReady,
-        activeBackend,
-        gateway: {
-          selected: gatewaySelected,
-          operational: gatewayOperational,
-          diagnostic: gatewayDiagnostic,
-          administratorConfigured,
-        },
-        prisma: {
-          databaseUrlConfigured,
-          runtimeReady: localPrismaReady,
-          directDatabaseUrlExplicitlyConfigured,
-          databaseAdministrationReady:
-            databaseUrlConfigured && directDatabaseUrlExplicitlyConfigured,
-        },
-        authenticationConfigured: gatewayOperational || jwtSecretConfigured,
-        authenticationSource: gatewayOperational
-          ? "supabase_gateway"
-          : jwtSecretConfigured
-            ? "local_jwt"
-            : "missing",
-        passwordResetSigningConfigured: passwordResetSecretConfigured,
-        appUrlConfigured,
-        smtpConfigured,
-        missing: missingCore,
-      },
-      evidenceVault: {
-        infrastructureReady: evidenceGatewayOperational,
-        backend: "supabase_edge_gateway",
-        gateway: {
-          operational: evidenceGatewayOperational,
-          diagnostic: evidenceGatewayDiagnostic,
-          service: "gem-verify-evidence-gateway",
-          privateServiceRoleHeldInSupabase: true,
-          vercelServiceRoleRequired: false,
-          vercelScannerSecretsRequired: false,
-        },
-        activationReady: false,
-        activationState: "requires_authenticated_governance_check",
-        controls: [
-          "approved_active_retention_policy",
-          "operational_approval",
-          "different_administrator_upload_activation",
-        ],
-        uploadsFailClosed: true,
-        staleScanScheduler: {
-          provider: "supabase_pg_cron",
-          expectedIntervalMinutes: 10,
-          requiresVercelSecret: false,
-        },
-      },
-      scanner: {
-        backend: "supabase_edge_gateway",
-        engine: "gem-supabase-static-safety-v1",
-        assurance: "structural_file_safety_only",
-        antivirusEquivalent: false,
-        biometricAnalysis: false,
-        syntheticSelfTestEndpoint:
-          "https://www.gemcybersecurityassist.com/api/verify/evidence/internal-scanner/self-test",
-      },
-      safety: {
-        secretValuesExposed: false,
-        demoDataEnabled: process.env.SEED_DEMO_DATA === "true",
-        automaticDatabasePushEnabled: process.env.AUTO_DB_PUSH === "true",
-        automaticDatabaseSeedEnabled: process.env.AUTO_DB_SEED === "true",
-        automaticMigrationEnabled: process.env.RUN_DB_MIGRATIONS === "true",
-      },
+      service: status.service,
+      evaluatedAt: status.evaluatedAt,
+      core: { ready: status.core.ready },
+      detailsRequireAdministrator: true,
     },
-    {
-      status: 200,
-      headers: {
-        "Cache-Control": "no-store, max-age=0",
-        "X-Content-Type-Options": "nosniff",
-      },
-    },
+    { status: 200, headers },
   );
 }

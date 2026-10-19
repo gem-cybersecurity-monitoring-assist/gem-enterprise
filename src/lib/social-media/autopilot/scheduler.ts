@@ -81,8 +81,10 @@ export function buildSocialAutopilotSlots(input: {
 
   const slots: Date[] = [];
   for (let index = 0; index < count; index += 1) {
+    // The final slot skips jitter so its deterministic offset can never push
+    // it past the day window and silently drop a planned post.
     const jitter =
-      index === 0 || count === 1
+      index === 0 || count === 1 || index === count - 1
         ? 0
         : deterministicJitterMinutes(
             `${input.provider}|${dayStart.toISOString().slice(0, 10)}|${index}`,
