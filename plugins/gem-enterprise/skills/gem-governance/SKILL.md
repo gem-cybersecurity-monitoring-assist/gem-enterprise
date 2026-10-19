@@ -39,7 +39,8 @@ Base44 must not replace the website, database, or authentication; hold client, l
 
 ## Marketing and public claims
 
-- Every public statement must match an approved entry in `src/lib/publicClaims.ts`. Claims marked `block` must not appear in any page, post, advert, or email.
+- Claims about identity, credentials, staffing, coverage, availability, response times, monitoring, encryption, compliance, partnerships, pricing, or product availability need approved supporting evidence before publication.
+- When a claim is registered in `src/lib/publicClaims.ts`, use its approved wording. Claims marked `block` must not appear in any page, post, advert, or email.
 - Never describe sample, seeded, or manually entered information as live, verified, certified, guaranteed, or available 24/7.
 - AI-generated drafts are drafts only. They pass the claims check and an exact-version human approval before publication.
 
@@ -47,8 +48,9 @@ Base44 must not replace the website, database, or authentication; hold client, l
 
 - All publishing goes through the Social Media Command Center. TikTok goes only through TokMetric; never add a second TikTok connector.
 - Published content requires real human presence and the platform's AI-generated-content disclosure where AI was used.
-- The daily planner creates at least 20 TikTok drafts. That is a draft count, not a publishing target. TikTok's API caps direct posting at roughly 15 posts per creator account per day.
-- Until TikTok's app review passes, posting is limited to private (`SELF_ONLY`) visibility.
+- An authorized operator other than the author approves the exact content version, including each newly rendered video version. Authors never approve their own content.
+- When TikTok is enabled, the daily planner creates at least 20 TikTok drafts. Respect the planner's provider-enabled gate: no TikTok drafts while TikTok is disabled. The draft count is not a publishing target, and TikTok's API caps direct posting at roughly 15 posts per creator account per day.
+- `SELF_ONLY` posting is for sandbox review only. Production publishing requires TikTok's completed app review and every production activation gate: provider approval and scopes, a healthy connector, no emergency lock, publishing enabled for the workspace, and an approved exact content version.
 
 ## Sales and email
 
