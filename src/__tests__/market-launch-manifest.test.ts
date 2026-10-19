@@ -22,7 +22,7 @@ describe("GEM market launch content package", () => {
     expect(manifest.ownerApprovalRequired).toBe(true);
     expect(manifest.campaignId).toBe("founding-first-20");
     expect(manifest.primaryLandingPage).toBe("https://www.gemcybersecurityassist.com/business-review");
-    expect(manifest.channels.length).toBeGreaterThanOrEqual(7);
+    expect(manifest.channels.length).toBeGreaterThanOrEqual(6);
     expect(manifest.channels.every((channel) => channel.status === "DRAFT")).toBe(true);
   });
 
@@ -35,7 +35,7 @@ describe("GEM market launch content package", () => {
   });
 
   it("preserves channel-specific attribution on every campaign link", () => {
-    expect(manifest.trackingLinks.length).toBe(7);
+    expect(manifest.trackingLinks.length).toBe(manifest.channels.length);
     for (const link of manifest.trackingLinks) {
       const url = new URL(link.url);
       expect(url.pathname).toBe("/business-review");
@@ -60,6 +60,15 @@ describe("GEM market launch content package", () => {
     expect(panel).toContain('href={asset.path} download');
     expect(panel).not.toContain("/api/social-media/publishing");
     expect(panel).not.toContain("window.location.assign");
+  });
+
+  it("keeps every draft publishable on its channel", () => {
+    const captions = manifest.channels as Array<{ provider: string; caption: string; mediaIds: string[] }>;
+    const x = captions.find((channel) => channel.provider === "X");
+    // X counts every link as 23 characters; leave room for the tracked CTA link.
+    expect(x && x.caption.length + 24).toBeLessThanOrEqual(280);
+    // The YouTube publisher accepts video only; no draft may ship until a video asset exists.
+    expect(captions.some((channel) => channel.provider === "YOUTUBE")).toBe(false);
   });
 
   it("requires backend, account, content, and explicit publish gates", () => {

@@ -78,8 +78,7 @@
       "format": "1080x1920",
       "placement": [
         "TikTok",
-        "Instagram Reels",
-        "YouTube Shorts"
+        "Instagram Reels"
       ],
       "alt": "Four practical checks: account recovery, MFA, payment verification, and backup restoration."
     }
@@ -125,19 +124,9 @@
       "source": "x",
       "medium": "organic-social",
       "status": "DRAFT",
-      "caption": "Small-business security often starts with ordinary operating questions. Who controls your domain and recovery methods? Is MFA enabled on email and admin accounts? Are payment changes verified separately? Have backups been tested? GEM offers a bounded $199 Business Security & Operations Review for qualified businesses, subject to scope. Not a certification or guaranteed monitoring service.",
+      "caption": "Security starts with ordinary questions: Who controls account recovery? Is MFA on email and admin accounts? Are payment changes verified separately? Are backups tested? GEM's $199 review is for qualified businesses, subject to scope. Not a certification.",
       "mediaIds": [
         "square-01"
-      ]
-    },
-    {
-      "provider": "YOUTUBE",
-      "source": "youtube",
-      "medium": "organic-social",
-      "status": "DRAFT",
-      "caption": "Four practical business-readiness checks: recovery ownership, multi-factor authentication, payment-change verification, and backup restoration. GEM's review is subject to qualification and scope; it is not a certification or guarantee of continuous monitoring.",
-      "mediaIds": [
-        "story-01"
       ]
     },
     {
@@ -183,12 +172,6 @@
       "medium": "organic-social",
       "campaign": "founding-first-20",
       "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=x&utm_medium=organic-social&utm_campaign=founding-first-20"
-    },
-    {
-      "source": "youtube",
-      "medium": "organic-social",
-      "campaign": "founding-first-20",
-      "url": "https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=youtube&utm_medium=organic-social&utm_campaign=founding-first-20"
     },
     {
       "source": "tiktok",

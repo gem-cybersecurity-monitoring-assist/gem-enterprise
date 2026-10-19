@@ -48,7 +48,6 @@ Each link preserves the existing campaign identity and uses a stable source/medi
 | Instagram Professional | `https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=instagram&utm_medium=organic-social&utm_campaign=founding-first-20` |
 | X company account | `https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=x&utm_medium=organic-social&utm_campaign=founding-first-20` |
 | TikTok | `https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=tiktok&utm_medium=organic-social&utm_campaign=founding-first-20` |
-| YouTube | `https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=youtube&utm_medium=organic-social&utm_campaign=founding-first-20` |
 | Telegram | `https://www.gemcybersecurityassist.com/business-review?lead=campaign&campaign=founding-first-20&utm_source=telegram&utm_medium=organic-social&utm_campaign=founding-first-20` |
 
 After a channel has an authorized public profile, use that channel's URL in its bio/about field. Do not direct any post to `/market-entry` or `/personal-security` until the new routes are live and tested. The existing Business Review page is the live business conversion path.
@@ -131,7 +130,7 @@ If a vendor leaves or payment instructions change, do you have a clear access-re
 A checklist helps identify what to review first. GEM offers a bounded $199 Business Security & Operations Review for qualified businesses, subject to scope. It is not a certification or guaranteed monitoring service.  
 **CTA:** use the tracked X Business Review link.
 
-### Day 5 — Vertical video: use on TikTok, Reels, and Shorts after each account passes readiness
+### Day 5 — Vertical video: use on TikTok and Reels after each account passes readiness (Shorts only once an approved video exists)
 
 **Length:** 25–30 seconds. **Format:** 1080×1920, captions burned in and checked for accuracy.
 
@@ -219,7 +218,7 @@ The repository supports these lanes, but that is not evidence that their provide
 | TikTok | Existing TokMetric authorization, account scope, token storage, production gateway transaction backend and schema, exact-version approval | Blocked; do not bypass TokMetric with a second connector |
 | X | Company account, OAuth client/scopes and redirect URI, token storage and gateway readiness | Blocked until evidenced |
 | LinkedIn Company | Authorized organization, organization-role validation, Community Management API access, scopes and gateway readiness | Blocked until platform access is evidenced |
-| YouTube | Authorized channel/Brand Account, Google OAuth, applicable API audit/verification, media rights and gateway readiness | Blocked until evidenced |
+| YouTube | Authorized channel/Brand Account, Google OAuth, applicable API audit/verification, media rights, gateway readiness, and an approved video asset (the publisher accepts video only) | Blocked until evidenced; no YouTube draft is in the manifest |
 | Telegram | Official bot token stored as an encrypted credential, verified channel/chat ID, bot administrator rights, gateway readiness | Blocked until operator setup and test |
 | Nextdoor | Approved publishing API access, authorized business/neighborhood identity, documented local relevance, gateway readiness | Blocked until platform approval |
 | Metricool | Login and each target social profile's authorization/permissions independently verified | Existing references are not proof of live publishing authorization |
@@ -258,7 +257,7 @@ The repository now includes eight original editable vector assets and a structur
 - Structured draft manifest: `/market-launch/founding-first-20.json`
 - Manifest regression test: `src/__tests__/market-launch-manifest.test.ts`
 
-The manifest stores seven channel-specific draft captions, seven UTM-tracked business-review URLs, media references and alt text, plus explicit release gates. It intentionally marks every channel as `DRAFT`, requires owner approval, and preserves the existing Business Review route. Use the SVG files as editable source; before uploading to a provider that does not accept SVG, render them to the provider's required raster format and inspect the result at actual mobile size.
+The manifest stores six channel-specific draft captions, six UTM-tracked business-review URLs, media references and alt text, plus explicit release gates. It intentionally marks every channel as `DRAFT`, requires owner approval, and preserves the existing Business Review route. Use the SVG files as editable source; before uploading to a provider that does not accept SVG, render them to the provider's required raster format and inspect the result at actual mobile size.
 
 
 ## 9. Current release checkpoint — 2026-10-15
