@@ -23,19 +23,10 @@ import {
   recordSocialConnectorLifecycle,
   releaseSocialConnectorCredentialRefreshClaim,
 } from "@/lib/social-media/oauth/lifecycle-store";
-import {
-  isSocialProviderPaused,
-} from "@/lib/social-media/oauth/provider-pause";
-import {
-  probeSocialConnector,
-  readLiveProbeSignal,
-  type LiveProbeSignal,
-} from "@/lib/social-media/oauth/probes";
 
 const healthSchema = z.object({
   workspaceId: z.string().trim().min(1),
   connectorId: z.string().trim().min(1),
-  liveProbe: z.boolean().optional(),
 });
 
 const rejectedRefreshCodes = new Set([
@@ -101,7 +92,8 @@ export async function POST(request: NextRequest) {
     let credential = stored.credential;
     let lifecycle = evaluateSocialCredentialLifecycle(config, credential);
 
-    if (lifecycle.shouldRefresh) {      const claim = await claimSocialConnectorCredentialRefresh({
+    if (lifecycle.shouldRefresh) {
+      const claim = await claimSocialConnectorCredentialRefresh({
         workspaceId,
         connectorId,
         expectedCredentialRotatedAt: stored.credentialRotatedAt,
@@ -174,27 +166,6 @@ export async function POST(request: NextRequest) {
     }
 
     let connector;
-    // Optional read-only live probe. Results are cached ~15 minutes in the
-    // connector metadata; without an explicit request (or a fresh cache entry)
-    // the response stays on the config-only evaluation, labeled as such.
-    let liveProbeSignal: LiveProbeSignal = readLiveProbeSignal(stored.connector.safeMetadata);
-    let liveProbeMetadata:
-      | { probeOk: boolean; probedAt: string; accountName: string | null; latencyMs: number }
-      | undefined;
-    if (parsed.liveProbe === true && liveProbeSignal.source !== "live") {
-      const probe = await probeSocialConnector({ config, credential });
-      liveProbeMetadata = {
-        probeOk: probe.healthy,
-        probedAt: probe.checkedAt,
-        accountName: probe.accountName,
-        latencyMs: probe.latencyMs,
-      };
-      liveProbeSignal = {
-        lastProbedAt: probe.checkedAt,
-        probeOk: probe.healthy,
-        source: "live",
-      };
-    }
     try {
       connector = await recordSocialConnectorLifecycle({
         workspaceId,
@@ -206,7 +177,6 @@ export async function POST(request: NextRequest) {
         refreshAttempted,
         refreshSucceeded,
         concurrentRotationObserved,
-        liveProbe: liveProbeMetadata,
       });
     } catch (error) {
       if (!(error instanceof TokMetricError) || error.code !== "SOCIAL_CREDENTIAL_ROTATION_CONFLICT") {
@@ -225,11 +195,8 @@ export async function POST(request: NextRequest) {
         refreshAttempted,
         refreshSucceeded: false,
         concurrentRotationObserved: true,
-        liveProbe: liveProbeMetadata,
       });
     }
-
-    const providerPaused = await isSocialProviderPaused(workspaceId, stored.connector.provider);
 
     await emitTokMetricAudit({
       workspaceId,
@@ -246,10 +213,7 @@ export async function POST(request: NextRequest) {
         tokenRefreshAttempted: refreshAttempted,
         tokenRefreshSucceeded: refreshSucceeded,
         concurrentRotationObserved,
-        providerAccountProbePerformed: Boolean(liveProbeMetadata),
-        liveProbeOk: liveProbeSignal.probeOk,
-        liveProbeSource: liveProbeSignal.source,
-        providerPaused,
+        providerAccountProbePerformed: false,
         externalPublishingEnabled: false,
       },
     });
@@ -263,9 +227,7 @@ export async function POST(request: NextRequest) {
         tokenRefreshAttempted: refreshAttempted,
         tokenRefreshSucceeded: refreshSucceeded,
         concurrentRotationObserved,
-        providerAccountProbePerformed: Boolean(liveProbeMetadata),
-        liveProbe: liveProbeSignal,
-        providerPaused,
+        providerAccountProbePerformed: false,
         externalPublishingActionTaken: false,
       },
       { headers: { "Cache-Control": "no-store" } },

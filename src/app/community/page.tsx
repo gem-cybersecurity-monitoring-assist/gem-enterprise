@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { MemberWorkspaceShowcase } from "@/components/community/MemberWorkspaceShowcase";
 import Link from "next/link";
 import {
   Users,
@@ -218,10 +217,6 @@ export default function CommunityPage() {
           </div>
         </div>
       </section>
-
-      <div className="container mx-auto max-w-6xl px-6 pb-12">
-        <MemberWorkspaceShowcase />
-      </div>
 
       {/* ══ COMMUNITY HUB PREVIEW ═════════════════════════════════════════════ */}
       <section className="border-y border-border bg-card/20 py-20">

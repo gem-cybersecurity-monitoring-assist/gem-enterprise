@@ -13,7 +13,6 @@ import {
   tokMetricErrorResponse,
   withIdempotency,
 } from "@/lib/tokmetric/security";
-import { assertSocialAutopilotKillSwitchClear } from "@/lib/social-media/autopilot/health";
 
 type ProviderId = (typeof socialMediaProviderIds)[number];
 type SignalPayload = {
@@ -25,9 +24,6 @@ type SignalPayload = {
   observedAt: string;
   sourceReference: string;
   providers?: ProviderId[];
-  contentLaneHint?: "FACELESS_CINEMATIC";
-  transformedSummary?: string;
-  sourceTransformationVerified?: boolean;
 };
 type SourcePayload = {
   id: string;
@@ -67,9 +63,6 @@ const signalSchema = z.object({
   observedAt: z.string().datetime(),
   sourceReference: z.string().trim().min(1).max(2000),
   providers: z.array(providerSchema).max(8).optional(),
-  contentLaneHint: z.literal("FACELESS_CINEMATIC").optional(),
-  transformedSummary: z.string().trim().min(1).max(5000).optional(),
-  sourceTransformationVerified: z.boolean().optional(),
 });
 const sourceSchema = z.object({
   id: z.string().trim().min(1).max(300),
@@ -176,10 +169,6 @@ export async function POST(request: NextRequest) {
     if (input.requestApprovals) {
       requirePermission(membership, "request", "approvals");
     }
-
-    // Global emergency stop: no new content plans while the workspace is
-    // locked for publishing.
-    await assertSocialAutopilotKillSwitchClear(input.workspaceId);
 
     const idempotencyKey = request.headers.get("idempotency-key")?.trim();
     if (!idempotencyKey) {

@@ -1,16 +1,8 @@
 import { TokMetricError } from "@/lib/tokmetric/security";
-import { getUnifiedTikTokProviderConfig } from "./tiktok-adapter";
 
-export const socialOAuthProviders = [
-  "META",
-  "X",
-  "LINKEDIN",
-  "YOUTUBE",
-  "NEXTDOOR",
-  "TIKTOK",
-] as const;
+export const socialOAuthProviders = ["META", "X", "LINKEDIN", "YOUTUBE", "NEXTDOOR"] as const;
 export type SocialOAuthProvider = (typeof socialOAuthProviders)[number];
-export type SocialOAuthRefreshMode = "STANDARD" | "LONG_LIVED_EXCHANGE" | "REAUTHORIZE" | "NONE";
+export type SocialOAuthRefreshMode = "STANDARD" | "REAUTHORIZE" | "NONE";
 
 export interface SocialOAuthProviderConfig {
   provider: SocialOAuthProvider;
@@ -26,23 +18,9 @@ export interface SocialOAuthProviderConfig {
   usePkce: boolean;
   tokenClientAuthentication: "BODY" | "BASIC";
   refreshMode: SocialOAuthRefreshMode;
-  /**
-   * Provider-specific parameter naming. TikTok's OAuth API uses `client_key`
-   * where the generic OAuth2 flow uses `client_id`.
-   */
-  clientIdAuthorizationParameter?: "client_id" | "client_key";
-  clientIdTokenParameter?: "client_id" | "client_key";
-  /** Scope list delimiter for the authorization URL. Defaults to a space. */
-  scopeDelimiter?: string;
   additionalAuthorizationParameters: Record<string, string>;
   apiVersion?: string;
   platformAccessEnv?: string;
-  /**
-   * Env var that must supply the redirect URI. When set, provider validation
-   * fails closed if it is absent, even when a legacy fallback redirect URI
-   * exists (e.g. TikTok's legacy `/api/tokmetric/oauth/callback`).
-   */
-  redirectUriEnv?: string;
 }
 
 function value(name: string) {
@@ -92,7 +70,7 @@ export function getSocialOAuthProviderConfig(
       scopes: scopes("META_SOCIAL_SCOPES"),
       usePkce: false,
       tokenClientAuthentication: "BODY",
-      refreshMode: "LONG_LIVED_EXCHANGE",
+      refreshMode: "NONE",
       additionalAuthorizationParameters: {},
       apiVersion: value("META_GRAPH_API_VERSION"),
       platformAccessEnv: "META_APP_REVIEW_APPROVED",
@@ -169,7 +147,6 @@ export function getSocialOAuthProviderConfig(
       additionalAuthorizationParameters: {},
       platformAccessEnv: "NEXTDOOR_PUBLISH_API_ACCESS_APPROVED",
     },
-    TIKTOK: getUnifiedTikTokProviderConfig(),
   };
 
   return configs[provider];
@@ -208,16 +185,8 @@ export function validateSocialOAuthProviderConfig(provider: SocialOAuthProvider)
   if (provider === "NEXTDOOR" && !config.scopes.includes("profile")) {
     missing.push("NEXTDOOR_PROFILE_DISCOVERY_SCOPE");
   }
-  if (provider === "TIKTOK" && !config.scopes.includes("user.info.basic")) {
-    missing.push("TIKTOK_USER_INFO_SCOPE");
-  }
   if (config.platformAccessEnv && !enabled(config.platformAccessEnv)) {
     missing.push(config.platformAccessEnv);
-  }
-  // The unified TikTok flow must use its own allow-listed callback URL; the
-  // legacy TokMetric callback is not a valid unified target.
-  if (config.redirectUriEnv && !value(config.redirectUriEnv)) {
-    missing.push(config.redirectUriEnv);
   }
   if (!value("SOCIAL_TOKEN_ENCRYPTION_KEY")) missing.push("SOCIAL_TOKEN_ENCRYPTION_KEY");
 

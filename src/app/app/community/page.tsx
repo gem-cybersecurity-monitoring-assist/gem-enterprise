@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { MemberWorkspaceShowcase } from '@/components/community/MemberWorkspaceShowcase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,8 +51,6 @@ export default function CommunityPage() {
           Intelligence briefings, compliance updates, and client resources.
         </p>
       </div>
-
-      <MemberWorkspaceShowcase />
 
       {/* Announcements */}
       <section className="space-y-4">

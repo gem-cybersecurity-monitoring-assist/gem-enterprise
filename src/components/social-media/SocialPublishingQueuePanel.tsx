@@ -50,7 +50,6 @@ const providerLabels: Record<SharedSocialPublishingProvider, string> = {
   LINKEDIN_COMPANY: "LinkedIn",
   YOUTUBE: "YouTube",
   NEXTDOOR: "Nextdoor",
-  TELEGRAM: "Telegram",
 };
 
 const terminalStates = new Set<SocialPublishingJobState>([

@@ -243,12 +243,6 @@ export const clientPortalNavGroups: PlatformNavGroup[] = [
         description: "Secure messaging and conversation threads.",
       },
       {
-        href: "/app/whatsapp",
-        icon: "MessageSquare",
-        label: "WhatsApp Operations",
-        description: "Coordinate WhatsApp-supported service, case, appointment, and document handoffs.",
-      },
-      {
         href: "/app/notifications",
         icon: "Bell",
         label: "Notifications",
@@ -304,12 +298,6 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         description: "Administrative overview and route directory.",
       },
       {
-        href: "/app/admin/client-operations",
-        icon: "Building2",
-        label: "Client Operations",
-        description: "Unified client lifecycle, security, finance, compliance, communications, and service operations.",
-      },
-      {
         href: "/app/admin/organization-reports",
         icon: "ClipboardList",
         label: "Organization Highlights",
@@ -345,6 +333,12 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         icon: "Briefcase",
         label: "Commercial Operations",
         description: "Govern the full market, sales, delivery, success, expansion, and referral lifecycle without duplicate systems.",
+      },
+      {
+        href: "/app/admin/market/wix",
+        icon: "LayoutDashboard",
+        label: "GEM Wix Control",
+        description: "Branded entry to Wix market-site assets, links, safe Editor release gates, and GEM conversion.",
       },
       {
         href: "/app/admin/market/research",

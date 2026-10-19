@@ -40,12 +40,12 @@ export async function handlePublicIntake(
   options: { kind: IntakeKind; schema: ZodTypeAny },
 ) {
   const { ipAddress, userAgent } = getRequestContext(request);
-  const limit = await rateLimit(ipAddress, {
+  const limit = rateLimit(ipAddress, {
     key: `intake:${options.kind.toLowerCase()}`,
     windowMs: 60 * 60_000,
     max: routeLimit(options.kind),
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
 
   let body: unknown;
   try {
