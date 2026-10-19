@@ -126,6 +126,7 @@ export const utmContract = {
   },
   sources: [
     "homepage",
+    "market-entry",
     "enterprise-solutions",
     "social",
     "direct-outreach",
@@ -139,6 +140,7 @@ export const utmContract = {
     "telegram",
     "referral",
     "organic-search",
+    "wix-gem-assist-1",
   ],
   mediums: [
     "hero",
@@ -170,6 +172,15 @@ export function buildBusinessReviewCampaignUrl(input: {
     utm_campaign: utmContract.campaign,
   });
   return `${utmContract.destinations.review}?${params.toString()}`;
+}
+
+/** A canonical, attributed handoff from the Wix market-entry website to the governed GEM intake. */
+export function buildWixMarketEntryReviewUrl(): string {
+  return `https://www.gemcybersecurityassist.com${buildBusinessReviewCampaignUrl({
+    source: "wix-gem-assist-1",
+    medium: "organic",
+    leadSource: "referral",
+  })}`;
 }
 
 export const gtmCalendar: readonly GtmCalendarItem[] = [

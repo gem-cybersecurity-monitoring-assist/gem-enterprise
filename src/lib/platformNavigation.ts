@@ -335,6 +335,12 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         description: "Govern the full market, sales, delivery, success, expansion, and referral lifecycle without duplicate systems.",
       },
       {
+        href: "/app/admin/market/wix",
+        icon: "LayoutDashboard",
+        label: "GEM Wix Control",
+        description: "Branded entry to Wix market-site assets, links, safe Editor release gates, and GEM conversion.",
+      },
+      {
         href: "/app/admin/market/research",
         icon: "ClipboardList",
         label: "Market Research",

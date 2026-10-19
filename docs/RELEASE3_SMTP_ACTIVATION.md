@@ -24,10 +24,9 @@ Never reuse the historical exposed SendGrid credential. Never place credentials 
 1. Confirm sender and domain verification with the provider.
 2. Add the new restricted credential only to Vercel Production.
 3. Deploy current `main` and wait for the exact production deployment to reach `READY`.
-4. Read `/api/auth/recovery-readiness` and confirm:
-   - `emailDeliveryConfigured` is `true`.
-   - `missingVariables` is empty.
-   - port and secure settings are valid.
+4. Read `/api/auth/recovery-readiness` and confirm `emailDeliveryConfigured` is `true`.
+   - Anonymous and non-admin callers receive only `ok`, `service`, `emailDeliveryConfigured` and `detailsRequireAdministrator`.
+   - While signed in as a GEM administrator, the same endpoint also returns `emailDelivery`; confirm `missingVariables` is empty and the port and secure settings are valid.
 5. While authenticated as a GEM administrator, POST to `/api/auth/recovery-readiness/verify`.
    - This performs an SMTP handshake only.
    - It sends no message.
