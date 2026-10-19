@@ -1,0 +1,19 @@
+{
+  "name": "gem-enterprise",
+  "version": "1.0.0",
+  "description": "GEM Enterprise cybersecurity and operations assistance for controlled project workflows, repository verification, and governed market-entry tasks.",
+  "author": {
+    "name": "GEM Cybersecurity & Monitoring Assist",
+    "url": "https://www.gemcybersecurityassist.com"
+  },
+  "homepage": "https://www.gemcybersecurityassist.com",
+  "repository": "https://github.com/support371/gem-enterprise",
+  "license": "UNLICENSED",
+  "keywords": [
+    "gem",
+    "cybersecurity",
+    "enterprise",
+    "operations",
+    "project-management"
+  ]
+}
