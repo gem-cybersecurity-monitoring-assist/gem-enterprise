@@ -56,7 +56,6 @@ DEPLOYMENT.md
 # Keep governance records required by build-time verification.
 !prisma/proposals/README.md
 !docs/PUBLIC_CLAIMS_REVIEW.md
-!docs/integrations/metricool.md
 !ops/owner-flow/README.md
 
 # Local environment templates are not deployed

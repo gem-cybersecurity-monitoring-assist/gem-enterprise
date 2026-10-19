@@ -115,7 +115,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(destination);
   }
 
-  if (isStaticOrApiPath(pathname)) {
+  // A "." marks static assets, but never lets a protected path skip the session check
+  // (e.g. a dynamic segment such as /app/portfolios/a.b).
+  if (isStaticOrApiPath(pathname) && !isProtected(pathname)) {
     return NextResponse.next();
   }
 
@@ -136,7 +138,6 @@ export async function proxy(request: NextRequest) {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-is-portal", "1");
-    requestHeaders.set("x-is-protected", "1");
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
@@ -162,7 +163,6 @@ export async function proxy(request: NextRequest) {
     }
 
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-is-protected", "1");
     requestHeaders.set("x-user-id", session.userId);
     requestHeaders.set("x-user-email", session.email);
     requestHeaders.set("x-user-role", session.role);

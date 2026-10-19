@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { gatewayVerificationUnavailable } from "@/lib/kyc/gateway-guard";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/api/auth-helpers";
 import { SECURE_DOCUMENT_UPLOAD_ACTIVE } from "@/lib/kyc/capabilities";
@@ -26,7 +25,6 @@ function json(body: unknown, status = 200) {
 export async function GET() {
   const gate = await requireAdmin();
   if (!gate.ok) return gate.response;
-  if (gate.session.authSource === "supabase_gateway") return gatewayVerificationUnavailable();
 
   try {
     const [accounts, statusGroups, reviewCount, decisionCount, documentCount] =

@@ -3,13 +3,10 @@ import { ArrowRight, Settings2, ShieldCheck } from "lucide-react";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
 import { getSafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
-import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
-import { getSocialBackendReadiness } from "@/lib/social-media/backend-readiness";
 
 export default function SocialMediaSettingsPage() {
   const providers = getSocialMediaProviderReadiness();
   const oauthProviders = getSafeSocialOAuthReadiness();
-  const backend = getSocialBackendReadiness(shouldUseSupabaseGateway());
   const configured = providers.filter((provider) => provider.configurationReady).length;
   const liveReady = providers.filter((provider) => provider.externalWriteAllowed).length;
 
@@ -34,12 +31,6 @@ export default function SocialMediaSettingsPage() {
           <p className="mt-4 text-2xl font-bold text-white">{configured}/{providers.length} configured</p>
           <p className="mt-2 text-sm text-slate-400">{liveReady} destinations currently pass every external-write gate.</p>
         </article>
-      </section>
-
-      <section role="status" aria-label="Social publishing backend readiness" className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-5">
-        <h2 className="text-base font-semibold text-amber-100">Publishing backend: {backend.state === "BLOCKED_GATEWAY_BACKEND" ? "Gateway compatibility required" : "Direct database not verified"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{backend.explanation}</p>
-        <p className="mt-2 text-sm text-amber-100/80">Provider configuration and sign-in do not certify live posting. Nothing is published from this status check.</p>
       </section>
 
       <SocialConnectorPanel providers={oauthProviders} />

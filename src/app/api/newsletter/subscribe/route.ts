@@ -21,12 +21,12 @@ type SubscriberRow = {
 
 export async function POST(req: NextRequest) {
   const { ipAddress, userAgent } = getRequestContext(req);
-  const limit = await rateLimit(ipAddress, {
+  const limit = rateLimit(ipAddress, {
     key: "newsletter:subscribe",
     windowMs: 60 * 60_000,
     max: 5,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
 
   let body: unknown;
   try {

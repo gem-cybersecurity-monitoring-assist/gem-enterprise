@@ -56,7 +56,6 @@ const providerContentPolicy: Record<SocialMediaProviderId, readonly SocialConten
   INDEED_EMPLOYER: ["JOB_POSTING", "EMPLOYER_UPDATE"],
   LINKEDIN_COMPANY: ["TEXT", "IMAGE", "SHORT_VIDEO", "LONG_VIDEO", "ARTICLE", "JOB_LINK"],
   YOUTUBE: ["SHORT_VIDEO", "LONG_VIDEO"],
-  TELEGRAM: ["TEXT", "IMAGE", "SHORT_VIDEO", "LONG_VIDEO"],
 };
 
 export function evaluateSocialPublishingAuthorization(
