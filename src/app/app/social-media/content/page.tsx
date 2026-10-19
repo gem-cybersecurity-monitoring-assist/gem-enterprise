@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import Link from "next/link";
 import { ArrowRight, ImageIcon, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react";
 import { ContentOrchestratorPanel } from "@/components/social-media/ContentOrchestratorPanel";
+import { MarketLaunchPackPanel } from "@/components/social-media/MarketLaunchPackPanel";
 
 const productionOutputs = [
   ["Short-form video", "Hook, narration, scenes, captions, camera direction, and renderer-ready recipe."],
@@ -10,6 +13,10 @@ const productionOutputs = [
 ] as const;
 
 export default function SocialMediaContentPage() {
+  const campaign = JSON.parse(
+    readFileSync(join(process.cwd(), "public/market-launch/founding-first-20.json"), "utf8"),
+  );
+
   return (
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -57,6 +64,8 @@ export default function SocialMediaContentPage() {
           </Link>
         </article>
       </section>
+
+      <MarketLaunchPackPanel campaign={campaign} />
 
       <ContentOrchestratorPanel />
     </div>
