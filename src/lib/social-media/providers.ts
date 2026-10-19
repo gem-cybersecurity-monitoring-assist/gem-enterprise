@@ -7,6 +7,7 @@ export const socialMediaProviderIds = [
   "INDEED_EMPLOYER",
   "LINKEDIN_COMPANY",
   "YOUTUBE",
+  "TELEGRAM",
 ] as const;
 
 export type SocialMediaProviderId = (typeof socialMediaProviderIds)[number];
@@ -21,7 +22,7 @@ export interface SocialMediaProviderDefinition {
   id: SocialMediaProviderId;
   label: string;
   purpose: string;
-  connectionMode: "OAUTH" | "EMPLOYER_FEED";
+  connectionMode: "OAUTH" | "EMPLOYER_FEED" | "BOT_TOKEN";
   supportedContent: readonly string[];
   enableEnv: string;
   requiredEnv: readonly string[];
@@ -206,6 +207,21 @@ export const socialMediaProviderDefinitions: readonly SocialMediaProviderDefinit
     restrictions: [
       "A connected YouTube Brand Account or authorized channel is required.",
       "Public uploads require the applicable Google project verification or audit.",
+    ],
+  },
+  {
+    id: "TELEGRAM",
+    label: "Telegram",
+    purpose: "Channel and group publishing through the Telegram Bot API.",
+    connectionMode: "BOT_TOKEN",
+    supportedContent: ["TEXT", "IMAGE", "SHORT_VIDEO", "LONG_VIDEO"],
+    enableEnv: "TELEGRAM_SOCIAL_PUBLISHING_ENABLED",
+    requiredEnv: [sharedTokenEncryptionVariable],
+    liveGateEnv: "TELEGRAM_SOCIAL_PUBLISHING_ENABLED",
+    restrictions: [
+      "The bot token from @BotFather is stored as an encrypted connector credential (server-side only), never as an environment variable or in metadata.",
+      "The target chat/channel id is stored as safe connector metadata (telegramChatId); the bot must be an administrator of the target channel.",
+      "Exact-version approval and compliance review remain mandatory before queueing.",
     ],
   },
 ];

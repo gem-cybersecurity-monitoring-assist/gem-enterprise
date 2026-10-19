@@ -55,6 +55,48 @@ describe("verification review API", () => {
     expect(response.status).toBe(403);
   });
 
+
+  it("fails closed before Prisma when an authenticated gateway session loads the queue", async () => {
+    authMocks.requireStaff.mockResolvedValue({
+      ok: true,
+      session: {
+        userId: "reviewer-1",
+        role: "analyst",
+        authSource: "supabase_gateway",
+      },
+    });
+
+    const response = await GET();
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "VERIFICATION_REVIEW_GATEWAY_REQUIRED",
+    });
+    expect(serviceMocks.list).not.toHaveBeenCalled();
+  });
+
+  it("fails closed before Prisma when an authenticated gateway session submits a review action", async () => {
+    authMocks.requireStaff.mockResolvedValue({
+      ok: true,
+      session: {
+        userId: "reviewer-1",
+        role: "analyst",
+        authSource: "supabase_gateway",
+      },
+    });
+    const request = new NextRequest("http://localhost/api/verify/review", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ applicationId: "app-1", action: "start_review" }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "VERIFICATION_REVIEW_GATEWAY_REQUIRED",
+    });
+    expect(serviceMocks.perform).not.toHaveBeenCalled();
+  });
+
   it("rejects an unknown review action before any database mutation", async () => {
     authMocks.requireStaff.mockResolvedValue({
       ok: true,

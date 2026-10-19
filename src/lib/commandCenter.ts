@@ -108,122 +108,242 @@ export const commandCenterNavigationGroups: Array<{
   },
 ];
 
-export const executiveMetrics: CommandCenterMetric[] = [
-  { label: "Monthly recurring revenue", value: "$148.2K", detail: "Illustrative recurring revenue", trend: "+8.6%", tone: "emerald" },
-  { label: "Active client organizations", value: "142", detail: "Across enabled service modules", trend: "+11", tone: "cyan" },
-  { label: "Security posture", value: "91/100", detail: "Weighted tenant average", trend: "+3", tone: "blue" },
-  { label: "Compliance readiness", value: "84%", detail: "Control evidence completion", trend: "+5%", tone: "violet" },
-  { label: "Open critical actions", value: "7", detail: "Security, compliance, and billing", trend: "-4", tone: "rose" },
-  { label: "AI automation savings", value: "386h", detail: "Estimated analyst hours this month", trend: "+14%", tone: "amber" },
+// ---------------------------------------------------------------------------
+// Operational datasets (WS-B demo-data remediation, 2026-09-29).
+//
+// These datasets previously shipped with fabricated illustrative records
+// (invented revenue figures, incidents, tenants, agents, and integration
+// health). Every dataset below is now explicitly NOT CONNECTED: values are
+// empty arrays until a real service backs them and persisted organization
+// records exist. Exported names and element types are unchanged so existing
+// consumers keep compiling; an empty array must never be read as "zero" or
+// as live operational evidence. See `commandCenterConnectionState` for the
+// machine-readable connection state.
+// ---------------------------------------------------------------------------
+
+export interface CommandCenterRevenueTrendPoint {
+  label: string;
+  revenue: number;
+  target: number;
+}
+
+export interface CommandCenterServiceMixSlice {
+  name: string;
+  percentage: number;
+  value: string;
+}
+
+export interface CommandCenterActionItem {
+  id: string;
+  title: string;
+  owner: string;
+  priority: string;
+  due: string;
+}
+
+export interface CommandCenterSecurityIncident {
+  id: string;
+  title: string;
+  tenant: string;
+  severity: string;
+  status: string;
+  sla: string;
+}
+
+export interface CommandCenterComplianceFramework {
+  name: string;
+  readiness: number;
+  controls: string;
+  evidence: string;
+  status: string;
+}
+
+export interface CommandCenterComplianceTask {
+  task: string;
+  framework: string;
+  owner: string;
+  due: string;
+  state: string;
+}
+
+export interface CommandCenterRevenueProduct {
+  name: string;
+  model: string;
+  customers: number;
+  revenue: string;
+  margin: string;
+  state: string;
+}
+
+export interface CommandCenterUsageMeter {
+  label: string;
+  used: number;
+  limit: number;
+  display: string;
+}
+
+export interface CommandCenterTenantHealth {
+  name: string;
+  plan: string;
+  health: number;
+  security: number;
+  compliance: number;
+  mrr: string;
+  renewal: string;
+  signal: string;
+}
+
+export interface CommandCenterAIAgent {
+  name: string;
+  purpose: string;
+  status: string;
+  success: string;
+  tasks: string;
+  errors: string;
+  approval: string;
+}
+
+export interface CommandCenterApprovalRequest {
+  id: string;
+  action: string;
+  agent: string;
+  tenant: string;
+  risk: string;
+  age: string;
+}
+
+export interface CommandCenterIntegrationEntry {
+  name: string;
+  category: string;
+  state: string;
+  lastCheck: string;
+  owner: string;
+}
+
+export type CommandCenterDatasetKey =
+  | "executiveMetrics"
+  | "revenueTrend"
+  | "serviceMix"
+  | "actionQueue"
+  | "securityIncidents"
+  | "securityMetrics"
+  | "complianceFrameworks"
+  | "complianceTasks"
+  | "revenueProducts"
+  | "usageMeters"
+  | "tenantHealth"
+  | "aiAgents"
+  | "approvalQueue"
+  | "integrations";
+
+/**
+ * Machine-readable connection state for every operational dataset.
+ * "not_configured" means no verified service backs the dataset in this
+ * surface; consumers must render the not-connected notice rather than
+ * treating the (empty) dataset as live.
+ */
+export const commandCenterConnectionState: Record<CommandCenterDatasetKey, "not_configured"> = {
+  executiveMetrics: "not_configured",
+  revenueTrend: "not_configured",
+  serviceMix: "not_configured",
+  actionQueue: "not_configured",
+  securityIncidents: "not_configured",
+  securityMetrics: "not_configured",
+  complianceFrameworks: "not_configured",
+  complianceTasks: "not_configured",
+  revenueProducts: "not_configured",
+  usageMeters: "not_configured",
+  tenantHealth: "not_configured",
+  aiAgents: "not_configured",
+  approvalQueue: "not_configured",
+  integrations: "not_configured",
+};
+
+export function isCommandCenterDatasetConfigured(key: CommandCenterDatasetKey): boolean {
+  return commandCenterConnectionState[key] !== "not_configured";
+}
+
+/**
+ * Sections whose content previously rendered fabricated datasets. Page-level
+ * consumers use this to render the explicit "Not connected — setup required"
+ * notice. Keep in sync with the illustrative-analytics section list in the
+ * command-center view component.
+ */
+export const commandCenterNotConnectedSections: CommandCenterSection[] = [
+  "executive",
+  "security",
+  "compliance",
+  "revenue",
+  "clients",
+  "agents",
+  "integrations",
 ];
 
-export const revenueTrend = [
-  { label: "Jan", revenue: 96, target: 105 },
-  { label: "Feb", revenue: 104, target: 108 },
-  { label: "Mar", revenue: 111, target: 114 },
-  { label: "Apr", revenue: 119, target: 121 },
-  { label: "May", revenue: 132, target: 130 },
-  { label: "Jun", revenue: 148, target: 142 },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const executiveMetrics: CommandCenterMetric[] = [];
 
-export const serviceMix = [
-  { name: "Managed cybersecurity", percentage: 34, value: "$50.4K" },
-  { name: "Compliance management", percentage: 24, value: "$35.6K" },
-  { name: "SaaS subscriptions", percentage: 18, value: "$26.7K" },
-  { name: "Consulting", percentage: 10, value: "$14.8K" },
-  { name: "AI automation", percentage: 7, value: "$10.4K" },
-  { name: "API, training, white label", percentage: 7, value: "$10.3K" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const revenueTrend: CommandCenterRevenueTrendPoint[] = [];
 
-export const actionQueue = [
-  { id: "ACT-1042", title: "Contain critical identity alert", owner: "Security Ops", priority: "Critical", due: "18 min" },
-  { id: "ACT-1039", title: "Review expired PCI evidence", owner: "Compliance", priority: "High", due: "Today" },
-  { id: "ACT-1036", title: "Approve enterprise expansion proposal", owner: "Revenue", priority: "High", due: "Today" },
-  { id: "ACT-1031", title: "Resolve degraded Cloudflare health check", owner: "Platform", priority: "Medium", due: "4 hours" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const serviceMix: CommandCenterServiceMixSlice[] = [];
 
-export const securityIncidents = [
-  { id: "INC-2088", title: "Suspicious privileged sign-in", tenant: "Northstar Health", severity: "Critical", status: "Investigating", sla: "18m" },
-  { id: "INC-2084", title: "Endpoint malware blocked", tenant: "Apex Realty Group", severity: "High", status: "Contained", sla: "42m" },
-  { id: "INC-2079", title: "Public bucket exposure", tenant: "Harbor Financial", severity: "High", status: "Remediating", sla: "1h 12m" },
-  { id: "INC-2072", title: "Repeated authentication failures", tenant: "Cobalt Logistics", severity: "Medium", status: "Triaged", sla: "3h 05m" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const actionQueue: CommandCenterActionItem[] = [];
 
-export const securityMetrics: CommandCenterMetric[] = [
-  { label: "Active incidents", value: "23", detail: "4 high or critical", trend: "-6", tone: "rose" },
-  { label: "Mean time to acknowledge", value: "7m", detail: "Target below 10 minutes", trend: "-2m", tone: "emerald" },
-  { label: "Mean time to resolve", value: "3.8h", detail: "Across closed incidents", trend: "-11%", tone: "cyan" },
-  { label: "Managed assets", value: "8,412", detail: "Endpoints, cloud, identity, network", trend: "+238", tone: "blue" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+// Must never render as real production incidents.
+export const securityIncidents: CommandCenterSecurityIncident[] = [];
 
-export const complianceFrameworks = [
-  { name: "SOC 2", readiness: 88, controls: "76 / 86", evidence: "12 due", status: "In progress" },
-  { name: "ISO 27001", readiness: 82, controls: "93 / 114", evidence: "18 due", status: "In progress" },
-  { name: "NIST CSF", readiness: 91, controls: "97 / 106", evidence: "5 due", status: "Healthy" },
-  { name: "HIPAA", readiness: 79, controls: "61 / 77", evidence: "14 due", status: "Attention" },
-  { name: "PCI DSS", readiness: 74, controls: "228 / 308", evidence: "29 due", status: "Attention" },
-  { name: "GDPR / CCPA", readiness: 86, controls: "49 / 57", evidence: "7 due", status: "In progress" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const securityMetrics: CommandCenterMetric[] = [];
 
-export const complianceTasks = [
-  { task: "Approve access-control policy revision", framework: "ISO 27001", owner: "C. Morgan", due: "Today", state: "Under review" },
-  { task: "Upload quarterly vulnerability evidence", framework: "PCI DSS", owner: "Security Ops", due: "Tomorrow", state: "Assigned" },
-  { task: "Complete business associate inventory", framework: "HIPAA", owner: "J. Patel", due: "Jul 17", state: "In progress" },
-  { task: "Review data-retention exception", framework: "GDPR", owner: "Legal", due: "Jul 19", state: "Draft" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const complianceFrameworks: CommandCenterComplianceFramework[] = [];
 
-export const revenueProducts = [
-  { name: "Analytics SaaS", model: "Subscription", customers: 64, revenue: "$26.7K", margin: "82%", state: "Active" },
-  { name: "Managed Cybersecurity", model: "Recurring service", customers: 38, revenue: "$50.4K", margin: "61%", state: "Active" },
-  { name: "Compliance Management", model: "Recurring service", customers: 29, revenue: "$35.6K", margin: "68%", state: "Active" },
-  { name: "AI Automation", model: "Usage + subscription", customers: 18, revenue: "$10.4K", margin: "74%", state: "Active" },
-  { name: "White Label", model: "License", customers: 6, revenue: "$6.9K", margin: "87%", state: "Active" },
-  { name: "API and Training", model: "Usage / cohort", customers: 22, revenue: "$3.4K", margin: "71%", state: "Pilot" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const complianceTasks: CommandCenterComplianceTask[] = [];
 
-export const usageMeters = [
-  { label: "API calls", used: 684000, limit: 1000000, display: "684K / 1M" },
-  { label: "AI actions", used: 12480, limit: 20000, display: "12.5K / 20K" },
-  { label: "Managed assets", used: 8412, limit: 10000, display: "8,412 / 10,000" },
-  { label: "Storage", used: 720, limit: 1000, display: "720 GB / 1 TB" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const revenueProducts: CommandCenterRevenueProduct[] = [];
 
-export const tenantHealth = [
-  { name: "Northstar Health", plan: "Enterprise", health: 72, security: 68, compliance: 81, mrr: "$8,900", renewal: "Aug 28", signal: "At risk" },
-  { name: "Apex Realty Group", plan: "Professional", health: 91, security: 94, compliance: 86, mrr: "$4,200", renewal: "Oct 04", signal: "Healthy" },
-  { name: "Harbor Financial", plan: "Enterprise", health: 84, security: 79, compliance: 92, mrr: "$11,600", renewal: "Sep 16", signal: "Watch" },
-  { name: "Cobalt Logistics", plan: "Professional", health: 88, security: 90, compliance: 82, mrr: "$3,800", renewal: "Nov 11", signal: "Healthy" },
-  { name: "Evergreen Legal", plan: "Basic", health: 76, security: 83, compliance: 69, mrr: "$1,450", renewal: "Aug 09", signal: "Expansion" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const usageMeters: CommandCenterUsageMeter[] = [];
 
-export const aiAgents = [
-  { name: "Security Triage Agent", purpose: "Classify and enrich alerts", status: "Running", success: "96.4%", tasks: "1,842", errors: "7", approval: "Containment actions" },
-  { name: "Compliance Evidence Agent", purpose: "Map evidence to controls", status: "Running", success: "93.1%", tasks: "624", errors: "11", approval: "Evidence approval" },
-  { name: "Revenue Insight Agent", purpose: "Identify service expansion", status: "Review", success: "89.8%", tasks: "188", errors: "4", approval: "Client outreach" },
-  { name: "Executive Briefing Agent", purpose: "Create daily leadership brief", status: "Running", success: "98.0%", tasks: "142", errors: "1", approval: "External distribution" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+// Must never render as real production tenants.
+export const tenantHealth: CommandCenterTenantHealth[] = [];
 
-export const approvalQueue = [
-  { id: "APR-441", action: "Send upgrade recommendation", agent: "Revenue Insight Agent", tenant: "Evergreen Legal", risk: "External message", age: "12m" },
-  { id: "APR-439", action: "Contain suspicious identity", agent: "Security Triage Agent", tenant: "Northstar Health", risk: "Security action", age: "18m" },
-  { id: "APR-436", action: "Accept uploaded audit evidence", agent: "Compliance Evidence Agent", tenant: "Harbor Financial", risk: "Compliance approval", age: "37m" },
-];
+// Not connected: empty until backed by connected services and persisted records.
+export const aiAgents: CommandCenterAIAgent[] = [];
 
-export const integrations = [
-  { name: "Supabase", category: "Data and identity", state: "Configuration required", lastCheck: "Never", owner: "Platform" },
+// Not connected: empty until backed by connected services and persisted records.
+export const approvalQueue: CommandCenterApprovalRequest[] = [];
+
+/**
+ * Integration catalog. This shared module has no server context, so entries
+ * cannot derive live connector state here: every entry is explicitly marked
+ * "Not configured" and no health-check timestamps are claimed ("Never" means
+ * no check has been performed from this surface — previously invented values
+ * such as "Degraded / 7 min ago" have been removed). Name, category, and
+ * owner are structural catalog metadata; the authoritative connector
+ * readiness surface is the governed integrations page.
+ */
+export const integrations: CommandCenterIntegrationEntry[] = [
+  { name: "Supabase", category: "Data and identity", state: "Not configured", lastCheck: "Never", owner: "Platform" },
   { name: "Stripe", category: "Billing", state: "Not configured", lastCheck: "Never", owner: "Finance" },
-  { name: "Cloudflare", category: "Infrastructure", state: "Degraded", lastCheck: "7 min ago", owner: "Platform" },
-  { name: "Vercel", category: "Frontend hosting", state: "Connected", lastCheck: "3 min ago", owner: "Engineering" },
-  { name: "GitHub", category: "Source control", state: "Connected", lastCheck: "1 min ago", owner: "Engineering" },
+  { name: "Cloudflare", category: "Infrastructure", state: "Not configured", lastCheck: "Never", owner: "Platform" },
+  { name: "Vercel", category: "Frontend hosting", state: "Not configured", lastCheck: "Never", owner: "Engineering" },
+  { name: "GitHub", category: "Source control", state: "Not configured", lastCheck: "Never", owner: "Engineering" },
   { name: "Google Analytics", category: "Analytics", state: "Not configured", lastCheck: "Never", owner: "Marketing" },
-  { name: "Gmail and Calendar", category: "Communication", state: "Configuration required", lastCheck: "Never", owner: "Operations" },
+  { name: "Gmail and Calendar", category: "Communication", state: "Not configured", lastCheck: "Never", owner: "Operations" },
   { name: "Slack / Teams", category: "Collaboration", state: "Not configured", lastCheck: "Never", owner: "Operations" },
   { name: "Twilio", category: "Messaging", state: "Not configured", lastCheck: "Never", owner: "Support" },
   { name: "CRM and accounting", category: "Business systems", state: "Not configured", lastCheck: "Never", owner: "Revenue" },
 ];
 
 export const demoDisclosure =
-  "Demo data: values in this command center are illustrative until backed by connected services and persisted organization records.";
+  "Demo data: values in this command center are illustrative until backed by connected services and persisted organization records. A dataset that renders empty is not connected — setup is required before its values exist. Empty never means zero activity, and nothing here should be treated as live operational evidence.";
 
 export function isCommandCenterSection(value: string): value is CommandCenterSection {
   return value in commandCenterSections && value !== "overview";

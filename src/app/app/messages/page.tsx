@@ -7,9 +7,11 @@ import {
   Lock,
   MessageSquare,
   ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WorkspaceBreadcrumb } from "@/components/workspace/WorkspaceUi";
 
 const communicationPaths = [
   {
@@ -20,7 +22,7 @@ const communicationPaths = [
   },
   {
     title: "Service Request",
-    description: "Route a structured request to portfolio, compliance, cyber, document, or ATR operations.",
+    description: "Route a structured request to portfolio, compliance, cyber, document, or trust operations.",
     href: "/app/requests",
     icon: ClipboardList,
   },
@@ -30,13 +32,18 @@ const communicationPaths = [
     href: "/app/meetings",
     icon: CalendarClock,
   },
+  {
+    title: "WhatsApp Operations",
+    description: "Use the connected WhatsApp Business channel for permitted support, reminders, case updates, and service handoffs.",
+    href: "/app/whatsapp",
+    icon: Smartphone,
+  },
 ];
 
-const controls = [
-  "No advisor thread data is fabricated in the client UI.",
-  "Operational communication is routed through existing backend workflows.",
-  "Support and request flows preserve auditability and escalation paths.",
-  "Future real-time messaging should connect to SupportSession records or a dedicated message model.",
+const assurances = [
+  "Every message stays inside a governed workflow — nothing is lost or informal.",
+  "Support tickets, service requests, and consultations keep a full audit trail.",
+  "Sensitive matters can be escalated to your GEM team at any step.",
 ];
 
 export default function MessagesPage() {
@@ -44,16 +51,17 @@ export default function MessagesPage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
+          <WorkspaceBreadcrumb current="Messages" />
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-mono uppercase tracking-wider text-cyan-400">
-            <MessageSquare className="h-3.5 w-3.5" /> Secure Communications
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> Secure Communications
           </div>
           <h1 className="text-2xl font-bold text-white">Messages</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            Route sensitive client communication through governed support, request, and consultation workflows until real-time messaging is connected.
+            Reach your GEM team through governed support, request, and consultation workflows. Direct in-portal messaging is planned and will appear here when it is ready.
           </p>
         </div>
         <Badge className="border-green-500/25 bg-green-500/15 text-green-400">
-          <ShieldCheck className="mr-1 h-3.5 w-3.5" /> Controlled Routing
+          <ShieldCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Controlled Routing
         </Badge>
       </div>
 
@@ -61,18 +69,19 @@ export default function MessagesPage() {
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10">
-              <Lock className="h-6 w-6 text-cyan-400" />
+              <Lock className="h-6 w-6 text-cyan-400" aria-hidden="true" />
             </div>
             <h2 className="text-2xl font-bold text-white">Use governed communication paths.</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-400">
-              GEM Enterprise should avoid showing fabricated advisor conversations. This surface now routes clients into the operational communication channels that already exist in the platform.
+              Sensitive client communication is routed through the operational channels that already exist in the platform, so nothing you send is informal or unrecorded.
             </p>
           </div>
 
           <div className="grid gap-3">
-            {controls.map((control) => (
-              <div key={control} className="rounded-2xl border border-white/10 bg-background/60 p-4 text-sm text-slate-300">
-                {control}
+            {assurances.map((assurance) => (
+              <div key={assurance} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-background/60 p-4">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" aria-hidden="true" />
+                <p className="text-sm text-slate-300">{assurance}</p>
               </div>
             ))}
           </div>
@@ -94,10 +103,10 @@ export default function MessagesPage() {
         ))}
       </section>
 
-      <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-5">
-        <p className="text-sm font-semibold text-yellow-400">Implementation note</p>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.06] p-5">
+        <p className="text-sm font-semibold text-cyan-300">What comes next</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-400">
-          Real-time encrypted messaging should be implemented only after a persisted message/thread model or SupportSession-backed message API is confirmed. Until then, this page intentionally routes to existing safe workflows.
+          Direct encrypted messaging inside the portal is planned. Until then, these workflows are the secure way to reach your team — and they keep everything recorded.
         </p>
         <Button asChild variant="outline" className="mt-4 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
           <Link href="/app/support">Start With Support</Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SupportCaseConversation } from "@/components/support/SupportCaseConversation";
+import { WorkspaceBreadcrumb, WorkspaceEmptyState, WorkspaceErrorState } from "@/components/workspace/WorkspaceUi";
 
 type TicketRecord = {
   id: string;
@@ -35,7 +36,7 @@ const supportTopics = [
   { label: "Account Access", description: "Login, profile, authentication, and access issues.", value: "account_access" },
   { label: "KYC / Compliance", description: "Verification, documents, decisions, and disclosures.", value: "kyc_compliance" },
   { label: "Portfolio Operations", description: "Portfolio visibility, reporting, allocations, and statements.", value: "portfolio_operations" },
-  { label: "ATR Property Trust", description: "Real estate trust, consultation, and document readiness.", value: "atr_property_trust" },
+  { label: "Real Estate & Trust", description: "Real estate trust, consultation, and document readiness.", value: "real_estate_trust" },
   { label: "Cyber Briefing", description: "Intelligence briefing, exposure review, and escalation.", value: "cyber_briefing" },
   { label: "General Support", description: "Other operational support and service desk requests.", value: "general_support" },
 ];
@@ -55,6 +56,7 @@ function formatLabel(value: string) {
 export default function SupportPage() {
   const [tickets, setTickets] = useState<TicketRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [topic, setTopic] = useState("general_support");
@@ -62,11 +64,14 @@ export default function SupportPage() {
   const [description, setDescription] = useState("");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [canOperate, setCanOperate] = useState(false);
+  const subjectRef = useRef<HTMLInputElement>(null);
 
   async function loadTickets() {
     setLoading(true);
+    setLoadError(false);
     try {
       const response = await fetch("/api/support", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (Array.isArray(data.tickets)) {
         setTickets(data.tickets);
@@ -79,6 +84,8 @@ export default function SupportPage() {
           return null;
         });
       }
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -145,8 +152,9 @@ export default function SupportPage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
+          <WorkspaceBreadcrumb current="Support" />
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-mono uppercase tracking-wider text-cyan-400">
-            <HeadphonesIcon className="h-3.5 w-3.5" /> Support Command Center
+            <HeadphonesIcon className="h-3.5 w-3.5" aria-hidden="true" /> Support Command Center
           </div>
           <h1 className="text-2xl font-bold text-white">Enterprise Support</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
@@ -178,27 +186,58 @@ export default function SupportPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card className="border-white/10 bg-card">
-          <CardHeader><CardTitle className="flex items-center gap-2 text-white"><LifeBuoy className="h-5 w-5 text-cyan-400" /> Open Support Ticket</CardTitle></CardHeader>
+        <Card id="open-support-ticket" className="scroll-mt-24 border-white/10 bg-card">
+          <CardHeader><CardTitle className="flex items-center gap-2 text-white"><LifeBuoy className="h-5 w-5 text-cyan-400" aria-hidden="true" /> Open Support Ticket</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={createTicket} className="space-y-5">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {supportTopics.map((item) => (
-                  <button key={item.value} type="button" onClick={() => setTopic(item.value)} className={`rounded-2xl border p-4 text-left transition ${topic === item.value ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/20"}`}>
-                    <p className="text-sm font-semibold text-white">{item.label}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
-                  </button>
-                ))}
+              <fieldset>
+                <legend className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Topic</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {supportTopics.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      aria-pressed={topic === item.value}
+                      onClick={() => setTopic(item.value)}
+                      className={`rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${topic === item.value ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/20"}`}
+                    >
+                      <p className="text-sm font-semibold text-white">{item.label}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <div>
+                <label htmlFor="support-subject" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Short support issue</label>
+                <input
+                  id="support-subject"
+                  ref={subjectRef}
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  maxLength={160}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-500/40 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
+                  placeholder="e.g. Cannot view my latest statement"
+                />
               </div>
-              <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={160} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-500/40" placeholder="Short support issue" />
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={4000} rows={5} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-500/40" placeholder="Describe the issue, affected service, desired outcome, and urgency." />
+              <div>
+                <label htmlFor="support-description" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Details</label>
+                <textarea
+                  id="support-description"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  maxLength={4000}
+                  rows={5}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-500/40 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
+                  placeholder="Describe the issue, affected service, desired outcome, and urgency."
+                />
+              </div>
               {createError ? (
                 <div role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                   {createError}
                 </div>
               ) : null}
               <Button type="submit" disabled={creating || !subject.trim() || !description.trim()} className="w-full rounded-xl bg-cyan-400 text-black hover:bg-cyan-300">
-                {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <ArrowRight className="mr-2 h-4 w-4" aria-hidden="true" />}
                 {creating ? "Opening Ticket" : "Open Ticket"}
               </Button>
             </form>
@@ -230,9 +269,30 @@ export default function SupportPage() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-white"><MessageSquare className="h-5 w-5 text-cyan-400" /> Ticket History</CardTitle></CardHeader>
             <CardContent>
               {loading ? (
-                <div className="flex items-center justify-center gap-2 py-10 text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading tickets…</div>
+                <div className="flex items-center justify-center gap-2 py-10 text-slate-500" role="status"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading tickets…</div>
+              ) : loadError ? (
+                <WorkspaceErrorState
+                  title="Tickets could not be loaded"
+                  description="Your ticket history could not be reached. Try again — you can still open a new ticket."
+                  onRetry={loadTickets}
+                />
               ) : tickets.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center"><Ticket className="mx-auto mb-3 h-8 w-8 text-slate-600" /><p className="text-sm text-slate-500">No support tickets yet.</p></div>
+                <WorkspaceEmptyState
+                  title="No support tickets yet"
+                  description="When you open a ticket, its history and conversation appear here."
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.getElementById("open-support-ticket")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        subjectRef.current?.focus({ preventScroll: true });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-300 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    >
+                      Open your first ticket <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  }
+                />
               ) : (
                 <div className="space-y-3">
                   {tickets.map((ticket) => (

@@ -243,6 +243,12 @@ export const clientPortalNavGroups: PlatformNavGroup[] = [
         description: "Secure messaging and conversation threads.",
       },
       {
+        href: "/app/whatsapp",
+        icon: "MessageSquare",
+        label: "WhatsApp Operations",
+        description: "Coordinate WhatsApp-supported service, case, appointment, and document handoffs.",
+      },
+      {
         href: "/app/notifications",
         icon: "Bell",
         label: "Notifications",
@@ -296,6 +302,12 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         icon: "Shield",
         label: "Admin Center",
         description: "Administrative overview and route directory.",
+      },
+      {
+        href: "/app/admin/client-operations",
+        icon: "Building2",
+        label: "Client Operations",
+        description: "Unified client lifecycle, security, finance, compliance, communications, and service operations.",
       },
       {
         href: "/app/admin/organization-reports",

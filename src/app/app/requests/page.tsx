@@ -70,9 +70,16 @@ interface RequestCenterResponse {
 type RequestTypeIcon = ComponentType<{ className?: string }>;
 
 const requestTypeIcons: Record<ServiceRequestTypeId, RequestTypeIcon> = {
+  client_onboarding: UserRound,
   portfolio_review: Briefcase,
+  finance_operations: Briefcase,
+  digital_finance_review: ShieldCheck,
   compliance_review: ShieldCheck,
+  legal_regulatory: ClipboardList,
   cyber_briefing: Shield,
+  threat_monitoring: ShieldAlert,
+  digital_services: Building2,
+  business_growth: ArrowRight,
   real_estate_trust: Building2,
   document_request: FileText,
   support: HeadphonesIcon,

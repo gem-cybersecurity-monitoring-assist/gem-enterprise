@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shield, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 import { getFooterRoutes, navigationMenu } from "@/lib/siteRoutes";
 
 const footerRoutes = getFooterRoutes();
@@ -82,7 +83,7 @@ export function Footer() {
           <div className="max-w-sm">
             <Link href="/" className="group inline-flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[hsl(185,100%,45%)]/10 ring-1 ring-[hsl(185,100%,45%)]/25 transition-all group-hover:ring-[hsl(185,100%,45%)]/50">
-                <Shield className="h-5 w-5 text-[hsl(185,100%,45%)]" strokeWidth={2} aria-hidden="true" />
+                <Image src="/favicon.svg" alt="" aria-hidden="true" width={24} height={24} unoptimized className="h-6 w-6" />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="text-base font-bold tracking-widest text-[hsl(185,100%,45%)]">GEM</span>

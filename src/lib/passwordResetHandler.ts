@@ -20,12 +20,12 @@ const schema = z.object({
 
 export async function handlePasswordReset(request: NextRequest) {
   const { ipAddress, userAgent } = getRequestContext(request);
-  const limit = rateLimit(ipAddress, {
+  const limit = await rateLimit(ipAddress, {
     key: "auth:reset-password",
     windowMs: 900_000,
     max: 10,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

@@ -3,6 +3,10 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { socialContentTypes } from "@/lib/social-media/policy";
 import {
+  evaluateContentLaneDestination,
+  readContentLaneMetadata,
+} from "@/lib/social-media/orchestration/content-lanes";
+import {
   createSocialPublishingJob,
   listSocialPublishingJobs,
 } from "@/lib/social-media/publishing/store";
@@ -187,6 +191,30 @@ export async function POST(request: NextRequest) {
     }
 
     const settings = object(version.settings);
+    const laneMetadata = readContentLaneMetadata(settings);
+    if (!laneMetadata.metadataValid) {
+      throw new TokMetricError(
+        409,
+        "CONTENT_LANE_METADATA_INVALID",
+        "The active content version contains an unknown content lane and cannot be queued.",
+      );
+    }
+    const laneRouting = evaluateContentLaneDestination({
+      lane: laneMetadata.lane,
+      provider: input.provider,
+      sourceKind: laneMetadata.sourceKind,
+      sourceTransformationVerified:
+        laneMetadata.sourceTransformationVerified,
+      aigcDisclosureApplied: laneMetadata.aigcDisclosureApplied,
+    });
+    if (!laneRouting.allowed) {
+      throw new TokMetricError(
+        409,
+        "CONTENT_LANE_PUBLISHING_BLOCKED",
+        `Content lane policy blocked this destination: ${laneRouting.reasons.join(", ")}.`,
+      );
+    }
+
     const hashtags = version.hashtags.map((tag) =>
       tag.startsWith("#") ? tag : `#${tag}`,
     );
@@ -223,9 +251,24 @@ export async function POST(request: NextRequest) {
       thread: strings(settings.thread),
       localContext: input.localContext,
       visibility,
+      syntheticContentDisclosure:
+        laneMetadata.aigcDisclosureRequired
+          ? laneMetadata.aigcDisclosureApplied
+          : undefined,
       metadata: {
         contentId: content.id,
         contentVersionId: version.id,
+        contentLane: laneMetadata.lane,
+        sourceKind: laneMetadata.sourceKind,
+        routingPolicyVersion: laneMetadata.policyVersion,
+        aigcDisclosureRequired: laneMetadata.aigcDisclosureRequired,
+        aigcDisclosureApplied: laneMetadata.aigcDisclosureApplied,
+        sourceTransformationRequired:
+          laneMetadata.sourceTransformationRequired,
+        sourceTransformationVerified:
+          laneMetadata.sourceTransformationVerified,
+        sourceAttributionRequired: laneMetadata.sourceAttributionRequired,
+        originalConceptRequired: laneMetadata.originalConceptRequired,
       },
     };
 

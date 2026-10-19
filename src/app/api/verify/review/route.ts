@@ -47,9 +47,22 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function gatewayReviewUnavailable() {
+  return json(
+    {
+      error: "Verification review is temporarily unavailable.",
+      code: "VERIFICATION_REVIEW_GATEWAY_REQUIRED",
+    },
+    503,
+  );
+}
+
 export async function GET() {
   const gate = await requireStaff();
   if (!gate.ok) return gate.response;
+  if (gate.session.authSource === "supabase_gateway") {
+    return gatewayReviewUnavailable();
+  }
 
   try {
     const applications = await listVerificationReviewQueue(
@@ -73,6 +86,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const gate = await requireStaff();
   if (!gate.ok) return gate.response;
+  if (gate.session.authSource === "supabase_gateway") {
+    return gatewayReviewUnavailable();
+  }
 
   let body: unknown;
   try {

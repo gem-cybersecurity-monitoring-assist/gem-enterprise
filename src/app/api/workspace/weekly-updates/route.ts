@@ -15,10 +15,10 @@ function failure(error: unknown) {
   if (error instanceof OrganizationWorkspaceError) return NextResponse.json({error:error.message,code:error.code},{status:error.statusCode});
   console.error("[weekly-updates] failed",error); return NextResponse.json({error:"Weekly update operation failed"},{status:500});
 }
-function writeGate(request:NextRequest,userId:string){if(!isSameOriginWorkspaceRequest(request.headers.get("origin"),request.nextUrl.origin))return NextResponse.json({error:"A same-origin request is required.",code:"SAME_ORIGIN_REQUIRED"},{status:403});const {ipAddress}=getRequestContext(request);const limit=rateLimit(`${userId}:${ipAddress}`,{key:"workspace:weekly-updates",windowMs:60_000,max:20});return limit.ok?null:rateLimitedResponse(limit.retryAfterSeconds)}
+async function writeGate(request:NextRequest,userId:string){if(!isSameOriginWorkspaceRequest(request.headers.get("origin"),request.nextUrl.origin))return NextResponse.json({error:"A same-origin request is required.",code:"SAME_ORIGIN_REQUIRED"},{status:403});const {ipAddress}=getRequestContext(request);const limit=await rateLimit(`${userId}:${ipAddress}`,{key:"workspace:weekly-updates",windowMs:60_000,max:20});return limit.ok?null:rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable)}
 export async function POST(request:NextRequest){
   const gate=await requireSession(); if(!gate.ok)return gate.response;
-  const blocked=writeGate(request,gate.session.userId);if(blocked)return blocked;
+  const blocked=await writeGate(request,gate.session.userId);if(blocked)return blocked;
   const parsed=createSchema.safeParse(await request.json().catch(()=>null)); if(!parsed.success)return NextResponse.json({error:"Validation failed",details:parsed.error.flatten()},{status:400});
   try{
     if(gate.session.authSource==="supabase_gateway"){const token=await getGatewaySessionToken();if(!token)return NextResponse.json({error:"Gateway session required"},{status:401});return NextResponse.json(await workspaceGateway("create_update",token,parsed.data),{status:201})}
@@ -31,7 +31,7 @@ export async function POST(request:NextRequest){
 }
 export async function PATCH(request:NextRequest){
   const gate=await requireSession();if(!gate.ok)return gate.response;
-  const blocked=writeGate(request,gate.session.userId);if(blocked)return blocked;
+  const blocked=await writeGate(request,gate.session.userId);if(blocked)return blocked;
   const parsed=reviewSchema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return NextResponse.json({error:"Validation failed",details:parsed.error.flatten()},{status:400});
   try{
     if(gate.session.authSource==="supabase_gateway"){const token=await getGatewaySessionToken();if(!token)return NextResponse.json({error:"Gateway session required"},{status:401});return NextResponse.json(await workspaceGateway("review_update",token,parsed.data))}

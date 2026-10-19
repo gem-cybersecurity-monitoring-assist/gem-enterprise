@@ -81,4 +81,32 @@ describe("verification application API", () => {
     expect(response.status).toBe(400);
     expect(serviceMocks.save).not.toHaveBeenCalled();
   });
+
+  it("rejects a gateway-authenticated applicant status request without using Prisma", async () => {
+    authMocks.requireSession.mockResolvedValue({
+      ok: true,
+      session: { userId: "user-1", role: "client", authSource: "supabase_gateway" },
+    });
+    const response = await GET();
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ code: "VERIFICATION_GATEWAY_BACKEND_REQUIRED" });
+    expect(serviceMocks.getLatest).not.toHaveBeenCalled();
+    expect(serviceMocks.save).not.toHaveBeenCalled();
+  });
+
+  it("rejects a gateway-authenticated applicant write before reading its contents", async () => {
+    authMocks.requireSession.mockResolvedValue({
+      ok: true,
+      session: { userId: "user-1", role: "client", authSource: "supabase_gateway" },
+    });
+    const response = await POST(new NextRequest("http://localhost/api/verify/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not valid json",
+    }));
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ code: "VERIFICATION_GATEWAY_BACKEND_REQUIRED" });
+    expect(serviceMocks.save).not.toHaveBeenCalled();
+  });
+
 });

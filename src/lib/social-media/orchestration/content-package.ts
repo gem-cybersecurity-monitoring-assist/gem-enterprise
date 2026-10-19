@@ -4,6 +4,14 @@ import type {
   MarketSignal,
 } from "../planning/daily-flow";
 import type { SocialMediaProviderId } from "../providers";
+import {
+  deriveContentLane,
+  detectContentSourceKind,
+  getContentLaneDecision,
+  SOCIAL_CONTENT_ROUTING_POLICY_VERSION,
+  type SocialContentLane,
+  type SocialContentSourceKind,
+} from "./content-lanes";
 
 export type ContentRiskCategory =
   | "UNSUPPORTED_CLAIM"
@@ -11,7 +19,9 @@ export type ContentRiskCategory =
   | "REGULATORY_CLAIM"
   | "LOCAL_CONTEXT_REQUIRED"
   | "HUMAN_APPROVAL_REQUIRED"
-  | "AUTO_POLICY_REQUIRED";
+  | "AUTO_POLICY_REQUIRED"
+  | "SOURCE_REPURPOSING"
+  | "AI_GENERATED_CONTENT";
 
 export type ContentRiskSeverity = "INFO" | "WARNING" | "BLOCK";
 
@@ -32,6 +42,24 @@ export interface VideoScene {
   humanPresence: "REQUIRED" | "OPTIONAL";
 }
 
+/**
+ * Attribution for live-sourced signals ("news:<articleId>"). Returns the
+ * credit text plus the source URL when the signal carries a real URL;
+ * undefined for evergreen fallback signals or URL-less references.
+ */
+export function buildSignalAttribution(
+  signal: MarketSignal,
+): { text: string; url: string } | undefined {
+  if (!signal.id.startsWith("news:")) return undefined;
+  const url = signal.sourceReference.trim();
+  if (!/^https?:\/\//i.test(url)) return undefined;
+  return { text: `Source: ${url}`, url };
+}
+
+function signalAttribution(signal: MarketSignal) {
+  return buildSignalAttribution(signal);
+}
+
 export interface VideoRecipe {
   format: "VERTICAL_SHORT" | "LANDSCAPE";
   durationSeconds: number;
@@ -47,6 +75,15 @@ export interface VideoRecipe {
     scenes: VideoScene[];
     subtitles: true;
     humanReviewRequired: boolean;
+    contentLane: SocialContentLane;
+    sourceKind: SocialContentSourceKind;
+    routingPolicyVersion: string;
+    aigcDisclosureRequired: boolean;
+    aigcDisclosureApplied: boolean;
+    sourceTransformationRequired: boolean;
+    sourceTransformationVerified: boolean;
+    sourceAttributionRequired: boolean;
+    originalConceptRequired: boolean;
   };
 }
 
@@ -81,6 +118,7 @@ export interface PublishingChecklistItem {
 export interface CrossPlatformContentPackage {
   fingerprint: string;
   provider: SocialMediaProviderId;
+  contentLane: SocialContentLane;
   contentType: DailyContentDraft["contentType"];
   title: string;
   shortVideo: VideoRecipe;
@@ -91,6 +129,13 @@ export interface CrossPlatformContentPackage {
     sourceReference: string;
     signalId: string;
     signalReference: string;
+    /** Source URL attribution is only present for observed, URL-backed news signals. */
+    attribution?: string;
+    sourceKind: SocialContentSourceKind;
+    transformationRequired: boolean;
+    sourceTransformationVerified: boolean;
+    attributionRequired: boolean;
+    originalConceptRequired: boolean;
   };
   riskFlags: ContentRiskFlag[];
   publishingChecklist: PublishingChecklistItem[];
@@ -193,6 +238,7 @@ function platformHashtags(provider: SocialMediaProviderId, topic: string) {
     INDEED_EMPLOYER: 0,
     LINKEDIN_COMPANY: 5,
     YOUTUBE: 8,
+    TELEGRAM: 5,
   };
   return [...new Set([...base, ...topicTags])].slice(0, limits[provider]);
 }
@@ -232,7 +278,7 @@ function platformCaption(input: {
   return truncate(`${hook}\n\n${explanation}\n\n${action}`, 4500);
 }
 
-function buildScenes(input: {
+function buildStandardScenes(input: {
   hook: string;
   signal: MarketSignal;
   source: ApprovedSourceMaterial;
@@ -274,12 +320,127 @@ function buildScenes(input: {
   ];
 }
 
+function buildTikTokRepurposeScenes(input: {
+  hook: string;
+  signal: MarketSignal;
+  source: ApprovedSourceMaterial;
+  action: string;
+}): VideoScene[] {
+  return [
+    {
+      sequence: 1,
+      durationSeconds: 4,
+      visualDirection:
+        "Fast original title sequence with abstract editorial motion; do not reproduce source screenshots or platform UI.",
+      narration: input.hook,
+      onScreenText: truncate(input.hook, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 2,
+      durationSeconds: 8,
+      visualDirection:
+        "Use original diagrams, neutral B-roll, or licensed visuals to summarize the fresh source without copying its wording or visual identity.",
+      narration: input.signal.summary,
+      onScreenText: truncate(input.signal.topic, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 3,
+      durationSeconds: 10,
+      visualDirection:
+        "Translate the development into a practical GEM-relevant explanation with original visuals and no fabricated event footage.",
+      narration: input.source.summary,
+      onScreenText: truncate(input.source.title, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 4,
+      durationSeconds: 6,
+      visualDirection:
+        "Close with a concise original takeaway and the canonical GEM next step; retain source attribution in publication metadata.",
+      narration: input.action,
+      onScreenText: truncate(input.action, 72),
+      humanPresence: "OPTIONAL",
+    },
+  ];
+}
+
+function buildFacelessCinematicScenes(input: {
+  hook: string;
+  signal: MarketSignal;
+  source: ApprovedSourceMaterial;
+  action: string;
+}): VideoScene[] {
+  return [
+    {
+      sequence: 1,
+      durationSeconds: 8,
+      visualDirection:
+        "Original cinematic establishing shot with stylized, non-identifiable characters or environments; no real-person likeness or fabricated real-event framing.",
+      narration: input.hook,
+      onScreenText: truncate(input.hook, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 2,
+      durationSeconds: 14,
+      visualDirection:
+        "Cinematic faceless sequence explaining the current development using generated or licensed symbolic visuals, not deceptive documentary footage.",
+      narration: input.signal.summary,
+      onScreenText: truncate(input.signal.topic, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 3,
+      durationSeconds: 18,
+      visualDirection:
+        "Continue the original story with faceless characters, environments, diagrams, and service-relevant scenes; avoid impersonation and unsupported claims.",
+      narration: input.source.summary,
+      onScreenText: truncate(input.source.title, 72),
+      humanPresence: "OPTIONAL",
+    },
+    {
+      sequence: 4,
+      durationSeconds: 10,
+      visualDirection:
+        "End on a branded cinematic resolution and clear next step with captions and AI-content disclosure metadata preserved.",
+      narration: input.action,
+      onScreenText: truncate(input.action, 72),
+      humanPresence: "OPTIONAL",
+    },
+  ];
+}
+
+function buildScenes(input: {
+  hook: string;
+  signal: MarketSignal;
+  source: ApprovedSourceMaterial;
+  action: string;
+  lane: SocialContentLane;
+}): VideoScene[] {
+  if (input.lane === "TIKTOK_VIRAL_REPURPOSE") {
+    return buildTikTokRepurposeScenes(input);
+  }
+  if (input.lane === "FACELESS_CINEMATIC") {
+    return buildFacelessCinematicScenes(input);
+  }
+  return buildStandardScenes(input);
+}
+
 function buildVisualBrief(input: {
   draft: DailyContentDraft;
   source: ApprovedSourceMaterial;
   signal: MarketSignal;
   action: string;
+  lane: SocialContentLane;
 }): VisualBrief {
+  const laneDirection =
+    input.lane === "TIKTOK_VIRAL_REPURPOSE"
+      ? "Original editorial visuals derived from the summarized source; do not copy source screenshots, post layouts, or platform chrome; never fabricate statistics or events."
+      : input.lane === "FACELESS_CINEMATIC"
+        ? "Original cinematic faceless artwork using stylized or clearly synthetic scenes; no real-person impersonation, deceptive documentary framing, fake news treatment, or unlicensed media."
+        : "Professional, realistic security-operations aesthetic; use approved GEM brand assets; never depict real credentials, customer systems, exploit steps, or fabricated dashboards.";
   const slides = [
     {
       sequence: 1,
@@ -312,8 +473,7 @@ function buildVisualBrief(input: {
   return {
     type: carousel ? "CAROUSEL" : "SINGLE_IMAGE",
     headline: truncate(`${input.signal.topic}: ${input.source.title}`, 100),
-    artDirection:
-      "Professional, realistic security-operations aesthetic; use approved GEM brand assets; never depict real credentials, customer systems, exploit steps, or fabricated dashboards.",
+    artDirection: laneDirection,
     accessibilityText: `Educational visual about ${input.signal.topic} and ${input.source.title}.`,
     slides: carousel ? slides : [slides[0]],
   };
@@ -322,6 +482,8 @@ function buildVisualBrief(input: {
 function publishingChecklist(
   provider: SocialMediaProviderId,
   approvalMode: "HUMAN" | "AUTO_POLICY",
+  lane: SocialContentLane,
+  decision: ReturnType<typeof getContentLaneDecision>,
 ): PublishingChecklistItem[] {
   const common: PublishingChecklistItem[] = [
     { code: "SOURCE_APPROVED", label: "Confirm the source material remains approved and current.", required: true, completed: false },
@@ -356,6 +518,38 @@ function publishingChecklist(
       completed: false,
     });
   }
+  if (lane === "TIKTOK_VIRAL_REPURPOSE") {
+    common.splice(1, 0,
+      {
+        code: "SOURCE_TRANSFORMED",
+        label: "Confirm the X or Threads source was summarized and materially rewritten rather than copied.",
+        required: true,
+        completed: false,
+      },
+      {
+        code: "SOURCE_ATTRIBUTED",
+        label: "Retain the original source reference for editorial verification and attribution.",
+        required: true,
+        completed: false,
+      },
+    );
+  }
+  if (decision.aigcDisclosureRequired) {
+    common.splice(1, 0,
+      {
+        code: "AIGC_DISCLOSURE",
+        label: "Apply the platform AI-generated or synthetic-content disclosure when required by the destination.",
+        required: true,
+        completed: false,
+      },
+      {
+        code: "NO_REAL_PERSON_IMPERSONATION",
+        label: "Confirm generated visuals and narration do not impersonate a real person or fabricate a real event.",
+        required: true,
+        completed: false,
+      },
+    );
+  }
   return common;
 }
 
@@ -367,8 +561,40 @@ export function generateCrossPlatformContentPackage(input: {
   approvalMode?: "HUMAN" | "AUTO_POLICY";
 }): CrossPlatformContentPackage {
   const hook = `What does ${input.signal.topic} mean for your organization today?`;
-  const explanation = `${input.signal.summary} ${input.source.summary}`.trim();
   const action = input.source.callToAction.trim();
+  const sourceKind = detectContentSourceKind(input.signal.sourceReference);
+  const contentLane =
+    input.draft.contentLane ??
+    deriveContentLane({
+      provider: input.draft.provider,
+      contentType: input.draft.contentType,
+      signalReference: input.signal.sourceReference,
+      laneHint: input.signal.contentLaneHint,
+      observedAt: input.signal.observedAt,
+      evaluatedAt: new Date(),
+    });
+  const transformedSummary = input.signal.transformedSummary?.trim();
+  const sourceTransformationVerified =
+    contentLane === "TIKTOK_VIRAL_REPURPOSE"
+      ? Boolean(
+          transformedSummary &&
+            input.signal.sourceTransformationVerified === true,
+        )
+      : true;
+  const presentationSignal =
+    contentLane === "TIKTOK_VIRAL_REPURPOSE"
+      ? {
+          ...input.signal,
+          summary:
+            transformedSummary ||
+            "Source transformation is pending verification and cannot be published yet.",
+        }
+      : input.signal;
+  const explanation = `${presentationSignal.summary} ${input.source.summary}`.trim();
+  const laneDecision = getContentLaneDecision({
+    lane: contentLane,
+    sourceKind,
+  });
   const caption = platformCaption({
     provider: input.draft.provider,
     hook,
@@ -376,7 +602,13 @@ export function generateCrossPlatformContentPackage(input: {
     action,
     localContext: input.localContext,
   });
-  const scenes = buildScenes({ hook, signal: input.signal, source: input.source, action });
+  const scenes = buildScenes({
+    hook,
+    signal: presentationSignal,
+    source: input.source,
+    action,
+    lane: contentLane,
+  });
   const script = scenes.map((scene) => scene.narration).join("\n\n");
   const riskFlags = scanText(
     [
@@ -384,10 +616,57 @@ export function generateCrossPlatformContentPackage(input: {
       input.source.summary,
       input.signal.topic,
       input.signal.summary,
+      transformedSummary ?? "",
       caption,
       script,
     ].join("\n"),
   );
+
+  if (contentLane === "TIKTOK_VIRAL_REPURPOSE") {
+    riskFlags.push(
+      sourceTransformationVerified
+        ? {
+            code: "SOURCE_TRANSFORMATION_VERIFIED",
+            category: "SOURCE_REPURPOSING",
+            severity: "INFO",
+            message:
+              "The X or Threads source has a separately supplied, verified transformed summary for TikTok publication.",
+          }
+        : {
+            code: "SOURCE_TRANSFORMATION_UNVERIFIED",
+            category: "SOURCE_REPURPOSING",
+            severity: "BLOCK",
+            message:
+              "TikTok viral repurposing is blocked until a materially rewritten summary is supplied and explicitly verified.",
+          },
+      {
+        code: "SOURCE_ATTRIBUTION_REQUIRED",
+        category: "SOURCE_REPURPOSING",
+        severity: "INFO",
+        message:
+          "The original source reference must remain attached for verification and attribution.",
+      },
+    );
+  }
+
+  if (contentLane === "FACELESS_CINEMATIC") {
+    riskFlags.push(
+      {
+        code: "AIGC_DISCLOSURE_REQUIRED",
+        category: "AI_GENERATED_CONTENT",
+        severity: "INFO",
+        message:
+          "Faceless cinematic output must preserve the destination's AI-generated or synthetic-content disclosure.",
+      },
+      {
+        code: "REAL_PERSON_IMPERSONATION_PROHIBITED",
+        category: "AI_GENERATED_CONTENT",
+        severity: "INFO",
+        message:
+          "Generated media must not impersonate a real person or present fabricated events as authentic footage.",
+      },
+    );
+  }
 
   if (input.draft.provider === "NEXTDOOR" && !input.localContext?.trim()) {
     riskFlags.push({
@@ -428,6 +707,7 @@ export function generateCrossPlatformContentPackage(input: {
   return {
     fingerprint: input.draft.fingerprint,
     provider: input.draft.provider,
+    contentLane,
     contentType: input.draft.contentType,
     title: truncate(`${input.signal.topic} — ${input.draft.angle}`, 190),
     shortVideo: {
@@ -435,11 +715,21 @@ export function generateCrossPlatformContentPackage(input: {
       durationSeconds,
       aspectRatio: format === "LANDSCAPE" ? "16:9" : "9:16",
       voiceDirection:
-        "Natural, confident human delivery. Avoid synthetic urgency, fear tactics, and claims beyond the approved source.",
+        contentLane === "FACELESS_CINEMATIC"
+          ? "Use a clearly produced narration track or TTS voice that does not imitate a real person; prioritize clarity, natural pacing, and disclosure-aware presentation."
+          : contentLane === "TIKTOK_VIRAL_REPURPOSE"
+            ? "Use concise editorial narration in GEM's own voice; do not imitate the source author or reproduce source wording."
+            : "Natural, confident human delivery. Avoid synthetic urgency, fear tactics, and claims beyond the approved source.",
       cameraDirection:
-        "Use a real presenter where available; medium close-up, direct eye contact, clean lighting, and realistic operations visuals.",
+        contentLane === "FACELESS_CINEMATIC"
+          ? "Faceless cinematic storytelling only: stylized or clearly synthetic environments, no real-person likeness, no fake documentary footage, and no platform UI mockups."
+          : contentLane === "TIKTOK_VIRAL_REPURPOSE"
+            ? "Use original vertical editorial visuals, licensed B-roll, diagrams, or faceless motion graphics; do not copy source screenshots or branding."
+            : "Use a real presenter where available; medium close-up, direct eye contact, clean lighting, and realistic operations visuals.",
       musicDirection:
-        "Optional low-volume licensed instrumental bed; narration and accessibility captions remain primary.",
+        contentLane === "FACELESS_CINEMATIC"
+          ? "Use only licensed or generated soundtrack material suitable for cinematic narration; speech and captions remain primary."
+          : "Optional low-volume licensed instrumental bed; narration and accessibility captions remain primary.",
       captionsRequired: true,
       script,
       scenes,
@@ -448,13 +738,23 @@ export function generateCrossPlatformContentPackage(input: {
         scenes,
         subtitles: true,
         humanReviewRequired: input.approvalMode !== "AUTO_POLICY",
+        contentLane,
+        sourceKind,
+        routingPolicyVersion: SOCIAL_CONTENT_ROUTING_POLICY_VERSION,
+        aigcDisclosureRequired: laneDecision.aigcDisclosureRequired,
+        aigcDisclosureApplied: false,
+        sourceTransformationRequired: laneDecision.sourceTransformationRequired,
+        sourceTransformationVerified,
+        sourceAttributionRequired: laneDecision.sourceAttributionRequired,
+        originalConceptRequired: laneDecision.originalConceptRequired,
       },
     },
     visualBrief: buildVisualBrief({
       draft: input.draft,
       source: input.source,
-      signal: input.signal,
+      signal: presentationSignal,
       action,
+      lane: contentLane,
     }),
     publication: {
       provider: input.draft.provider,
@@ -468,11 +768,19 @@ export function generateCrossPlatformContentPackage(input: {
       sourceReference: input.source.sourceReference,
       signalId: input.signal.id,
       signalReference: input.signal.sourceReference,
+      attribution: signalAttribution(input.signal)?.text,
+      sourceKind,
+      transformationRequired: laneDecision.sourceTransformationRequired,
+      sourceTransformationVerified,
+      attributionRequired: laneDecision.sourceAttributionRequired,
+      originalConceptRequired: laneDecision.originalConceptRequired,
     },
     riskFlags,
     publishingChecklist: publishingChecklist(
       input.draft.provider,
       input.approvalMode ?? "HUMAN",
+      contentLane,
+      laneDecision,
     ),
     approvalRequired: true,
     complianceReviewRequired: true,

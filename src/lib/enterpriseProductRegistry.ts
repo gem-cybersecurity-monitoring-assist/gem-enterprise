@@ -2,7 +2,7 @@ export type ProductBoundary = "gem_internal" | "independent_saas";
 export type ProductReadiness = "LIVE" | "CONTROLLED" | "PLANNED";
 
 export interface EnterpriseProduct {
-  id: "gem-workspace-os" | "iww" | "crypto-signal-bot" | "btcc-copy-manager";
+  id: "gem-workspace-os" | "iww" | "btcc-copy-manager";
   name: string;
   summary: string;
   boundary: ProductBoundary;
@@ -51,19 +51,6 @@ export const enterpriseProducts: readonly EnterpriseProduct[] = [
     repository: "support371/infinite-wealth-wellbeing",
     owner: "IWW platform administration",
     capabilities: ["Tenant workspaces", "Member portal", "Wealth planning", "Wellbeing planning", "306-app integration catalog"],
-  },
-  {
-    id: "crypto-signal-bot",
-    name: "Crypto Signal Bot",
-    summary: "A separately governed crypto intelligence product boundary. It must not inherit trading authority from GEM or IWW.",
-    boundary: "independent_saas",
-    readiness: "PLANNED",
-    launchHref: null,
-    authentication: "Separate product identity boundary required",
-    dataAuthority: "Separate product data store required",
-    repository: "Separate repository required before activation",
-    owner: "Crypto product governance",
-    capabilities: ["Market intelligence", "Signal review", "Human approval", "Risk controls"],
   },
   {
     id: "btcc-copy-manager",

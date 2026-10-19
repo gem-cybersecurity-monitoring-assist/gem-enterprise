@@ -59,6 +59,16 @@ The Facebook Operations dashboard must consume this shared Meta connector invent
 
 Account authorization stores a credential and discovered account identity only. It does not authorize an external publishing operation.
 
+## Content lane routing
+
+The adaptive orchestrator now classifies generated content into governed production lanes before media rendering and queue creation:
+
+- `TIKTOK_VIRAL_REPURPOSE` for fresh X or Threads signals transformed into original TikTok-native content;
+- `FACELESS_CINEMATIC` for original faceless AI cinematic YouTube production;
+- `STANDARD_GOVERNED` for the existing cross-platform workflow.
+
+The route guard prevents a lane from being silently sent to a different destination and records lane/source metadata for audit and downstream monitoring. See [social-media-content-lanes.md](./social-media-content-lanes.md).
+
 ### Adaptive content orchestration
 
 The internal Content Orchestrator implements the fixed operational flow:

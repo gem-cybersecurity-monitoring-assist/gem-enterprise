@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   buildAdaptiveDailyContentPlan,
@@ -168,6 +169,40 @@ describe("adaptive daily social flow", () => {
     expect(plan.drafts).toHaveLength(1);
     expect(plan.drafts[0].contentType).toBe("JOB_POSTING");
     expect(plan.drafts[0].vacancyId).toBe("vacancy-123");
+  });
+
+  it("preserves the legacy standard fingerprint while distinguishing special lanes", () => {
+    const legacyExpected = createHash("sha256")
+      .update(
+        [
+          "TIKTOK",
+          "SHORT_VIDEO",
+          "identity protection",
+          "what changed today",
+          "source-1",
+        ].join("|"),
+      )
+      .digest("hex");
+
+    const standard = contentFingerprint({
+      provider: "TIKTOK",
+      topic: "Identity Protection",
+      angle: "What Changed Today",
+      sourceMaterialId: "source-1",
+      contentType: "SHORT_VIDEO",
+      contentLane: "STANDARD_GOVERNED",
+    });
+    const viral = contentFingerprint({
+      provider: "TIKTOK",
+      topic: "Identity Protection",
+      angle: "What Changed Today",
+      sourceMaterialId: "source-1",
+      contentType: "SHORT_VIDEO",
+      contentLane: "TIKTOK_VIRAL_REPURPOSE",
+    });
+
+    expect(standard).toBe(legacyExpected);
+    expect(viral).not.toBe(standard);
   });
 
   it("creates stable fingerprints from normalized content inputs", () => {

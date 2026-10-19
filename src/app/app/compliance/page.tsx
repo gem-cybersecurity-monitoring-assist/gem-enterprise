@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WorkspaceBreadcrumb, WorkspaceErrorState } from "@/components/workspace/WorkspaceUi";
 
 type ProfileResponse = {
   email?: string;
@@ -53,17 +54,30 @@ export default function CompliancePage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadCompliance = async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const [profileResponse, docsResponse] = await Promise.all([
+        fetch("/api/users/profile"),
+        fetch("/api/documents"),
+      ]);
+      if (!profileResponse.ok || !docsResponse.ok) throw new Error("compliance fetch failed");
+      const profileData = await profileResponse.json().catch(() => null);
+      const docsData = await docsResponse.json().catch(() => null);
+      if (profileData) setProfile(profileData);
+      if (Array.isArray(docsData?.documents)) setDocuments(docsData.documents);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/users/profile").then((response) => response.json()).catch(() => null),
-      fetch("/api/documents").then((response) => response.json()).catch(() => null),
-    ])
-      .then(([profileData, docsData]) => {
-        if (profileData) setProfile(profileData);
-        if (Array.isArray(docsData?.documents)) setDocuments(docsData.documents);
-      })
-      .finally(() => setLoading(false));
+    void loadCompliance();
   }, []);
 
   const kycStatus = profile?.kycStatus || "not_started";
@@ -82,21 +96,28 @@ export default function CompliancePage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
+          <WorkspaceBreadcrumb current="Compliance" />
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-mono uppercase tracking-wider text-cyan-400">
-            <ShieldCheck className="h-3.5 w-3.5" /> Compliance Control
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Compliance Control
           </div>
           <h1 className="text-2xl font-bold text-white">Compliance Dashboard</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            Review verification status, document readiness, disclosure posture, and entitlement readiness.
+            Review verification status, document readiness, disclosure posture, and entitlement readiness. This reflects your account&apos;s verification record; workspace-level compliance state is administered separately by GEM operations.
           </p>
         </div>
         <Badge className={kycBadge(kycStatus)}>{formatLabel(kycStatus)}</Badge>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading compliance state…
+        <div className="flex items-center justify-center gap-2 py-16 text-slate-500" role="status">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading compliance state…
         </div>
+      ) : loadError ? (
+        <WorkspaceErrorState
+          title="Compliance state could not be loaded"
+          description="Verification status and documents could not be reached. No compliance state is shown rather than a stale one."
+          onRetry={loadCompliance}
+        />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -104,7 +125,7 @@ export default function CompliancePage() {
               { label: "KYC Status", value: formatLabel(kycStatus), icon: UserCheck, color: "text-cyan-400", bg: "bg-cyan-500/10" },
               { label: "Documents", value: String(docsCount), icon: FileText, color: "text-blue-400", bg: "bg-blue-500/10" },
               { label: "Verified Docs", value: String(verifiedDocs), icon: FileCheck2, color: "text-green-400", bg: "bg-green-500/10" },
-              { label: "Accredited", value: profile?.profile?.accreditedStatus ? "Yes" : "Pending", icon: ClipboardCheck, color: "text-yellow-400", bg: "bg-yellow-500/10" },
+              { label: "Accredited", value: profile?.profile?.accreditedStatus ? "Yes" : "Not recorded", icon: ClipboardCheck, color: "text-yellow-400", bg: "bg-yellow-500/10" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="glass-panel bento-card rounded-xl p-5">
                 <div className="mb-4 flex items-center justify-between">

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Mail, Plus, RefreshCw, ShieldCheck, Loader2, Users } from "lucide-react";
+import { AlertTriangle, Mail, Megaphone, Plus, RefreshCw, ShieldCheck, Loader2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +63,9 @@ export default function AdminCampaignsPage() {
           </Button>
           <Button asChild variant="outline" size="sm" className="border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
             <Link href="/app/admin/market/outreach"><Users className="mr-2 h-4 w-4" /> First-20 Outreach</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
+            <Link href="/app/admin/ads-bridge"><Megaphone className="mr-2 h-4 w-4" /> Ads Bridge</Link>
           </Button>
           <Button asChild size="sm" className="bg-cyan-400 text-black hover:bg-cyan-300">
             <Link href="/app/admin/campaigns/new"><Plus className="mr-2 h-4 w-4" /> New Campaign</Link>

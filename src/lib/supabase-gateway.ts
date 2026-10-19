@@ -444,3 +444,75 @@ export async function completePasswordRecoveryGateway(
     },
   );
 }
+
+
+export interface PublicAuditGatewayEntry {
+  action: "admin_action";
+  resource: string;
+  resourceId: string;
+  metadata: Record<string, unknown>;
+}
+
+/**
+ * Persists a non-authenticated, non-sensitive public interaction through the
+ * existing Supabase audit table when the deployed PostgREST grants permit it.
+ * The caller owns a first-party fallback when public insertion is unavailable.
+ * Never pass credentials, wallet addresses, IPs, or
+ * authentication material through this helper.
+ */
+export async function publicAuditGateway(
+  entry: PublicAuditGatewayEntry,
+): Promise<{ ok: true }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const key = gatewayAnonKey();
+    const response = await fetch(`${gatewayProjectUrl()}/rest/v1/audit_logs`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        userId: null,
+        action: entry.action,
+        resource: entry.resource,
+        resourceId: entry.resourceId,
+        metadata: entry.metadata,
+        createdAt: new Date().toISOString(),
+      }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new GatewayRequestError(
+        response.status >= 500 ? 503 : response.status,
+        "PUBLIC_AUDIT_PERSISTENCE_FAILED",
+        "Public audit persistence failed.",
+      );
+    }
+
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof GatewayRequestError) throw error;
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new GatewayRequestError(
+        504,
+        "PUBLIC_AUDIT_TIMEOUT",
+        "Public audit persistence timed out.",
+      );
+    }
+    throw new GatewayRequestError(
+      503,
+      "PUBLIC_AUDIT_UNAVAILABLE",
+      "Public audit persistence is unavailable.",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}

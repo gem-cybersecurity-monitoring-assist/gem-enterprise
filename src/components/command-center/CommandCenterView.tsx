@@ -141,8 +141,13 @@ function ExecutiveSection() {
           <div className="space-y-3">{actionQueue.map((item) => <div key={item.id} className="flex items-center justify-between gap-4 rounded-lg border border-white/8 p-3"><div><p className="text-sm font-medium text-white">{item.title}</p><p className="text-xs text-slate-500">{item.owner} · {item.due}</p></div><Badge className={statusBadge(item.priority)}>{item.priority}</Badge></div>)}</div>
         </SectionCard>
         <SectionCard title="Operating posture" icon={Gauge}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[{ label: "Client retention", value: 94, tone: "emerald" as MetricTone }, { label: "Delivery health", value: 87, tone: "cyan" as MetricTone }, { label: "Security coverage", value: 91, tone: "blue" as MetricTone }, { label: "Compliance readiness", value: 84, tone: "violet" as MetricTone }].map((item) => <div key={item.label} className="rounded-lg border border-white/8 p-4"><div className="mb-2 flex justify-between text-sm"><span className="text-slate-400">{item.label}</span><span className="font-bold text-white">{item.value}%</span></div><ProgressBar value={item.value} tone={item.tone} /></div>)}
+          <div className="rounded-lg border border-amber-400/25 bg-amber-400/[0.06] p-4">
+            <p className="text-sm font-medium text-amber-100">Not connected — setup required</p>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              Operating-posture indicators (client retention, delivery health, security coverage,
+              compliance readiness) are not backed by connected services or persisted records yet.
+              No illustrative percentages are shown here.
+            </p>
           </div>
         </SectionCard>
       </div>
@@ -263,7 +268,7 @@ export function CommandCenterView({ section }: { section: CommandCenterSection }
           {usesIllustrativeAnalytics ? (
             <div className="flex flex-wrap gap-2">
               <select value={tenant} onChange={(event) => setTenant(event.target.value)} className="h-9 rounded-md border border-white/10 bg-background px-3 text-xs text-slate-300 outline-none focus:border-cyan-500/50" aria-label="Organization filter">
-                <option value="all">All organizations</option><option value="northstar">Northstar Health</option><option value="apex">Apex Realty Group</option><option value="harbor">Harbor Financial</option>
+                <option value="all">All organizations</option>
               </select>
               {["7d", "30d", "90d"].map((value) => <Button key={value} size="sm" variant={range === value ? "default" : "outline"} onClick={() => setRange(value)} className={range === value ? "bg-cyan-500 text-black hover:bg-cyan-400" : "border-white/10"}>{value}</Button>)}
             </div>

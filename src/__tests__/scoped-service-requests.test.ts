@@ -20,11 +20,18 @@ const promotionSource = source("scripts/apply-service-request-prisma.mjs");
 
 describe("secure scoped service requests", () => {
   it("uses a fixed request catalog and excludes emergency priority claims", () => {
-    expect(serviceRequestTypeCatalog).toHaveLength(6);
+    expect(serviceRequestTypeCatalog).toHaveLength(13);
     expect(serviceRequestTypeCatalog.map((item) => item.id)).toEqual([
+      "client_onboarding",
       "portfolio_review",
+      "finance_operations",
+      "digital_finance_review",
       "compliance_review",
+      "legal_regulatory",
       "cyber_briefing",
+      "threat_monitoring",
+      "digital_services",
+      "business_growth",
       "real_estate_trust",
       "document_request",
       "support",

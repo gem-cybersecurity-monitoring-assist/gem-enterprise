@@ -28,12 +28,12 @@ function json(body: unknown, status = 200) {
 
 export async function POST(request: NextRequest) {
   const { ipAddress } = getRequestContext(request);
-  const limit = rateLimit(ipAddress, {
+  const limit = await rateLimit(ipAddress, {
     key: "auth:admin-access-validate",
     windowMs: 15 * 60_000,
     max: 12,
   });
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   let body: unknown;
   try {
