@@ -11,7 +11,7 @@ const manifest = JSON.parse(
   ownerApprovalRequired: boolean;
   primaryLandingPage: string;
   media: Array<{ id: string; path: string; format: string; alt: string }>;
-  channels: Array<{ provider: string; source: string; medium: string; status: string; mediaIds: string[] }>;
+  channels: Array<{ provider: string; source: string; medium: string; status: string; caption: string; mediaIds: string[] }>;
   trackingLinks: Array<{ source: string; medium: string; campaign: string; url: string }>;
   releaseGates: string[];
 };
@@ -63,7 +63,7 @@ describe("GEM market launch content package", () => {
   });
 
   it("keeps every draft publishable on its channel", () => {
-    const captions = manifest.channels as Array<{ provider: string; caption: string; mediaIds: string[] }>;
+    const captions = manifest.channels;
     const x = captions.find((channel) => channel.provider === "X");
     // X counts every link as 23 characters; leave room for the tracked CTA link.
     expect(x && x.caption.length + 24).toBeLessThanOrEqual(280);
