@@ -1,34 +1,14 @@
 export const serviceRequestTypeCatalog = [
   {
-    id: "client_onboarding",
-    label: "Client Onboarding & Workspace Setup",
-    description: "Request onboarding, organization setup, workspace activation, or account-structure assistance.",
-  },
-  {
     id: "portfolio_review",
     label: "Portfolio Review",
     description: "Request a review of reporting, allocations, exposure, or protected assets.",
   },
   {
-    id: "finance_operations",
-    label: "Finance & Payment Operations",
-    description: "Request help with approved finance, billing, payment, accounting, or service-finance workflows without entering banking credentials.",
-  },
-  {
-    id: "digital_finance_review",
-    label: "Digital Finance Review",
-    description: "Request a compliant review of digital-asset, wallet, digital-currency, custody, payment-rail, or related service needs without sharing private keys or recovery material.",
-  },
-  {
     id: "compliance_review",
     label: "Compliance Review",
     description:
-      "Request clarification about compliance status, disclosures, evidence, or next steps without submitting identity-document details.",
-  },
-  {
-    id: "legal_regulatory",
-    label: "Legal & Regulatory Workflow",
-    description: "Request routing for legal, policy, contractual, regulatory, or jurisdiction-specific review. GEM will route regulated work to the appropriate authorized professional or process.",
+      "Request clarification about compliance status, disclosures, or next steps without submitting identity-document details.",
   },
   {
     id: "cyber_briefing",
@@ -37,23 +17,8 @@ export const serviceRequestTypeCatalog = [
       "Request a security briefing or an operational review without including passwords, tokens, recovery codes, or private keys.",
   },
   {
-    id: "threat_monitoring",
-    label: "Threat Monitoring & Alert Review",
-    description: "Request threat-monitoring onboarding, alert review, security triage, or escalation. Do not include passwords, tokens, or private keys.",
-  },
-  {
-    id: "digital_services",
-    label: "Digital Services",
-    description: "Request website, application, domain, social, content, automation, integration, or digital-operations support.",
-  },
-  {
-    id: "business_growth",
-    label: "Business Growth & Expansion",
-    description: "Request a review of expansion, service activation, digital presence, operations, or growth opportunities.",
-  },
-  {
     id: "real_estate_trust",
-    label: "Real Estate & Trust Services",
+    label: "ATR Property Trust",
     description: "Request property-trust readiness review or advisor consultation.",
   },
   {
@@ -71,16 +36,9 @@ export const serviceRequestTypeCatalog = [
 ] as const;
 
 export const serviceRequestTypeIds = [
-  "client_onboarding",
   "portfolio_review",
-  "finance_operations",
-  "digital_finance_review",
   "compliance_review",
-  "legal_regulatory",
   "cyber_briefing",
-  "threat_monitoring",
-  "digital_services",
-  "business_growth",
   "real_estate_trust",
   "document_request",
   "support",

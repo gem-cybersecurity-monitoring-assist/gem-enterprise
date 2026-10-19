@@ -4,9 +4,23 @@ function firstDefined(...values) {
   return values.find((value) => typeof value === "string" && value.trim().length > 0)?.trim() || "";
 }
 
+// Windows: Node ships node.exe (no node.cmd), and since CVE-2024-27980 Node
+// refuses to spawn .cmd shims without a shell. Run node via process.execPath
+// and pnpm via its JS entry point (npm_execpath) so no shell is needed.
+function resolveCommand(command, args, env) {
+  if (process.platform !== "win32") return [command, args];
+  if (command === "node") return [process.execPath, args];
+  const execPath = env.npm_execpath || "";
+  if (command === "pnpm" && /pnpm[^\\/]*\.c?js$/i.test(execPath)) return [process.execPath, [execPath, ...args]];
+  if (command === "pnpm" && /pnpm[^\\/]*\.exe$/i.test(execPath)) return [execPath, args];
+  throw new Error(
+    `Cannot resolve "${command}" on Windows without a shell. Run this build through "corepack pnpm run build" so npm_execpath points at pnpm.`,
+  );
+}
+
 function run(command, args, env) {
-  const executable = process.platform === "win32" ? `${command}.cmd` : command;
-  const result = spawnSync(executable, args, { stdio: "inherit", env });
+  const [executable, finalArgs] = resolveCommand(command, args, env);
+  const result = spawnSync(executable, finalArgs, { stdio: "inherit", env });
   if (result.error) throw result.error;
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} exited with status ${result.status}`);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, FolderKanban, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,14 +14,7 @@ interface WorkspaceDirectoryProject {
   progress: number;
 }
 
-export function WorkspaceProjectDirectory({
-  projects,
-  emptyAction,
-}: {
-  projects: WorkspaceDirectoryProject[];
-  /** Rendered inside the empty state when the workspace has no projects yet. */
-  emptyAction?: ReactNode;
-}) {
+export function WorkspaceProjectDirectory({ projects }: { projects: WorkspaceDirectoryProject[] }) {
   const [query, setQuery] = useState("");
   const filteredProjects = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -107,13 +100,9 @@ export function WorkspaceProjectDirectory({
             No workspace project matches “{query}”.
           </p>
         ) : (
-          <div className="rounded-xl border border-dashed border-white/15 p-5 text-center">
-            <p className="text-sm font-semibold text-white">No projects yet</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              The workspace remains active while setup continues. Delivery work provisioned by GEM will appear here.
-            </p>
-            {emptyAction ? <div className="mt-3">{emptyAction}</div> : null}
-          </div>
+          <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
+            No project has been added yet. The workspace remains active while setup continues.
+          </p>
         )}
       </CardContent>
     </Card>

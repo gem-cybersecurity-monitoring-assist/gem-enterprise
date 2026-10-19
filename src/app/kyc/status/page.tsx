@@ -36,69 +36,6 @@ export default async function VerificationStatusPage() {
   const session = await getSession();
   if (!session) redirect("/client-login?next=/kyc/status");
 
-  // The gateway refreshes the latest high-level KYC status while validating the session.
-  // Do not query the unrelated Prisma authority for review notes or case details.
-  if (session.authSource === "supabase_gateway") {
-    const gatewayStatuses: Record<string, { label: string; description: string }> = {
-      not_started: {
-        label: "No submitted verification status on file",
-        description: "The gateway does not report an active verification status for this account.",
-      },
-      started: {
-        label: "Application started",
-        description: "The gateway reports an application in its initial preparation stage.",
-      },
-      in_progress: {
-        label: "Submitted for review",
-        description: "The gateway reports an application in progress. This is not a completed identity verification.",
-      },
-      documents_uploaded: {
-        label: "Documents received — verification unconfirmed",
-        description: "The gateway reports a document-received stage; document authenticity or acceptance has not been verified by this page.",
-      },
-      under_review: {
-        label: "Review in progress",
-        description: "The gateway reports that the application is under review.",
-      },
-      manual_review: {
-        label: "Manual attention required",
-        description: "The gateway reports a manual-review stage. Specific reviewer requests are not available here.",
-      },
-      approved: {
-        label: "Application approved",
-        description: "The gateway reports an approved application decision. Service activation and other regulatory checks remain separate.",
-      },
-      rejected: {
-        label: "Application not approved",
-        description: "The gateway reports a rejected decision. Detailed reasons are not available on this page.",
-      },
-      expired: {
-        label: "Application expired or closed",
-        description: "The gateway reports an expired record. Contact support for case-specific information.",
-      },
-    };
-    const summary = gatewayStatuses[session.kycStatus] ?? {
-      label: "Verification status not classified",
-      description: "The latest gateway status could not be interpreted safely.",
-    };
-    return (
-      <div role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-500/25 bg-amber-500/10 p-8">
-        <h1 className="text-2xl font-bold text-foreground">Application status</h1>
-        <h2 className="mt-4 text-lg font-semibold text-amber-100">{summary.label}</h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{summary.description}</p>
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          This limited status comes from your validated GEM gateway session. Detailed reviewer notes,
-          case history, uploads, and any follow-up requirements remain unavailable until a supported
-          gateway verification service is activated. No application was changed by viewing this page.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild variant="outline"><Link href="/contact">Contact support</Link></Button>
-          <Button asChild variant="ghost"><Link href="/app/dashboard">Return to dashboard</Link></Button>
-        </div>
-      </div>
-    );
-  }
-
   const application = await getLatestVerificationApplication(session.userId);
   if (!application) {
     return (

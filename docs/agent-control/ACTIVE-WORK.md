@@ -1,38 +1,6 @@
 # Active Work
 
-Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
-
-## Unified Client Workspace OS
-
-| Field | Value |
-|---|---|
-| TASK | [UNIFIED-WORKSPACE-OS](tasks/UNIFIED-WORKSPACE-OS.md) |
-| OWNER | Muse / unified workspace lane |
-| SOURCE PR/ISSUE | Owner mandate 2026-09-29; PR #374 |
-| BASE SHA | `068a7d093189958d5be06b579b5fa8f40d7bc99d` |
-| WORKING BRANCH | `feat/unified-client-workspace-os` |
-| OWNED FILES/SCOPE | Capability readiness model + badge; command-center demo-claim remediation; client workspace OS page/components/readiness; admin client-operations control center; service-request lifecycle + admin APIs; additive Prisma models (readiness overrides, lifecycle funnel) + migration; focused tests; this control-plane record |
-| FORBIDDEN OVERLAP | Ads bridge, social autopilot, TikTok shop, news scroll, PR #291/#292/#252 files; provider credentials; production data; auth/session core outside owned files; main-branch merge (no merge authorization) |
-| STATUS | IMPLEMENTED — 120/120 focused tests pass; tsc/eslint clean on workstream files (Prisma client not generatable in sandbox); pushed as scoped commits; PR #374 open, NOT merged |
-| BLOCKER CLASS | CONFIGURATION (Prisma generate needs engine download; preview deploy verifies remainder) |
-| NEXT SAFE ACTION | Verify Vercel branch preview; role-specific live testing delegated to browser-capable agent; owner merge decision on PR #374. |
-
-
-## GEM Ads Bridge
-
-| Field | Value |
-|---|---|
-| TASK | [ADS-BRIDGE](tasks/ADS-BRIDGE.md) |
-| OWNER | Codex / advertising bridge lane |
-| SOURCE PR/ISSUE | Issue #366 |
-| BASE SHA | `b147dc01b51ce889a082641d12a2d6abce5ff45c` |
-| WORKING BRANCH | `codex/zero-spend-ads-bridge` |
-| OWNED FILES/SCOPE | Isolated Ads Bridge policy, admin API/UI, creative asset, focused tests, docs, one admin-campaign discoverability link, and this control-plane record |
-| FORBIDDEN OVERLAP | Social Autopilot/TokMetric internals; Prisma; provider credentials; billing; production activation |
-| STATUS | IMPLEMENTED — FOCUSED GATES PASS; REPOSITORY BASELINE BLOCKED |
-| BLOCKER CLASS | CONFIGURATION / SOURCE (full verify); PROVIDER (paid delivery only) |
-| LAST VERIFIED HEAD | `9cc11a3df2c0fca5ddc5faba8286f9d10efdad8d` |
-| NEXT SAFE ACTION | Review the focused PR, validate the canonical preview, and keep paid delivery fail closed. |
+Snapshot: 2026-09-21 UTC. Refresh live GitHub state before mutation.
 
 ## Social Autopilot
 
@@ -145,32 +113,3 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | BLOCKER CLASS | SOURCE |
 | LAST VERIFIED HEAD | Old PR head `3699dd5135acee4b5b1dc2c5c39674a195a5c666`; 41 commits behind current `main` |
 | NEXT SAFE ACTION | Compare old intent with current main and reimplement only behavior still missing; do not rebase blindly. |
-
-## Enterprise repository and connected-workspace audit
-
-| Field | Value |
-|---|---|
-| TASK | [ENTERPRISE-AUDIT-REPAIR](tasks/ENTERPRISE-AUDIT-REPAIR.md) |
-| OWNER | Codex / Enterprise audit repair |
-| SOURCE | Owner repository audit and repair mandate, 2026-10-02 |
-| BASE SHA | `7175341a328b522fdf181bf4f5ee78d6c3376f41` |
-| WORKING BRANCH | `codex/enterprise-audit-repair-20261002` |
-| OWNED FILES | Product registry; platform configuration routes/evidence; password-reset transaction; focused tests; audit documentation |
-| FORBIDDEN OVERLAP | Active social/provider, workspace OS, intake-routing, credential scan, database migration execution; merge |
-| STATUS | Local repairs validated; live Market and Command Center hosting made private; application code deployment pending |
-| BLOCKERS | Production identity/provider/database evidence; six reproduced base test failures; build errors in existing routes |
-| NEXT SAFE ACTION | Review isolated repair commits and coordinate existing build lanes before merge; verify configured stable Sites owner IDs |
-
-## Member Workspace Showcase — 2026-10-11 reconciliation
-
-| Field | Value |
-|---|---|
-| TASK | [MEMBER-WORKSPACE-SHOWCASE](tasks/MEMBER-WORKSPACE-SHOWCASE.md) |
-| SOURCE | Historical PR #390 and issue #389 |
-| PREVIOUS BASE | `7175341a328b522fdf181bf4f5ee78d6c3376f41` |
-| RECONCILIATION BASE | `0161fdfd05b2754ac677875345a5aba6c979d639` |
-| OWNED SCOPE | Public Community, client Community, Community Hub layout, shared standalone workspace links, focused tests and task docs |
-| EXCLUDED | Auth/session changes, sensitive member records, fabricated activity, provider connections, migrations, billing |
-| STATUS | Isolated source reconciliation; GitHub CI and preview validation required |
-| RELEASE CONTROL | Separate ChatGPT sign-in and membership entitlement required; do not present preview members as real |
-| NEXT STEP | Validate on hosted CI and preview; check workspace destination before production merge |

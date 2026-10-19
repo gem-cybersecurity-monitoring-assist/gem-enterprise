@@ -3,6 +3,12 @@
 const nextConfig = {
   poweredByHeader: false,
 
+  // Local dev only: lets Turbopack follow a node_modules symlink that lives
+  // outside the project directory. Unset in Vercel builds.
+  ...(process.env.NEXT_DEV_TURBOPACK_ROOT
+    ? { turbopack: { root: process.env.NEXT_DEV_TURBOPACK_ROOT } }
+    : {}),
+
   experimental: {
     optimizePackageImports: [
       '@radix-ui/react-accordion',
@@ -48,7 +54,7 @@ const nextConfig = {
   async headers() {
     const contentSecurityPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://tracker.metricool.com",
+      "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
@@ -87,10 +93,17 @@ const nextConfig = {
 
   async redirects() {
     return [
-      // Until community membership and event claims are verified, direct the
-      // public entry point to the clearly disclosed, non-indexed preview.
-      { source: '/community', destination: '/community-hub', permanent: false },
       { source: '/blog', destination: '/resources', permanent: true },
+      {
+        source: '/community',
+        destination: '/hub',
+        permanent: false,
+      },
+      {
+        source: '/community-hub',
+        destination: '/hub',
+        permanent: false,
+      },
       {
         source: '/enterprise-demo',
         destination: '/enterprise-solutions',
