@@ -126,6 +126,7 @@ export const utmContract = {
   },
   sources: [
     "homepage",
+    "market-entry",
     "enterprise-solutions",
     "social",
     "direct-outreach",
