@@ -25,6 +25,10 @@ dist-ssr
 # Private owner activation configuration
 ops/owner-flow/social-providers.local.json
 
+# Local outputs of scripts/generate-gem-route-inventory.mjs (committed snapshots use *.main.*)
+docs/generated/*.local.json
+docs/generated/*.local.csv
+
 # Package manager lock files (pnpm is the project package manager)
 bun.lock
 bun.lockb

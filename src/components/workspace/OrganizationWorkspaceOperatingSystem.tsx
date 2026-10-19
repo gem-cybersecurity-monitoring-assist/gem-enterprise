@@ -1,36 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, AlertTriangle, Plus, Send, Users, X } from "lucide-react";
+import { Activity, AlertTriangle, Plus, Send, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrganizationWorkspaceCommandLayer } from "@/components/workspace/OrganizationWorkspaceCommandLayer";
-import { WorkspaceOSModuleDirectory, type WorkspaceModuleItem } from "@/components/workspace/WorkspaceOSModuleDirectory";
+import { WorkspaceOSModuleDirectory } from "@/components/workspace/WorkspaceOSModuleDirectory";
 import { WorkspaceProjectDirectory } from "@/components/workspace/WorkspaceProjectDirectory";
 
 type Overview = Awaited<ReturnType<typeof import("@/lib/organizationWorkspace").getOrganizationWorkspaceOverview>>;
 
 const field = "w-full rounded-lg border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/60 focus-visible:ring-2 focus-visible:ring-cyan-300/25";
 
-export function OrganizationWorkspaceOperatingSystem({
-  overview,
-  moduleItems,
-}: {
-  overview: Overview;
-  moduleItems: WorkspaceModuleItem[];
-}) {
+export function OrganizationWorkspaceOperatingSystem({ overview }: { overview: Overview }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [reviewTarget, setReviewTarget] = useState<{
-    updateId: string;
-    decision: "APPROVED" | "RETURNED";
-  } | null>(null);
-  const [reviewNote, setReviewNote] = useState("");
-  const [reviewError, setReviewError] = useState<string | null>(null);
-  const reviewNoteRef = useRef<HTMLTextAreaElement>(null);
   const permits = (scope: string) => overview.workspace.permissions.some((permission) => permission.action === "manage" && permission.scope === scope);
 
   async function request(path: string, method: "POST" | "PATCH", payload: Record<string, unknown>) {
@@ -65,49 +52,16 @@ export function OrganizationWorkspaceOperatingSystem({
   }
 
   async function review(updateId: string, decision: "APPROVED" | "RETURNED") {
-    setReviewTarget({ updateId, decision });
-    setReviewNote("");
-    setReviewError(null);
-  }
-
-  async function submitReview() {
-    if (!reviewTarget || busy) return;
-    const note = reviewNote.trim();
-    if (!note) {
-      setReviewError(
-        reviewTarget.decision === "APPROVED"
-          ? "Add a short approval note before approving."
-          : "Describe what must be corrected before returning.",
-      );
-      reviewNoteRef.current?.focus();
-      return;
+    const reviewNote = window.prompt(decision === "APPROVED" ? "Approval note" : "What must be corrected?");
+    if (reviewNote) {
+      await request("/api/workspace/weekly-updates", "PATCH", {
+        updateId,
+        workspaceId: overview.workspace.id,
+        decision,
+        reviewNote,
+      });
     }
-    await request("/api/workspace/weekly-updates", "PATCH", {
-      updateId: reviewTarget.updateId,
-      workspaceId: overview.workspace.id,
-      decision: reviewTarget.decision,
-      reviewNote: note,
-    });
-    setReviewTarget(null);
-    setReviewNote("");
   }
-
-  const closeReview = useCallback(() => {
-    if (busy) return;
-    setReviewTarget(null);
-    setReviewNote("");
-    setReviewError(null);
-  }, [busy]);
-
-  useEffect(() => {
-    if (!reviewTarget) return;
-    reviewNoteRef.current?.focus();
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeReview();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [reviewTarget, closeReview]);
 
   return (
     <div className="space-y-6">
@@ -125,19 +79,10 @@ export function OrganizationWorkspaceOperatingSystem({
         updateCount={overview.updates.length}
       />
 
-      <WorkspaceOSModuleDirectory items={moduleItems} workspaceId={overview.workspace.id} />
+      <WorkspaceOSModuleDirectory modules={overview.modules} />
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
-        <WorkspaceProjectDirectory
-          projects={overview.projects}
-          emptyAction={
-            permits("projects") ? (
-              <a href="#add-project" className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
-                Create the first project <Plus className="h-3 w-3" aria-hidden="true" />
-              </a>
-            ) : undefined
-          }
-        />
+        <WorkspaceProjectDirectory projects={overview.projects} />
 
         <div className="space-y-6">
           <Card id="workspace-team" className="scroll-mt-24 border-white/10 bg-card">
@@ -148,31 +93,15 @@ export function OrganizationWorkspaceOperatingSystem({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {overview.members.length ? (
-                overview.members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between rounded-lg border border-white/10 p-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">{member.user.profile?.displayName || member.user.email}</p>
-                      <p className="truncate text-xs text-slate-500">{member.user.email}</p>
-                    </div>
-                    <Badge variant="outline">{member.role?.name || "Member"}</Badge>
+              {overview.members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between rounded-lg border border-white/10 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{member.user.profile?.displayName || member.user.email}</p>
+                    <p className="truncate text-xs text-slate-500">{member.user.email}</p>
                   </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-white/15 p-5 text-center">
-                  <p className="text-sm font-semibold text-white">No team members yet</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    {permits("members")
-                      ? "Assign an existing GEM member below to build this workspace's team."
-                      : "Team assignment is handled by a workspace owner or administrator."}
-                  </p>
-                  {permits("members") ? (
-                    <a href="#add-team-member" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
-                      Assign a team member <Send className="h-3 w-3" aria-hidden="true" />
-                    </a>
-                  ) : null}
+                  <Badge variant="outline">{member.role?.name || "Member"}</Badge>
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
 
@@ -201,19 +130,7 @@ export function OrganizationWorkspaceOperatingSystem({
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-dashed border-white/15 p-5 text-center">
-                  <p className="text-sm font-semibold text-white">No weekly update submitted yet</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    {permits("weekly_updates")
-                      ? "Prepare the first update below to start the reporting cadence."
-                      : "Weekly updates appear here once delivery begins."}
-                  </p>
-                  {permits("weekly_updates") ? (
-                    <a href="#prepare-weekly-update" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
-                      Prepare an update <Send className="h-3 w-3" aria-hidden="true" />
-                    </a>
-                  ) : null}
-                </div>
+                <p className="text-sm text-slate-400">No weekly update submitted yet.</p>
               )}
             </CardContent>
           </Card>
@@ -222,7 +139,7 @@ export function OrganizationWorkspaceOperatingSystem({
 
       <section className="grid gap-6 xl:grid-cols-2">
         {permits("projects") ? (
-          <Card id="add-project" className="scroll-mt-24 border-cyan-400/15 bg-card">
+          <Card className="border-cyan-400/15 bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Plus className="h-4 w-4" aria-hidden="true" />
@@ -249,7 +166,7 @@ export function OrganizationWorkspaceOperatingSystem({
         ) : null}
 
         {permits("members") ? (
-          <Card id="add-team-member" className="scroll-mt-24 border-cyan-400/15 bg-card">
+          <Card className="border-cyan-400/15 bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Users className="h-4 w-4" aria-hidden="true" />
@@ -281,7 +198,7 @@ export function OrganizationWorkspaceOperatingSystem({
         ) : null}
 
         {permits("weekly_updates") ? (
-          <Card id="prepare-weekly-update" className="scroll-mt-24 border-cyan-400/15 bg-card">
+          <Card className="border-cyan-400/15 bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Send className="h-4 w-4" aria-hidden="true" />
@@ -335,63 +252,6 @@ export function OrganizationWorkspaceOperatingSystem({
           </div>
         </CardContent>
       </Card>
-
-      {reviewTarget ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={closeReview}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="weekly-review-title"
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <h2 id="weekly-review-title" className="text-base font-bold text-white">
-                {reviewTarget.decision === "APPROVED" ? "Approve weekly update" : "Return weekly update"}
-              </h2>
-              <button
-                type="button"
-                onClick={closeReview}
-                aria-label="Close review dialog"
-                className="rounded-lg p-1 text-slate-500 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              {reviewTarget.decision === "APPROVED"
-                ? "The update will be marked approved and visible as reviewed. A short note is recorded with the decision."
-                : "The update will be returned to the author. Describe clearly what must be corrected."}
-            </p>
-            <label htmlFor="weekly-review-note" className="mt-4 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Review note
-            </label>
-            <textarea
-              id="weekly-review-note"
-              ref={reviewNoteRef}
-              value={reviewNote}
-              onChange={(event) => setReviewNote(event.target.value)}
-              rows={4}
-              placeholder={reviewTarget.decision === "APPROVED" ? "Approval note" : "What must be corrected?"}
-              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/60 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
-            />
-            {reviewError ? (
-              <p role="alert" className="mt-2 text-xs text-red-300">{reviewError}</p>
-            ) : null}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeReview} disabled={busy} className="border-white/15 text-slate-300">
-                Cancel
-              </Button>
-              <Button type="button" onClick={submitReview} disabled={busy} className="bg-cyan-300 text-slate-950 hover:bg-cyan-200">
-                {busy ? "Saving…" : reviewTarget.decision === "APPROVED" ? "Approve update" : "Return update"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

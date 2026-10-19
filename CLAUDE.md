@@ -411,15 +411,20 @@ Three new models need to be migrated before these features work in production:
 - `EmailCampaign` (admin campaigns)
 - `MeetingRequest` (member meetings)
 
+> **Never run `pnpm run db:migrate` (`prisma migrate dev`) or `pnpm run db:push` (`prisma db push`) against a shared, preview or production database.** The production schema is the product of migrations, `db push` and Supabase SQL-editor changes. Against a database built from migrations, `db push` would drop about 30 raw-SQL-managed tables, and `migrate dev` may offer to reset the database. Use them only on a disposable local database. See `docs/GEM_MIGRATION_INTEGRITY_20261017.md`.
+
 ```bash
-# Run locally with real DB credentials:
+# Disposable local database only:
 pnpm run db:migrate
 
-# Or push schema without migration history:
+# Disposable local database only (no migration history):
 pnpm run db:push
 
-# Always regenerate Prisma client after schema changes:
+# Regenerate Prisma client after schema changes (local files only):
 pnpm run db:generate
+
+# Replay the migration chain into a disposable *_test database:
+scripts/verify-migration-chain.sh <name>_test --stub scripts/verify-local-authorization.supabase-stub.sql
 ```
 
 ---

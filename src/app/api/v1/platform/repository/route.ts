@@ -1,25 +1,33 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/auth-helpers";
-import { repositoryConnection, platformConfigurationEvidence } from "@/lib/platformEnvironment";
+import { getSession } from "@/lib/auth";
+import { repositoryConnection } from "@/lib/platformEnvironment";
 
 export async function GET() {
-  const gate = await requireAdmin();
-  if (!gate.ok) return gate.response;
+  const session = await getSession();
 
-  return NextResponse.json({ repository: repositoryConnection, evidence: platformConfigurationEvidence() }, { headers: { "Cache-Control": "no-store" } });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({ repository: repositoryConnection });
 }
 
 export async function POST() {
-  const gate = await requireAdmin();
-  if (!gate.ok) return gate.response;
+  const session = await getSession();
 
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.role !== "admin" && session.role !== "super_admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   return NextResponse.json(
     {
       error: "Repository connection changes must be performed through the connected GitHub/Vercel integration flow.",
       repository: repositoryConnection,
-      evidence: platformConfigurationEvidence(),
     },
-    { status: 501, headers: { "Cache-Control": "no-store" } },
+    { status: 501 },
   );
 }
