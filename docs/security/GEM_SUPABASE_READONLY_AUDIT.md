@@ -2,7 +2,7 @@
 
 **SQL pack:** `docs/security/gem-supabase-readonly-audit.sql`
 **Purpose:** determine, from production catalog metadata, whether the RLS and grant gaps found in `docs/GEM_MIGRATION_INTEGRITY_20261017.md` §4 actually exist in the live Supabase project.
-**Status:** prepared and validated locally. **Not yet run against production.** No production conclusion exists until the owner runs it.
+**Status:** prepared and validated locally. **Run read-only against production on 2026-10-19** (owner-approved): no exposure found, one missing control (default privileges). Summary in `docs/GEM_EXECUTION_RECORD.md` item 9; detailed results are kept outside the repository.
 
 ## 1. Safety properties
 
