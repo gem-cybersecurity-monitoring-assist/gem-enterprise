@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { enterpriseApplicationSchema } from "@/lib/intake/schemas";
 import {
   activationGuardrails,
   alreadyATargetCampaign,
   buildBusinessReviewCampaignUrl,
+  buildWixMarketEntryReviewUrl,
   gtmCalendar,
   nurtureSequence,
   readinessChecklist,
@@ -54,6 +56,64 @@ describe("GTM activation assets", () => {
     for (const source of [homepage, enterprise, socialSource]) {
       expect(source).toContain("buildBusinessReviewCampaignUrl");
       expect(source).not.toContain("utm_campaign=founding-review");
+    }
+  });
+
+  it("routes Wix market entry through the canonical governed GEM pipeline", () => {
+    expect(utmContract.sources).toContain("wix-gem-assist-1");
+    expect(utmContract.mediums).toContain("organic");
+    expect(buildWixMarketEntryReviewUrl()).toBe(
+      "https://www.gemcybersecurityassist.com/business-review?" +
+        "lead=referral&campaign=founding-first-20&" +
+        "utm_source=wix-gem-assist-1&utm_medium=organic&utm_campaign=founding-first-20",
+    );
+  });
+
+  it("passes approved campaign attribution from the landing URL into governed intake", () => {
+    const reviewPage = readFileSync("src/app/business-review/page.tsx", "utf8");
+    const intakeForm = readFileSync("src/components/market/BusinessReviewIntakeForm.tsx", "utf8");
+
+    for (const parameter of ["lead", "source", "utm_source", "utm_medium", "utm_campaign", "campaign"]) {
+      expect(reviewPage).toContain(`params.${parameter}`);
+    }
+    for (const field of ["leadSource", "campaignCode", "utmSource", "utmMedium", "utmCampaign"]) {
+      expect(intakeForm).toContain(`${field}: attribution.${field}`);
+    }
+    expect(intakeForm).toContain('fetch("/api/intake/enterprise"');
+    expect(intakeForm).toContain("consentGiven");
+    expect(intakeForm).toContain("privacyAccepted");
+    expect(intakeForm).not.toContain("wixforms.com");
+    expect(intakeForm).not.toContain("createClient(");
+
+    const parsed = enterpriseApplicationSchema.safeParse({
+      name: "Sample Owner",
+      email: "owner@example.com",
+      organization: "Sample Company",
+      title: "Owner",
+      jurisdiction: "United States",
+      subject: "[Founding Business Review] Account access and identity",
+      message: "Please review account access, identity controls, and operational readiness.",
+      consentGiven: true,
+      privacyAccepted: true,
+      startedAt: Date.now(),
+      organizationType: "company",
+      employeeRange: "1-10",
+      serviceAreas: ["cybersecurity", "advisory"],
+      leadSource: "referral",
+      campaignCode: "founding-first-20",
+      utmSource: "wix-gem-assist-1",
+      utmMedium: "organic",
+      utmCampaign: "founding-first-20",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data).toMatchObject({
+        leadSource: "referral",
+        campaignCode: "founding-first-20",
+        utmSource: "wix-gem-assist-1",
+        utmMedium: "organic",
+        utmCampaign: "founding-first-20",
+      });
     }
   });
 
