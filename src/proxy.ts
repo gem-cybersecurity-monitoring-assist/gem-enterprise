@@ -115,7 +115,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(destination);
   }
 
-  if (isStaticOrApiPath(pathname)) {
+  // A "." marks static assets, but never lets a protected path skip the session check
+  // (e.g. a dynamic segment such as /app/portfolios/a.b).
+  if (isStaticOrApiPath(pathname) && !isProtected(pathname)) {
     return NextResponse.next();
   }
 
