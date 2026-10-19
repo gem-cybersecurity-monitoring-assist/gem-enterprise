@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" role="img" aria-labelledby="title desc">
+<title id="title">GEM Business Security and Operations Review</title>
+<desc id="desc">Square social creative: a practical first review for business security and resilience, with scope confirmed before engagement.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0B1320"/><stop offset="100%" stop-color="#172637"/></linearGradient>
+  <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#52E5F2" stop-opacity=".22"/><stop offset="100%" stop-color="#52E5F2" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="1080" height="1080" fill="url(#bg)"/>
+<circle cx="900" cy="130" r="280" fill="url(#glow)"/>
+<path d="M0 760 C250 620 470 890 740 760 S970 690 1080 720" fill="none" stroke="#5AE8F3" stroke-opacity=".12" stroke-width="3"/>
+<rect x="70" y="70" width="940" height="7" rx="3.5" fill="#5AE8F3"/>
+<text x="90" y="145" fill="#72EEF6" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700" letter-spacing="5">GEM ENTERPRISE</text>
+<text x="90" y="285" fill="#F8FAFC" font-family="Inter,Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="-2">Know what to</text>
+<text x="90" y="370" fill="#F8FAFC" font-family="Inter,Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="-2">fix first.</text>
+<text x="90" y="460" fill="#D7E1EA" font-family="Inter,Arial,sans-serif" font-size="34">A practical first review for</text>
+<text x="90" y="515" fill="#D7E1EA" font-family="Inter,Arial,sans-serif" font-size="34">business security and resilience.</text>
+<text x="90" y="585" fill="#AFC0CF" font-family="Inter,Arial,sans-serif" font-size="26">Clear priorities. Confirmed scope.</text>
+<rect x="90" y="650" width="580" height="72" rx="18" fill="#5AE8F3"/>
+<text x="120" y="696" fill="#06121F" font-family="Inter,Arial,sans-serif" font-size="31" font-weight="800">$199 · QUALIFIED BUSINESSES</text>
+<text x="90" y="780" fill="#AFC0CF" font-family="Inter,Arial,sans-serif" font-size="23">An inquiry does not activate a paid service.</text>
+<rect x="70" y="865" width="940" height="2" fill="#FFFFFF" fill-opacity=".14"/>
+<text x="90" y="925" fill="#E5EEF5" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700">BUSINESS SECURITY &amp; OPERATIONS REVIEW</text>
+<text x="90" y="975" fill="#8FA3B6" font-family="Inter,Arial,sans-serif" font-size="20">gemcybersecurityassist.com/business-review</text>
+</svg>
