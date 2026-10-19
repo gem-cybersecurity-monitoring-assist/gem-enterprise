@@ -1,0 +1,504 @@
+{
+  "version": "gem-video-storylines-v1",
+  "status": "DRAFT",
+  "createdAt": "2026-10-19",
+  "render": {
+    "master": "9:16 1080x1920 H.264/AAC 30fps",
+    "variants": [
+      "9:16 1080x1920 (TikTok, Reels, Shorts, Telegram)",
+      "4:5 1080x1350 (Instagram/Facebook feed)",
+      "16:9 1920x1080 (X, LinkedIn, YouTube)"
+    ],
+    "style": "cut on beat boundaries; word-level burned captions; GEM logo bug top-right; 2s end card",
+    "landscapeClips": "none: all clips are vertical 9:16 sources; feed and 16:9 variants are reframed from the vertical master",
+    "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pexels clip from the same beat theme; it never loops or slows footage."
+  },
+  "contentRules": [
+    "All clips are Pexels License: free commercial and social use, modification allowed, no attribution required (credit appreciated). Mixkit excluded because part of its catalogue is personal-use only.",
+    "People shown are not GEM clients, staff or endorsers. Never caption them as such (Pexels prohibits implied endorsement).",
+    "No identifiable person may be shown in a negative light; threat beats use masked or faceless footage only.",
+    "No SLAs, certifications, response times or guarantees in voiceover or captions (public-claims control).",
+    "Each video stays DRAFT until approved in Approvals; exact-version approval required before publishing."
+  ],
+  "storylines": [
+    {
+      "id": "gem-master-one-controlled-path",
+      "title": "One Controlled Path",
+      "vertical": "brand",
+      "tags": [
+        "brand",
+        "cybersecurity",
+        "finance",
+        "real-estate",
+        "legal"
+      ],
+      "durationSec": 32,
+      "summary": "Brand overview: four risk lanes behind one access-controlled front door.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Four risks. Security, money, property, contracts.",
+          "caption": "4 risks. 1 front door.",
+          "clip": {
+            "source": "pexels",
+            "id": 5377516,
+            "title": "A woman sitting on a gaming chair while looking at the computer",
+            "url": "https://www.pexels.com/video/a-woman-sitting-on-a-gaming-chair-while-looking-at-the-computer-5377516/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "cybersecurity",
+          "voiceover": "GEM Enterprise coordinates cybersecurity reviews, scoped before work starts.",
+          "caption": "Cybersecurity · scoped first",
+          "clip": {
+            "source": "pexels",
+            "id": 6331006,
+            "title": "Man working with cyber security",
+            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "finance",
+          "voiceover": "Financial-security coordination through verified access.",
+          "caption": "Finance · verified access",
+          "clip": {
+            "source": "pexels",
+            "id": 8348901,
+            "title": "Bank financiers having stocks discussion",
+            "url": "https://www.pexels.com/video/bank-financiers-having-stocks-discussion-8348901/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "real-estate",
+          "voiceover": "Property-risk checks before you sign.",
+          "caption": "Real estate · risk before signature",
+          "clip": {
+            "source": "pexels",
+            "id": 7647325,
+            "title": "A realtor showing contract to a couple",
+            "url": "https://www.pexels.com/video/a-realtor-showing-contract-to-a-couple-7647325/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "legal",
+          "voiceover": "Compliance readiness, documented in writing.",
+          "caption": "Legal · documented scope",
+          "clip": {
+            "source": "pexels",
+            "id": 5637285,
+            "title": "A female lawyer discussing with client",
+            "url": "https://www.pexels.com/video/a-female-lawyer-discussing-with-client-5637285/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "27-32",
+          "role": "cta",
+          "voiceover": "Start with one controlled path. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Check eligibility →",
+          "clip": {
+            "source": "pexels",
+            "id": 7643473,
+            "title": "Handshake to start a business meeting",
+            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Security, finance, property and legal risk, coordinated through one verified entry point. Check eligibility at gemcybersecurityassist.com",
+        "hashtags": [
+          "#GEMEnterprise",
+          "#Cybersecurity",
+          "#RiskManagement",
+          "#Compliance",
+          "#RealEstate",
+          "#Fintech"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-seen-before-it-spreads",
+      "title": "Seen Before It Spreads",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "openguardians"
+      ],
+      "durationSec": 30,
+      "summary": "Cybersecurity lane: unowned alerts vs. a scoped, logged response model.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Most breaches start with one click nobody saw.",
+          "caption": "One click. Nobody saw it.",
+          "clip": {
+            "source": "pexels",
+            "id": 5377694,
+            "title": "A hacker wearing a mask",
+            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Alerts pile up, and nobody owns the response.",
+          "caption": "Alerts ≠ response",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "GEM scopes monitoring, escalation and incident response before coverage begins.",
+          "caption": "Scoped before coverage starts",
+          "clip": {
+            "source": "pexels",
+            "id": 8721658,
+            "title": "Woman typing on keyboards",
+            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Every action is logged. Every engagement is agreed in writing.",
+          "caption": "Logged · agreed in writing",
+          "clip": {
+            "source": "pexels",
+            "id": 8348315,
+            "title": "Man writing on clipboard while looking at screen",
+            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Request a Business Security and Operations Review.",
+          "caption": "Request a security review →",
+          "clip": {
+            "source": "pexels",
+            "id": 6931109,
+            "title": "Handshake of business partners",
+            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Alerts are not a response plan. Scope monitoring, escalation and incident response before you need them.",
+        "hashtags": [
+          "#Cybersecurity",
+          "#IncidentResponse",
+          "#SOC",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-finance-who-can-move-your-money",
+      "title": "Who Can Move Your Money?",
+      "vertical": "finance",
+      "tags": [
+        "finance",
+        "nexus-financial"
+      ],
+      "durationSec": 30,
+      "summary": "Finance lane (Nexus Financial): access control over financial workflows.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Who can actually move your money?",
+          "caption": "Who can move your money?",
+          "clip": {
+            "source": "pexels",
+            "id": 5743030,
+            "title": "Faceless person analyzing charts shaking a pencil",
+            "url": "https://www.pexels.com/video/faceless-person-analyzing-charts-shaking-a-pencil-5743030/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Shared logins. Unreviewed access. Silent risk.",
+          "caption": "Shared logins = silent risk",
+          "clip": {
+            "source": "pexels",
+            "id": 7822027,
+            "title": "A man talking while typing on laptop",
+            "url": "https://www.pexels.com/video/a-man-talking-while-typing-on-laptop-7822027/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Nexus Financial pairs verified identity with reviewed access to financial workflows.",
+          "caption": "Verified identity · reviewed access",
+          "clip": {
+            "source": "pexels",
+            "id": 36950732,
+            "title": "Financial analyst typing and writing in modern workspace",
+            "url": "https://www.pexels.com/video/financial-analyst-typing-and-writing-in-modern-workspace-36950732/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Advisors work inside an approved scope, on the record.",
+          "caption": "Approved scope · on record",
+          "clip": {
+            "source": "pexels",
+            "id": 8731251,
+            "title": "Associates having a conversation while doing paperwork",
+            "url": "https://www.pexels.com/video/associates-having-a-conversation-while-doing-paperwork-8731251/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Check eligibility for the financial-security track.",
+          "caption": "Check eligibility →",
+          "clip": {
+            "source": "pexels",
+            "id": 8061760,
+            "title": "Business woman shaking her customer hand",
+            "url": "https://www.pexels.com/video/business-woman-shaking-her-customer-hand-8061760/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "If you can't name everyone who can move your money, start there. Verified access for financial workflows.",
+        "hashtags": [
+          "#Fintech",
+          "#FinancialSecurity",
+          "#AccessControl",
+          "#NexusFinancial"
+        ]
+      }
+    },
+    {
+      "id": "gem-realestate-risk-lives-in-the-paperwork",
+      "title": "Risk Lives in the Paperwork",
+      "vertical": "real-estate",
+      "tags": [
+        "real-estate",
+        "alliance-trust-realty"
+      ],
+      "durationSec": 30,
+      "summary": "Real estate lane (Alliance Trust Realty): property-risk checks before funds move.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "The riskiest moment in property? The signature.",
+          "caption": "The riskiest moment: the signature",
+          "clip": {
+            "source": "pexels",
+            "id": 7647323,
+            "title": "A woman signing a contract",
+            "url": "https://www.pexels.com/video/a-woman-signing-a-contract-7647323/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Unverified sellers. Altered documents. Payment fraud at closing.",
+          "caption": "Unverified · altered · redirected",
+          "clip": {
+            "source": "pexels",
+            "id": 7578476,
+            "title": "Man holding a paper",
+            "url": "https://www.pexels.com/video/man-holding-a-paper-7578476/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Alliance Trust Realty coordinates property-risk checks before funds move.",
+          "caption": "Checks before funds move",
+          "clip": {
+            "source": "pexels",
+            "id": 7646763,
+            "title": "Realtor showing a house to a couple",
+            "url": "https://www.pexels.com/video/realtor-showing-a-house-to-a-couple-7646763/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "outcome",
+          "voiceover": "Keys handed over with the paper trail intact.",
+          "caption": "Paper trail intact",
+          "clip": {
+            "source": "pexels",
+            "id": 7817149,
+            "title": "A realtor smiling while holding a key",
+            "url": "https://www.pexels.com/video/a-realtor-smiling-while-holding-a-key-7817149/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Start an Asset and Property Risk Coordination review.",
+          "caption": "Start a property-risk review →",
+          "clip": {
+            "source": "pexels",
+            "id": 8293013,
+            "title": "Real estate agent sold a property",
+            "url": "https://www.pexels.com/video/real-estate-agent-sold-a-property-8293013/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Property fraud happens in the paperwork. Coordinate risk checks before funds move.",
+        "hashtags": [
+          "#RealEstate",
+          "#PropertyFraud",
+          "#DueDiligence",
+          "#AllianceTrustRealty"
+        ]
+      }
+    },
+    {
+      "id": "gem-legal-compliance-is-a-record",
+      "title": "Compliance Is a Record",
+      "vertical": "legal",
+      "tags": [
+        "legal",
+        "compliance"
+      ],
+      "durationSec": 30,
+      "summary": "Legal and compliance lane: controls and evidence mapped under an approved scope.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "If it isn't written down, it didn't happen.",
+          "caption": "Not written = didn't happen",
+          "clip": {
+            "source": "pexels",
+            "id": 7735908,
+            "title": "Person signing a contract",
+            "url": "https://www.pexels.com/video/person-signing-a-contract-7735908/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Policies in inboxes. Evidence nowhere.",
+          "caption": "Policies in inboxes",
+          "clip": {
+            "source": "pexels",
+            "id": 8682969,
+            "title": "Woman handing over paper works to her colleague",
+            "url": "https://www.pexels.com/video/woman-handing-over-paper-works-to-her-colleague-8682969/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "GEM maps controls, evidence and readiness under an approved scope.",
+          "caption": "Controls · evidence · readiness",
+          "clip": {
+            "source": "pexels",
+            "id": 7580287,
+            "title": "Man using laptop",
+            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Reviewed in writing, before anything is claimed.",
+          "caption": "Reviewed before claimed",
+          "clip": {
+            "source": "pexels",
+            "id": 7735907,
+            "title": "Reading the written contract",
+            "url": "https://www.pexels.com/video/reading-the-written-contract-7735907/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Request Compliance Readiness Support.",
+          "caption": "Request readiness support →",
+          "clip": {
+            "source": "pexels",
+            "id": 8814522,
+            "title": "People making a deal",
+            "url": "https://www.pexels.com/video/people-making-a-deal-8814522/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Compliance is a record, not a feeling. Map controls and evidence before an audit asks.",
+        "hashtags": [
+          "#Compliance",
+          "#Legal",
+          "#GRC",
+          "#GEMEnterprise"
+        ]
+      }
+    }
+  ]
+}
