@@ -2,8 +2,8 @@
 
 Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠ deployed ≠ verified in production.** Update this file in place; do not add parallel status documents.
 
-**Last updated:** 2026-10-19.
-**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_FsSQU3LSfkjGqpWgkaxnCZqG67Hy`, READY, built from `main` `2be5bb6e` (read via Vercel API). The intermediate builds for `5eaa4846`, `d0fc59c3` and `89782007` were cancelled and superseded by it; its tree contains them. Production runs the post-Lovable `main` tree, not the `9f1da4f` lineage.
+**Last updated:** 2026-10-20.
+**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_J65Fw3aVrBpikards4eJYMEcA4H4`, READY, built from `main` `2c5fc09b` (read via Vercel API). After the repository moved to `gem-cybersecurity-monitoring-assist/gem-enterprise`, the Vercel Git integration was reconnected; production deploys resumed on 2026-10-20. Production runs the post-Lovable `main` tree, not the `9f1da4f` lineage.
 
 ## Work items
 
@@ -22,9 +22,14 @@ Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠
 | 11 | Production smoke tests | — | — | — | — | — | **partial** | Direct egress is blocked by the network policy. Anonymous GETs through the Vercel API work (see #3). Signed-in flows not tested. |
 | 12 | `recovery-readiness` least privilege | PR #448, `2be5bb6e` | yes | 4 new tests; CI green | **yes** | **yes** (`dpl_FsSQU3LS…`, `2be5bb6e`) | **yes** (2026-10-19, anonymous GET): returns only `ok, service, emailDeliveryConfigured, detailsRequireAdministrator`; `Cache-Control: no-store`. `emailDeliveryConfigured` is `false`. | SMTP variables still to be set (owner, production credentials). |
 | 13 | AI capability upgrade baseline | PR #439, `89782007` | yes | CI green | **yes** | **yes** (`dpl_FsSQU3LS…`, `2be5bb6e`) | — | Docs only. |
-| 14 | Dependency group update (6 packages) | PR #442, `063aac67` | — | CI green on `a5304d57` | **yes** | pending | — | Confirm the production build for `063aac67` reaches READY. |
+| 14 | Dependency group update (6 packages) | PR #442, `063aac67` | — | CI green on `a5304d57` | **yes** | **yes** (in `2c5fc09b`) | — | — |
 | 15 | Social and TokMetric connections | production tables | — | Read-only counts 2026-10-19 | — | — | **verified: none** | 0 rows in `social_connectors`, `social_connector_credentials`, `social_oauth_authorization_attempts`, `social_publishing_jobs`, `tokmetric_connectors`, `tokmetric_connector_credential_references`, `tokmetric_oauth_authorization_attempts`, `tokmetric_publish_jobs`. 1 active GPT credential, never used. Accounts connected on external builder sites did not reach this app; each must be connected through the app's own OAuth start routes once provider credentials are set. |
-| 16 | Remaining open PRs | #425–#433, #362–#369 | — | — | no | no | — | Drafts or conflicted, mostly on the `9f1da4f` lineage or stale. Not merged; they wait on the lineage decision or their authors. |
+| 16 | Remaining open PRs | 37 PRs (#111–#433) | — | Local merge check against `main` `2c5fc09b`, 2026-10-20 | no | no | — | None descends from `a72f063`: all were built on the `9f1da4f` lineage. 19 conflict with `main`; the other 18 merge textually but target files the Lovable merge removed. They wait on the lineage decision (#19), then each is rebased or closed. |
+| 17 | Claude Code plugin moved to `plugins/gem-enterprise` | PR #446, `72b33edf` | yes | CI green | **yes** | **yes** (`dpl_DT2PxmSA…`) | — | — |
+| 18 | `@vitest/mocker` 4.1.4 → 5.0.5 | PR #449, `2c5fc09b` | — | CI green | **yes** | **yes** (`dpl_J65Fw3aV…`) | — | — |
+| 19 | Restore `9f1da4f` lineage (revert `a72f063`) | branch `restore/canonical-lineage`, `22da2f6f` (no PR yet) | yes | Local `pnpm run verify` 2026-10-20: exit 0, 179 files / 1225 tests, build OK; Vercel preview READY | no | no | — | **Owner decision.** 295 files, +26,833 / −1,646. Based on `dccc6581`; conflicts with current `main` only in `package.json` and `pnpm-lock.yaml` (from #449). |
+| 20 | Social and TikTok activation checklist | PR #450 | yes | CI green | — | n/a (docs) | — | `docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md`. |
+| 21 | Production smoke after redeploy | — | — | Anonymous GET via Vercel API, 2026-10-20 | — | — | **yes** | `/api/auth/recovery-readiness` and `/api/system/bootstrap-status` return only their minimal anonymous fields; `core.ready` is `true`. |
 
 ## Owner gates
 
