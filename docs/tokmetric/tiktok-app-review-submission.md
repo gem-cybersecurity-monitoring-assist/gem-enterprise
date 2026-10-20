@@ -31,13 +31,13 @@ Record one continuous MP4 or MOV video showing:
 3. Open `/tokmetric/publishing`.
 4. Select the review workspace.
 5. Select the connected TikTok sandbox account.
-6. Select an approved content record.
-7. Click **Query creator settings**.
-8. Show the returned TikTok nickname, username, maximum duration, and privacy options.
-9. Select a local MP4/MOV/WebM video.
+6. Select an approved content record and its exact approved media asset.
+7. Wait for the creator settings to load automatically (TikTok requires a fresh creator-info query whenever the post page renders; **Refresh creator settings** re-queries on demand).
+8. Show the returned TikTok avatar, nickname, username, maximum duration, and privacy options.
+9. Select the local MP4/MOV/WebM file that is the exact approved asset, and show the checksum-match confirmation.
 10. Edit the caption.
 11. Choose `SELF_ONLY` for sandbox review.
-12. Show the comments, Duet, Stitch, paid-partnership, own-business, and AI-generated-content controls.
+12. Show the comments, Duet, Stitch, paid-partnership, own-business, and AI-generated-content controls. Toggle the commercial disclosure on with nothing selected to show the disabled publish button and the required prompt, then select **Your brand** to show the “Promotional content” label preview.
 13. Manually check all four consent and rights confirmations.
 14. Click **Send video to TikTok**.
 15. Show upload progress.
@@ -58,4 +58,4 @@ The recording must show real clicks and a real sandbox API request. Do not submi
 - `TOKMETRIC_SANDBOX_PUBLISHING_ENABLED=true`.
 - `TOKMETRIC_LIVE_PUBLISHING_ENABLED=false`.
 - The redirect URI exactly matches the TikTok Developer Portal value.
-- The uploaded demo file is MP4 or MOV and is no larger than 50 MB, matching the review form’s upload limit.
+- The uploaded demo file is MP4 or MOV. The review form's instructions state 50 MB per file, but its upload widget currently states 5 MB per file; compress or split into up to three clips to satisfy the stricter limit.

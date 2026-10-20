@@ -7,7 +7,7 @@ TokMetric supports a governed end-to-end TikTok video publishing workflow:
 1. An authenticated operator selects a TokMetric workspace.
 2. The operator selects a connected TikTok Content Posting API account.
 3. The operator selects an approved content version and one of the video assets attached to that exact version.
-4. TokMetric queries TikTok's latest creator information before rendering publishing controls.
+4. TokMetric automatically queries TikTok's latest creator information whenever the publishing page renders or the selected account changes, and shows the creator's avatar and nickname.
 5. The operator chooses one of the privacy levels returned for that creator.
 6. The operator configures comments, Duet, Stitch, commercial-content disclosure, and AI-generated-content disclosure.
 7. The operator explicitly confirms upload consent, video rights, music rights, and the TikTok processing notice.
@@ -92,7 +92,7 @@ Record the working flow on `/tokmetric/publishing` while the TikTok app is in sa
 2. Open TokMetric Publishing.
 3. Select the review workspace and connected sandbox TikTok account.
 4. Select an approved content item.
-5. Click **Query creator settings** and show the returned TikTok nickname and privacy options.
+5. Show the creator settings that load automatically (avatar, nickname, and TikTok-returned privacy options).
 6. Select a local video file.
 7. Edit the caption and choose `SELF_ONLY`.
 8. Show comment, Duet, Stitch, paid-partnership, own-business, and AI-generated-content controls.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -21,6 +21,14 @@ import {
 } from "@/lib/tokmetric/publishing/types";
 import { GemVideoPlayer } from "@/components/video/GemVideoPlayer";
 import { explainTokMetricPublishingContextError } from "@/lib/tokmetric/publishing/readiness";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  BRANDED_CONTENT_POLICY_URL,
+  BRANDED_PRIVATE_BLOCKED_TEXT,
+  COMMERCIAL_SELECTION_REQUIRED_TEXT,
+  MUSIC_CONFIRMATION_URL,
+  commercialLabelPreview,
+} from "@/lib/tokmetric/publishing/ux-copy";
 
 type WorkspaceContext = {
   id: string;
@@ -82,8 +90,6 @@ class VideoPublishingRequestError extends Error {
   }
 }
 
-const MUSIC_CONFIRMATION_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
-const BRANDED_CONTENT_POLICY_URL = "https://www.tiktok.com/legal/page/global/bc-policy/en";
 const FOUR_GIB = 4 * 1024 * 1024 * 1024;
 
 function approvedCaption(content: WorkspaceContext["contents"][number] | undefined) {
@@ -343,7 +349,34 @@ export function TokMetricVideoPublisherV3() {
     sourceReady &&
     !dimensionsInvalid;
 
-  function resetPostControls() {
+  // Single, user-facing explanation for why "Send video to TikTok" is disabled.
+  const publishBlockedReason = busy
+    ? "A TikTok request is in progress."
+    : verifyingFile
+      ? "Verifying the selected file against the approved video."
+      : blocked
+        ? "Publishing is blocked for this workspace."
+        : !mediaAsset
+          ? "Select the exact approved video asset."
+          : !creator
+            ? "Waiting for the latest TikTok creator settings."
+            : !commercialSelectionValid
+              ? COMMERCIAL_SELECTION_REQUIRED_TEXT
+              : brandedPrivacyInvalid
+                ? BRANDED_PRIVATE_BLOCKED_TEXT
+                : !privacyLevel
+                  ? "Select who can view this video."
+                  : fileVersionMismatch || !sourceReady
+                    ? source === "FILE_UPLOAD"
+                      ? "Select the exact approved video file."
+                      : "The managed video host must be verified with TikTok."
+                    : durationInvalid || fileSizeInvalid || dimensionsInvalid
+                      ? "The selected video does not meet this creator's TikTok limits."
+                      : !confirmationsComplete
+                        ? "Complete every required confirmation."
+                        : null;
+
+  const resetPostControls = useCallback(() => {
     setPrivacyLevel("");
     setAllowComment(false);
     setAllowDuet(false);
@@ -360,7 +393,7 @@ export function TokMetricVideoPublisherV3() {
     setPublishId(null);
     setStatus(null);
     setProgress(0);
-  }
+  }, []);
 
   function resetSelectedFile() {
     setFile(null);
@@ -401,8 +434,13 @@ export function TokMetricVideoPublisherV3() {
     resetPostControls();
   }
 
-  async function queryCreator() {
+  // Monotonic request id so a slow response for a previously selected account
+  // can never overwrite the creator info of the currently selected account.
+  const creatorRequestRef = useRef(0);
+
+  const queryCreator = useCallback(async () => {
     if (!workspaceId || !connectorId) return;
+    const requestId = ++creatorRequestRef.current;
     setBusy(true);
     setError("");
     setMessage("Querying the latest TikTok creator settings…");
@@ -411,16 +449,25 @@ export function TokMetricVideoPublisherV3() {
         method: "POST",
         body: JSON.stringify({ workspaceId, connectorId }),
       });
+      if (requestId !== creatorRequestRef.current) return;
       setCreator(data);
       resetPostControls();
       setMessage(`Connected as ${data.creatorNickname} (@${data.creatorUsername}). Select every post setting manually.`);
     } catch (requestError) {
+      if (requestId !== creatorRequestRef.current) return;
+      setCreator(null);
       setMessage("");
       setError(requestError instanceof Error ? requestError.message : "Creator settings could not be loaded.");
     } finally {
-      setBusy(false);
+      if (requestId === creatorRequestRef.current) setBusy(false);
     }
-  }
+  }, [workspaceId, connectorId, resetPostControls]);
+
+  // TikTok requires the latest creator info to be fetched whenever the post
+  // page renders, so query automatically for the selected account.
+  useEffect(() => {
+    if (workspaceId && connectorId) void queryCreator();
+  }, [workspaceId, connectorId, queryCreator]);
 
   async function chooseFile(nextFile: File | null) {
     setFile(nextFile);
@@ -505,7 +552,7 @@ export function TokMetricVideoPublisherV3() {
     if (source === "FILE_UPLOAD" && !file) return setError("Select an MP4, MOV, or WebM video.");
     if (source === "FILE_UPLOAD" && !fileMatchesApprovedAsset) return setError("The selected file must match the exact approved video asset.");
     if (source === "PULL_FROM_URL" && !managedUrlEligible) return setError("The approved video host must be verified in TikTok before managed URL publishing.");
-    if (!commercialSelectionValid) return setError("Select Your brand, Branded content, or both.");
+    if (!commercialSelectionValid) return setError(COMMERCIAL_SELECTION_REQUIRED_TEXT);
     if (brandedPrivacyInvalid) return setError("Branded content cannot use SELF ONLY visibility.");
 
     setBusy(true);
@@ -680,11 +727,19 @@ export function TokMetricVideoPublisherV3() {
 
       <button type="button" onClick={() => void queryCreator()} disabled={busy || !connectorId} className="mt-5 rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-[#071019] disabled:opacity-40">
         <RefreshCw className="mr-2 inline h-4 w-4" />
-        Query creator settings
+        Refresh creator settings
       </button>
       {creator && (
-        <div className="mt-4 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4 text-sm text-white/65">
-          Posting to <strong className="text-white">{creator.creatorNickname}</strong> (@{creator.creatorUsername}) · maximum video duration {creator.maxVideoPostDurationSec}s. No post setting has been preselected.
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4 text-sm text-white/65">
+          <Avatar className="h-10 w-10 border border-white/10">
+            {creator.creatorAvatarUrl && <AvatarImage src={creator.creatorAvatarUrl} alt={`${creator.creatorNickname} TikTok avatar`} />}
+            <AvatarFallback className="bg-cyan-300/10 text-xs text-cyan-200">
+              {creator.creatorNickname.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <p>
+            Posting to <strong className="text-white">{creator.creatorNickname}</strong> (@{creator.creatorUsername}) · maximum video duration {creator.maxVideoPostDurationSec}s. No post setting has been preselected.
+          </p>
         </div>
       )}
 
@@ -746,9 +801,19 @@ export function TokMetricVideoPublisherV3() {
               {(creator?.privacyLevelOptions ?? []).map((value) => {
                 const disabledBySandbox = sandbox && value !== "SELF_ONLY";
                 const disabledByBrand = brandContentToggle && value === "SELF_ONLY";
-                return <option key={value} value={value} disabled={disabledBySandbox || disabledByBrand}>{value.replaceAll("_", " ")}</option>;
+                return (
+                  <option
+                    key={value}
+                    value={value}
+                    disabled={disabledBySandbox || disabledByBrand}
+                    title={disabledByBrand ? BRANDED_PRIVATE_BLOCKED_TEXT : undefined}
+                  >
+                    {value.replaceAll("_", " ")}
+                  </option>
+                );
               })}
             </select>
+            {brandContentToggle && <span className="mt-2 block text-xs text-white/45">{BRANDED_PRIVATE_BLOCKED_TEXT}</span>}
             {sandbox && <span className="mt-2 block text-xs text-amber-200/70">Unaudited sandbox posting is restricted to SELF ONLY and requires a private test account.</span>}
           </label>
         </div>
@@ -790,7 +855,10 @@ export function TokMetricVideoPublisherV3() {
                   Branded content — promotes another brand or third party. The post will be labelled “Paid partnership.”
                 </label>
                 {thirdPartyDisclosureDisabled && <p className="text-xs text-amber-200/70">Branded content cannot use SELF ONLY visibility, so it is unavailable during unaudited sandbox posting.</p>}
-                {!commercialSelectionValid && <p className="text-xs text-red-300">Select Your brand, Branded content, or both.</p>}
+                {commercialLabelPreview(brandOrganicToggle, brandContentToggle) && (
+                  <p className="text-xs text-cyan-200/80">{commercialLabelPreview(brandOrganicToggle, brandContentToggle)}</p>
+                )}
+                {!commercialSelectionValid && <p className="text-xs text-red-300">{COMMERCIAL_SELECTION_REQUIRED_TEXT}</p>}
               </div>
             )}
           </div>
@@ -808,8 +876,14 @@ export function TokMetricVideoPublisherV3() {
               <label className="flex gap-3 text-sm text-white/60">
                 <input type="checkbox" checked={musicRightsConfirmed} onChange={(event) => setMusicRightsConfirmed(event.target.checked)} className="mt-0.5" />
                 <span>
-                  By posting, I agree to TikTok’s <a href={MUSIC_CONFIRMATION_URL} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline">Music Usage Confirmation</a>
-                  {brandContentToggle && <> and <a href={BRANDED_CONTENT_POLICY_URL} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline">Branded Content Policy</a></>}.
+                  By posting, you agree to TikTok’s{" "}
+                  {brandContentToggle && (
+                    <>
+                      <a href={BRANDED_CONTENT_POLICY_URL} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline">Branded Content Policy</a>
+                      {" and "}
+                    </>
+                  )}
+                  <a href={MUSIC_CONFIRMATION_URL} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline">Music Usage Confirmation</a>.
                 </span>
               </label>
               <label className="flex gap-3 text-sm text-white/60"><input type="checkbox" checked={processingNoticeAccepted} onChange={(event) => setProcessingNoticeAccepted(event.target.checked)} className="mt-0.5" />I understand the post may take several minutes to process and appear on the TikTok profile.</label>
@@ -838,11 +912,14 @@ export function TokMetricVideoPublisherV3() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button type="button" onClick={() => void startPublish()} disabled={!canPublish} className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-[#071019] disabled:cursor-not-allowed disabled:opacity-40">
-          {busy ? <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> : source === "FILE_UPLOAD" ? <UploadCloud className="mr-2 inline h-4 w-4" /> : <Send className="mr-2 inline h-4 w-4" />}
-          Send video to TikTok
-        </button>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        {/* Disabled buttons don't emit hover events in every browser, so the tooltip lives on the wrapper. */}
+        <span title={canPublish ? undefined : publishBlockedReason ?? undefined} className="inline-flex">
+          <button type="button" onClick={() => void startPublish()} disabled={!canPublish} className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-[#071019] disabled:pointer-events-none disabled:opacity-40">
+            {busy ? <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> : source === "FILE_UPLOAD" ? <UploadCloud className="mr-2 inline h-4 w-4" /> : <Send className="mr-2 inline h-4 w-4" />}
+            Send video to TikTok
+          </button>
+        </span>
         <button type="button" onClick={() => void manuallyRefreshStatus()} disabled={busy || !activeJobId} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-white/70 disabled:opacity-40">
           <RefreshCw className="mr-2 inline h-4 w-4" />
           Refresh status
@@ -854,6 +931,9 @@ export function TokMetricVideoPublisherV3() {
           </button>
         )}
       </div>
+      {!canPublish && publishBlockedReason && !busy && (
+        <p className="mt-3 text-xs text-white/45">{publishBlockedReason}</p>
+      )}
     </section>
   );
 }
