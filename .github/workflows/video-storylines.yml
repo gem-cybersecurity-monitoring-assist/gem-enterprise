@@ -1,0 +1,101 @@
+name: Video Storylines
+
+# Daily render of one GEM storyline into platform-ready MP4s (9:16, 4:5, 16:9).
+# Output is DRAFT: it is uploaded as a workflow artifact for review and then
+# enters Approvals. Nothing here publishes to any social platform.
+
+on:
+  schedule:
+    # 04:39 UTC = 05:39 Africa/Lagos, daily rotation through the library.
+    - cron: "39 4 * * *"
+  workflow_dispatch:
+    inputs:
+      storyline:
+        description: "Storyline id (blank = daily rotation)"
+        required: false
+        default: ""
+  pull_request:
+    paths:
+      - "scripts/video-storylines/**"
+      - "content/video-storylines/**"
+      - ".github/workflows/video-storylines.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: video-storylines-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-test:
+    # Exercises the full ffmpeg graph, captions, variants and validation with
+    # generated footage; needs no secrets or network beyond apt.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter
+      - name: Validate storyline library
+        run: |
+          python3 -I - <<'PY'
+          import json, sys
+          d = json.load(open("content/video-storylines/gem-storylines.v1.json"))
+          bad = [b["clip"]["url"] for s in d["storylines"] for b in s["beats"] if b["clip"]["source"] != "pexels"]
+          if bad:
+              sys.exit("non-Pexels clips found: " + ", ".join(bad))
+          print("library OK:", sum(len(s["beats"]) for s in d["storylines"]), "beats")
+          PY
+      - name: Offline render
+        run: python3 -I scripts/video-storylines/render.py --storyline gem-master-one-controlled-path --offline --out out
+
+  render:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Require Pexels key
+        run: |
+          if [ -z "$PEXELS_API_KEY" ]; then
+            echo "::error::Add the PEXELS_API_KEY repository secret (free key from pexels.com/api) to enable rendering."
+            exit 1
+          fi
+
+      - name: Install ffmpeg, espeak-ng and fonts
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg espeak-ng fonts-inter
+
+      - name: Install voice model (Kokoro, CPU)
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q --upgrade pip
+          .venv/bin/pip install -q --extra-index-url https://download.pytorch.org/whl/cpu "kokoro==0.9.4" "soundfile==0.12.1"
+
+      - name: Render storyline
+        env:
+          STORYLINE: ${{ github.event.inputs.storyline }}
+        run: |
+          if [ -n "$STORYLINE" ]; then
+            if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
+              echo "::error::Invalid storyline id"; exit 1
+            fi
+            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --out out
+          else
+            .venv/bin/python -I scripts/video-storylines/render.py --rotate --out out
+          fi
+
+      - name: Upload drafts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gem-video-drafts-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: warn
