@@ -8,6 +8,10 @@
   },
   "homepage": "https://www.gemcybersecurityassist.com",
   "repository": "https://github.com/support371/gem-enterprise",
+  "documentationUrl": "https://github.com/support371/gem-enterprise/tree/main/plugins/gem-enterprise",
+  "supportUrl": "https://www.gemcybersecurityassist.com/contact",
+  "privacyPolicyUrl": "https://www.gemcybersecurityassist.com/privacy",
+  "termsOfServiceUrl": "https://www.gemcybersecurityassist.com/terms",
   "license": "UNLICENSED",
   "keywords": [
     "gem",
