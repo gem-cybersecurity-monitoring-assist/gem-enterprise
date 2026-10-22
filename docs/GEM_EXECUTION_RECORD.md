@@ -2,8 +2,8 @@
 
 Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠ deployed ≠ verified in production.** Update this file in place; do not add parallel status documents.
 
-**Last updated:** 2026-10-20.
-**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_J65Fw3aVrBpikards4eJYMEcA4H4`, READY, built from `main` `2c5fc09b` (read via Vercel API). After the repository moved to `gem-cybersecurity-monitoring-assist/gem-enterprise`, the Vercel Git integration was reconnected; production deploys resumed on 2026-10-20. Production runs the post-Lovable `main` tree, not the `9f1da4f` lineage.
+**Last updated:** 2026-10-22.
+**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_BxDeykudX7Dq6HvohTb4PC7LBQra`, READY, built from `main` `36f7ed6b` (read via Vercel API). Production now runs the restored `9f1da4f` lineage (PR #451, owner-approved 2026-10-22).
 
 ## Work items
 
@@ -24,10 +24,11 @@ Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠
 | 13 | AI capability upgrade baseline | PR #439, `89782007` | yes | CI green | **yes** | **yes** (`dpl_FsSQU3LS…`, `2be5bb6e`) | — | Docs only. |
 | 14 | Dependency group update (6 packages) | PR #442, `063aac67` | — | CI green on `a5304d57` | **yes** | **yes** (in `2c5fc09b`) | — | — |
 | 15 | Social and TokMetric connections | production tables | — | Read-only counts 2026-10-19 | — | — | **verified: none** | 0 rows in `social_connectors`, `social_connector_credentials`, `social_oauth_authorization_attempts`, `social_publishing_jobs`, `tokmetric_connectors`, `tokmetric_connector_credential_references`, `tokmetric_oauth_authorization_attempts`, `tokmetric_publish_jobs`. 1 active GPT credential, never used. Accounts connected on external builder sites did not reach this app; each must be connected through the app's own OAuth start routes once provider credentials are set. |
-| 16 | Remaining open PRs | 37 PRs (#111–#433) | — | Local merge check against `main` `2c5fc09b`, 2026-10-20 | no | no | — | None descends from `a72f063`: all were built on the `9f1da4f` lineage. 16 conflict with `main`; the other 21 merge textually but target files the Lovable merge removed. They wait on the lineage decision (#19), then each is rebased or closed. |
+| 16 | Remaining open PRs | 37 PRs (#111–#433) | — | Merge check against `main` `36f7ed6b`, 2026-10-22 | no | no | — | After the restore, 21 merge cleanly and 16 conflict (#111, #114, #221, #242, #244, #271, #287, #314, #330, #331, #342, #351, #362, #363, #364, #369). None is already contained in `main`. Most are drafts; each needs its own review before merging, and #341 (Klarna) and #365 (Experian) touch payment and credit providers, which need owner approval. |
 | 17 | Claude Code plugin moved to `plugins/gem-enterprise` | PR #446, `72b33edf` | yes | CI green | **yes** | **yes** (`dpl_DT2PxmSA…`) | — | — |
 | 18 | `@vitest/mocker` 4.1.4 → 5.0.5 | PR #449, `2c5fc09b` | — | CI green | **yes** | **yes** (`dpl_J65Fw3aV…`) | — | — |
-| 19 | Restore `9f1da4f` lineage (revert `a72f063`) | branch `restore/canonical-lineage`, `22da2f6f` (no PR yet) | yes | Local `pnpm run verify` 2026-10-20: exit 0, 179 files / 1225 tests, build OK; Vercel preview READY | no | no | — | **Owner decision.** 295 files, +26,833 / −1,646. Based on `dccc6581`; conflicts with current `main` only in `package.json` and `pnpm-lock.yaml` (from #449). |
+| 19 | Restore `9f1da4f` lineage (revert `a72f063`) | PR #451, `36f7ed6b` | yes | `pnpm run verify` on `6d737640`: 179 files / 1225 tests, build OK; CI green | **yes** | **yes** (`dpl_BxDeykud…`) | **yes** (2026-10-22): `/api/health` ok on `36f7ed6b`, database ok; status endpoints return only minimal anonymous fields; `/app/portfolios/x.y` redirects to `/client-login`; no runtime errors in the first 30 minutes | — |
+| 22 | Production schema for the restored lineage | Supabase migrations `social_provider_tiktok_and_pause`, `unified_client_workspace_os`, `social_metric_snapshots`, `social_provider_telegram` | yes | Read-only check after apply | n/a | **applied** 2026-10-22 (owner-approved) | **yes** | 6 new tables (`social_provider_pauses`, `capability_readiness_overrides`, `lifecycle_funnel_states`, `social_metric_snapshots`, `provider_account_metrics`, `social_metric_sync_runs`), all with RLS on and no policies. Provider checks now allow TIKTOK and TELEGRAM. Additive only; no data changed. Supersedes row 10. |
 | 20 | Social and TikTok activation checklist | PR #450 | yes | CI green | — | n/a (docs) | — | `docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md`. |
 | 21 | Production smoke after redeploy | — | — | Anonymous GET via Vercel API, 2026-10-20 | — | — | **yes** | `/api/auth/recovery-readiness` and `/api/system/bootstrap-status` return only their minimal anonymous fields; `core.ready` is `true`. |
 
@@ -37,4 +38,3 @@ Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠
 - Social/TikTok provider app credentials in Vercel, then connect each account through the app.
 - `admin_access_tokens` baseline (needs the real production definition).
 - Emergency RLS migration: **not needed** (#9 found no exposure). Hardening default privileges and API-role grants remains an owner decision.
-- Canonical-lineage / `a72f063` revert decision.
