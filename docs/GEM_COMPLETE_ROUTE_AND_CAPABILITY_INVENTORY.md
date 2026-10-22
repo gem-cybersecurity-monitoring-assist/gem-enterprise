@@ -548,7 +548,7 @@ For each route, record: **path; route kind (page/API/static); domain; source fil
 - `/api/social-media/analytics/sync` — `src/app/api/social-media/analytics/sync/route.ts`
 - `/api/social-media/autopilot/cancel` — `src/app/api/social-media/autopilot/cancel/route.ts`
 - `/api/social-media/connectors/:id/test` — `src/app/api/social-media/connectors/[id]/test/route.ts`
-- `/api/social-media/connectors/:provider/pause` — `src/app/api/social-media/connectors/[provider]/pause/route.ts`
+- `/api/social-media/connectors/:provider/pause` — `src/app/api/social-media/connectors/[id]/pause/route.ts`
 - `/api/social-media/connectors/health` — `src/app/api/social-media/connectors/health/route.ts`
 - `/api/social-media/connectors` — `src/app/api/social-media/connectors/route.ts`
 - `/api/social-media/oauth/:provider/callback` — `src/app/api/social-media/oauth/[provider]/callback/route.ts`
