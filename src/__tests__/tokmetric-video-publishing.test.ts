@@ -1,12 +1,26 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
 import {
   calculateTikTokChunkPlan,
   chunkByteRange,
 } from "@/lib/tokmetric/publishing/types";
 import { getTokMetricPublishingGate } from "@/lib/tokmetric/publishing/gates";
-import { validateVerifiedMediaUrl } from "@/lib/tokmetric/publishing/service";
+import {
+  assertMediaAssetAttachedToApprovedVersion,
+  assertSelectedVideoMatchesApprovedAsset,
+  validateVerifiedMediaUrl,
+} from "@/lib/tokmetric/publishing/service";
+import { requireSameOriginRequest } from "@/lib/tokmetric/security";
 
 const originalEnv = { ...process.env };
+const approvedAsset = {
+  id: "asset-1",
+  fileName: "approved.mp4",
+  mimeType: "video/mp4" as const,
+  fileSize: 1024,
+  checksum: "a".repeat(64),
+  storageRef: "https://media.gemcybersecurityassist.com/videos/approved.mp4",
+};
 
 afterEach(() => {
   process.env = { ...originalEnv };
@@ -106,5 +120,70 @@ describe("TikTok verified media URL controls", () => {
   it("fails closed when no verified media hosts are configured", () => {
     delete process.env.TOKMETRIC_VERIFIED_MEDIA_HOSTS;
     expect(() => validateVerifiedMediaUrl("https://gemcybersecurityassist.com/demo.mp4")).toThrow(/disabled/);
+  });
+});
+
+describe("TikTok exact approved video binding", () => {
+  it("rejects an unknown media asset before a publishing request is initialized", () => {
+    expect(() => assertMediaAssetAttachedToApprovedVersion(["asset-1"], "asset-unknown"))
+      .toThrow(/attached to the exact approved content version/);
+  });
+
+  it("accepts a local file only when its immutable evidence matches the approved asset", () => {
+    expect(assertSelectedVideoMatchesApprovedAsset({
+      asset: approvedAsset,
+      source: "FILE_UPLOAD",
+      file: {
+        name: "downloaded-copy.mp4",
+        mimeType: "video/mp4",
+        size: 1024,
+        checksumSha256: "a".repeat(64),
+      },
+    })).toMatchObject({ file: { checksumSha256: "a".repeat(64) } });
+  });
+
+  it("rejects a substituted local video even when the content record is approved", () => {
+    expect(() => assertSelectedVideoMatchesApprovedAsset({
+      asset: approvedAsset,
+      source: "FILE_UPLOAD",
+      file: {
+        name: "substituted.mp4",
+        mimeType: "video/mp4",
+        size: 1024,
+        checksumSha256: "b".repeat(64),
+      },
+    })).toThrow(/exact approved video asset/);
+  });
+
+  it("derives managed URL publishing from the approved asset and rejects URL substitution", () => {
+    process.env.TOKMETRIC_VERIFIED_MEDIA_HOSTS = "gemcybersecurityassist.com";
+    expect(assertSelectedVideoMatchesApprovedAsset({
+      asset: approvedAsset,
+      source: "PULL_FROM_URL",
+    }).verifiedUrl?.toString()).toBe(approvedAsset.storageRef);
+
+    expect(() => assertSelectedVideoMatchesApprovedAsset({
+      asset: approvedAsset,
+      source: "PULL_FROM_URL",
+      videoUrl: "https://media.gemcybersecurityassist.com/videos/different.mp4",
+    })).toThrow(/exact approved video asset/);
+  });
+});
+
+describe("TokMetric publishing browser-origin protection", () => {
+  it("accepts an explicit same-origin browser request", () => {
+    const request = new NextRequest("https://gemcybersecurityassist.com/api/tokmetric/publishing/init", {
+      headers: { origin: "https://gemcybersecurityassist.com" },
+    });
+    expect(() => requireSameOriginRequest(request)).not.toThrow();
+  });
+
+  it("rejects missing and cross-origin browser requests", () => {
+    const missing = new NextRequest("https://gemcybersecurityassist.com/api/tokmetric/publishing/init");
+    const crossOrigin = new NextRequest("https://gemcybersecurityassist.com/api/tokmetric/publishing/init", {
+      headers: { origin: "https://attacker.example" },
+    });
+    expect(() => requireSameOriginRequest(missing)).toThrow(/explicit same-origin/);
+    expect(() => requireSameOriginRequest(crossOrigin)).toThrow(/Cross-origin/);
   });
 });

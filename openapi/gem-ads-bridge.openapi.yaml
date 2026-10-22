@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: GEM Ads Bridge API
+  version: 1.0.0
+  description: |
+    Bearer-protected, zero-spend campaign planning service for GEM Enterprise.
+    It validates and returns preview-only paid-ad handoffs and approval-gated
+    organic packages. It never activates billing, creates a paid campaign, or
+    performs an external provider write.
+servers:
+  - url: https://www.gemcybersecurityassist.com
+    description: GEM Enterprise production domain
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/ads-bridge:
+    post:
+      operationId: evaluateGemAdsBridgePlan
+      summary: Get or validate a zero-spend GEM campaign package
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/GetDefaultRequest'
+                - $ref: '#/components/schemas/ValidateRequest'
+      responses:
+        '200':
+          description: Validated zero-spend campaign package
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, service, plan]
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  service:
+                    type: string
+                  plan:
+                    type: object
+                    additionalProperties: true
+        '401':
+          description: Invalid bearer token
+        '422':
+          description: Zero-spend policy rejected the request
+        '503':
+          description: Server-to-server authentication is not configured
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  schemas:
+    GetDefaultRequest:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action:
+          type: string
+          const: get_default
+    ValidateRequest:
+      type: object
+      additionalProperties: false
+      required: [action, draft]
+      properties:
+        action:
+          type: string
+          const: validate
+        draft:
+          $ref: '#/components/schemas/ZeroSpendDraft'
+    ZeroSpendDraft:
+      type: object
+      additionalProperties: false
+      required:
+        - mode
+        - advertiserName
+        - offerName
+        - headline
+        - body
+        - destination
+        - creativePath
+        - market
+        - objective
+        - status
+        - budgetUsd
+        - billingConfigured
+        - requestProviderWrite
+        - bypassProviderBilling
+        - organicTargets
+      properties:
+        mode:
+          type: string
+          const: ZERO_SPEND
+        advertiserName:
+          type: string
+        offerName:
+          type: string
+        headline:
+          type: string
+          minLength: 3
+          maxLength: 50
+        body:
+          type: string
+          minLength: 1
+          maxLength: 100
+        destination:
+          type: string
+          format: uri
+        creativePath:
+          type: string
+        market:
+          type: string
+          const: US
+        objective:
+          type: string
+          const: CLICKS
+        status:
+          type: string
+          const: PAUSED
+        budgetUsd:
+          type: number
+          const: 0
+        billingConfigured:
+          type: boolean
+          const: false
+        requestProviderWrite:
+          type: boolean
+          const: false
+        bypassProviderBilling:
+          type: boolean
+          const: false
+        organicTargets:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [LINKEDIN_COMPANY, FACEBOOK_PAGE, X]
+

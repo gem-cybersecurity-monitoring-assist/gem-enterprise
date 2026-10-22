@@ -21,6 +21,7 @@ import {
 import {
   TIKTOK_VIDEO_MIME_TYPES,
   calculateTikTokChunkPlan,
+  type TikTokApprovedVideoAsset,
   type TikTokPrivacyLevel,
   type TikTokVideoMimeType,
   type TikTokVideoSource,
@@ -110,10 +111,80 @@ export async function getVideoPublishingContext(session: SessionPayload) {
     },
   });
 
+  const currentVersionIds = workspaces.flatMap((workspace) =>
+    workspace.contents.flatMap((content) =>
+      content.currentVersionId ? [content.currentVersionId] : [],
+    ),
+  );
+  const versions = currentVersionIds.length
+    ? await db.contentVersion.findMany({
+        where: { id: { in: currentVersionIds } },
+        select: {
+          id: true,
+          caption: true,
+          script: true,
+          hashtags: true,
+          mediaAssetIds: true,
+        },
+      })
+    : [];
+  const mediaAssetIds = [...new Set(versions.flatMap((version) => version.mediaAssetIds))];
+  const mediaAssets = mediaAssetIds.length
+    ? await db.mediaAsset.findMany({
+        where: {
+          id: { in: mediaAssetIds },
+          mimeType: { in: [...TIKTOK_VIDEO_MIME_TYPES] },
+        },
+        select: {
+          id: true,
+          workspaceId: true,
+          fileName: true,
+          mimeType: true,
+          fileSize: true,
+          checksum: true,
+          storageRef: true,
+        },
+      })
+    : [];
+  const versionById = new Map(versions.map((version) => [version.id, version]));
+  const mediaAssetById = new Map(mediaAssets.map((asset) => [asset.id, asset]));
+
+  const publishingWorkspaces = workspaces.map((workspace) => ({
+    ...workspace,
+    contents: workspace.contents.flatMap((content) => {
+      const version = content.currentVersionId
+        ? versionById.get(content.currentVersionId)
+        : undefined;
+      if (!version) return [];
+
+      const approvedVideoAssets = version.mediaAssetIds.flatMap((assetId) => {
+        const asset = mediaAssetById.get(assetId);
+        if (!asset || asset.workspaceId !== workspace.id) return [];
+        return [{
+          id: asset.id,
+          fileName: asset.fileName,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+          checksum: asset.checksum,
+          storageRef: asset.storageRef,
+        }];
+      });
+      if (approvedVideoAssets.length === 0) return [];
+
+      return [{
+        ...content,
+        caption: version.caption,
+        script: version.script,
+        hashtags: version.hashtags,
+        mediaAssets: approvedVideoAssets,
+      }];
+    }),
+  }));
+
   return {
     gate: getTokMetricPublishingGate(),
     verifiedMediaHosts: (process.env.TOKMETRIC_VERIFIED_MEDIA_HOSTS ?? "").split(",").map((value) => value.trim()).filter(Boolean),
-    workspaces,
+    workspaces: publishingWorkspaces,
   };
 }
 
@@ -145,6 +216,7 @@ export async function getCreatorInfoForPublishing(input: {
 export type InitializeVideoPublishInput = {
   workspaceId: string;
   contentId: string;
+  mediaAssetId: string;
   connectorId: string;
   actorId: string;
   correlationId: string;
@@ -159,7 +231,13 @@ export type InitializeVideoPublishInput = {
   brandOrganicToggle: boolean;
   isAigc: boolean;
   source: TikTokVideoSource;
-  file?: { name: string; mimeType: TikTokVideoMimeType; size: number; durationSec?: number };
+  file?: {
+    name: string;
+    mimeType: TikTokVideoMimeType;
+    size: number;
+    checksumSha256: string;
+    durationSec?: number;
+  };
   videoUrl?: string;
   consentToUpload: boolean;
   rightsConfirmed: boolean;
@@ -167,7 +245,11 @@ export type InitializeVideoPublishInput = {
   processingNoticeAccepted: boolean;
 };
 
-async function assertApprovedContent(workspaceId: string, contentId: string) {
+async function assertApprovedContent(
+  workspaceId: string,
+  contentId: string,
+  mediaAssetId: string,
+) {
   const content = await db.content.findFirst({ where: { id: contentId, workspaceId } });
   if (!content?.currentVersionId || content.state !== "APPROVED") {
     throw new TokMetricError(409, "CONTENT_NOT_APPROVED", "Select an approved content version before publishing.");
@@ -177,9 +259,102 @@ async function assertApprovedContent(workspaceId: string, contentId: string) {
   const approval = await db.approvalRequest.findFirst({
     where: { contentVersionId: version.id, objectHash: version.objectHash, state: "APPROVED" },
     orderBy: { updatedAt: "desc" },
+    include: { decisions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
-  if (!approval) throw new TokMetricError(409, "APPROVAL_REQUIRED", "A valid approval for this exact content version is required.");
-  return { content, version, approval };
+  const decision = approval?.decisions[0];
+  if (
+    !approval ||
+    decision?.decision !== "approve" ||
+    decision.objectHash !== version.objectHash ||
+    !decision.actorId ||
+    decision.actorId === approval.requestedById
+  ) {
+    throw new TokMetricError(
+      409,
+      "APPROVAL_EVIDENCE_INVALID",
+      "A different authorized operator must approve this exact content and media version.",
+    );
+  }
+  assertMediaAssetAttachedToApprovedVersion(version.mediaAssetIds, mediaAssetId);
+  const mediaAsset = await db.mediaAsset.findFirst({
+    where: {
+      id: mediaAssetId,
+      workspaceId,
+      mimeType: { in: [...TIKTOK_VIDEO_MIME_TYPES] },
+    },
+    select: {
+      id: true,
+      fileName: true,
+      mimeType: true,
+      fileSize: true,
+      checksum: true,
+      storageRef: true,
+    },
+  });
+  if (!mediaAsset) {
+    throw new TokMetricError(
+      409,
+      "VIDEO_ASSET_MISSING",
+      "The approved video asset is unavailable in this workspace.",
+    );
+  }
+  return {
+    content,
+    version,
+    approval,
+    mediaAsset: mediaAsset as TikTokApprovedVideoAsset,
+  };
+}
+
+export function assertMediaAssetAttachedToApprovedVersion(
+  approvedMediaAssetIds: string[],
+  mediaAssetId: string,
+) {
+  if (!approvedMediaAssetIds.includes(mediaAssetId)) {
+    throw new TokMetricError(
+      409,
+      "MEDIA_ASSET_NOT_APPROVED",
+      "Select a video asset attached to the exact approved content version.",
+    );
+  }
+}
+
+export function assertSelectedVideoMatchesApprovedAsset(input: {
+  asset: TikTokApprovedVideoAsset;
+  source: TikTokVideoSource;
+  file?: InitializeVideoPublishInput["file"];
+  videoUrl?: string;
+}) {
+  if (input.source === "FILE_UPLOAD") {
+    const file = input.file;
+    if (!file || !TIKTOK_VIDEO_MIME_TYPES.includes(file.mimeType)) {
+      throw new TokMetricError(400, "UNSUPPORTED_VIDEO_TYPE", "Select an MP4, MOV, or WebM video.");
+    }
+    if (
+      file.size !== input.asset.fileSize ||
+      file.mimeType !== input.asset.mimeType ||
+      file.checksumSha256.toLowerCase() !== input.asset.checksum.toLowerCase()
+    ) {
+      throw new TokMetricError(
+        409,
+        "VIDEO_FILE_VERSION_MISMATCH",
+        "The selected file does not match the exact approved video asset.",
+      );
+    }
+    return { file, verifiedUrl: undefined };
+  }
+
+  if (input.videoUrl && input.videoUrl !== input.asset.storageRef) {
+    throw new TokMetricError(
+      409,
+      "VIDEO_URL_VERSION_MISMATCH",
+      "The video URL does not match the exact approved video asset.",
+    );
+  }
+  return {
+    file: undefined,
+    verifiedUrl: validateVerifiedMediaUrl(input.asset.storageRef),
+  };
 }
 
 export async function initializeVideoPublish(input: InitializeVideoPublishInput) {
@@ -189,7 +364,11 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     throw new TokMetricError(400, "PUBLISHING_CONSENT_REQUIRED", "All publishing consent and rights confirmations are required.");
   }
 
-  const { content, version } = await assertApprovedContent(input.workspaceId, input.contentId);
+  const { content, version, mediaAsset } = await assertApprovedContent(
+    input.workspaceId,
+    input.contentId,
+    input.mediaAssetId,
+  );
   const credential = await getAuthorizedTikTokCredential({
     workspaceId: input.workspaceId,
     connectorId: input.connectorId,
@@ -205,23 +384,24 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     throw new TokMetricError(400, "SANDBOX_REQUIRES_SELF_ONLY", "Sandbox and unaudited posting must use SELF_ONLY privacy.");
   }
 
+  const selectedMedia = assertSelectedVideoMatchesApprovedAsset({
+    asset: mediaAsset,
+    source: input.source,
+    file: input.file,
+    videoUrl: input.videoUrl,
+  });
   let chunkPlan: ReturnType<typeof calculateTikTokChunkPlan> | undefined;
-  let verifiedUrl: URL | undefined;
+  const verifiedUrl = selectedMedia.verifiedUrl;
   if (input.source === "FILE_UPLOAD") {
-    if (!input.file || !TIKTOK_VIDEO_MIME_TYPES.includes(input.file.mimeType)) {
-      throw new TokMetricError(400, "UNSUPPORTED_VIDEO_TYPE", "Select an MP4, MOV, or WebM video.");
-    }
-    if (input.file.durationSec && input.file.durationSec > creator.maxVideoPostDurationSec) {
+    const file = selectedMedia.file!;
+    if (file.durationSec && file.durationSec > creator.maxVideoPostDurationSec) {
       throw new TokMetricError(400, "VIDEO_TOO_LONG", `This TikTok account currently allows videos up to ${creator.maxVideoPostDurationSec} seconds.`);
     }
     try {
-      chunkPlan = calculateTikTokChunkPlan(input.file.size);
+      chunkPlan = calculateTikTokChunkPlan(file.size);
     } catch (error) {
       throw new TokMetricError(400, "INVALID_VIDEO_SIZE", error instanceof Error ? error.message : "Video size is invalid.");
     }
-  } else {
-    if (!input.videoUrl) throw new TokMetricError(400, "VIDEO_URL_REQUIRED", "A verified HTTPS video URL is required.");
-    verifiedUrl = validateVerifiedMediaUrl(input.videoUrl);
   }
 
   const requestHash = contentHash({
@@ -237,6 +417,7 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     brandOrganicToggle: input.brandOrganicToggle,
     isAigc: input.isAigc,
     source: input.source,
+    mediaAssetId: mediaAsset.id,
     file: input.file,
     videoUrl: verifiedUrl?.toString(),
   });

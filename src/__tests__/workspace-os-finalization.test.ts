@@ -26,9 +26,12 @@ describe("Workspace OS finalization", () => {
 
   it("uses authoritative setup states instead of presenting unavailable modules as live", () => {
     const directory = source("src/components/workspace/WorkspaceOSModuleDirectory.tsx");
-    expect(directory).toContain('module.state === "SETUP_IN_PROGRESS"');
-    expect(directory).toContain('The module remains fail-closed until it is activated.');
-    expect(directory).toContain('No separate surface activated');
+    // Authoritative readiness badge per module, fail-closed reasons for
+    // non-live states, and capability-gated tab filtering.
+    expect(directory).toContain("<ReadinessBadge state={item.state} />");
+    expect(directory).toContain('item.state !== "LIVE" && item.reasons.length > 0');
+    expect(directory).toContain("isCapabilityUsable(item.state)");
+    expect(directory).toContain("!isCapabilityUsable(item.state)");
   });
 
   it("preserves organization workspace controls while adding module wayfinding", () => {

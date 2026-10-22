@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">GEM Enterprise</title>
+  <desc id="desc">GEM Enterprise shield mark</desc>
+  <rect width="256" height="256" rx="56" fill="#06131f"/>
+  <path d="M128 28c31 25 59 34 82 36v58c0 55-35 87-82 106-47-19-82-51-82-106V64c23-2 51-11 82-36Z" fill="#00d8e8" opacity=".16" stroke="#00d8e8" stroke-width="8"/>
+  <path d="m84 128 28 28 60-66" fill="none" stroke="#ffbf00" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="128" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="5" fill="#fff">GEM</text>
+</svg>

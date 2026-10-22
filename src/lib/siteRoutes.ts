@@ -226,6 +226,18 @@ export const canonicalRoutes: SiteRoute[] = [
     showInFooter: true,
   },
   {
+    path: "/whatsapp",
+    label: "WhatsApp Business",
+    category: "public",
+    description: "Connected GEM WhatsApp Business service routing and support channel",
+    isPublic: true,
+    isCanonical: true,
+    menuGroup: "utility",
+    owner: "operations",
+    showInNav: false,
+    showInFooter: true,
+  },
+  {
     path: "/resources",
     label: "Resources",
     category: "public",

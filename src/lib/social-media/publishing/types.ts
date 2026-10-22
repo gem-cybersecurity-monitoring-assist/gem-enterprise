@@ -7,6 +7,7 @@ export const sharedSocialPublishingProviders = [
   "LINKEDIN_COMPANY",
   "YOUTUBE",
   "NEXTDOOR",
+  "TELEGRAM",
 ] as const;
 
 export type SharedSocialPublishingProvider =
@@ -36,6 +37,7 @@ export interface SocialPublishingPayload {
   thread?: string[];
   localContext?: string;
   visibility?: "PUBLIC" | "UNLISTED" | "PRIVATE";
+  syntheticContentDisclosure?: boolean;
   metadata?: Record<string, unknown>;
 }
 
@@ -85,4 +87,36 @@ export interface SocialPublishingAdapterResult {
   externalPostUrl?: string;
   providerStatusCode?: number;
   safeMetadata?: Record<string, unknown>;
+}
+
+/**
+ * Publication verification outcome. Recorded inside the job's
+ * safeProviderMetadata under the "verification" key (no schema migration
+ * required). A job is only PUBLISHED when dispatch succeeded AND verification
+ * passed or was not applicable for the provider.
+ */
+export interface SocialPublicationVerification {
+  verificationOk: boolean;
+  verifiedAt: string;
+  permalink?: string;
+  method: "READ_BACK" | "NOT_APPLICABLE";
+  detail?: string;
+}
+
+export function readJobVerification(
+  safeProviderMetadata: Record<string, unknown>,
+): SocialPublicationVerification | null {
+  const raw = safeProviderMetadata.verification;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  if (typeof record.verificationOk !== "boolean") return null;
+  if (typeof record.verifiedAt !== "string") return null;
+  return {
+    verificationOk: record.verificationOk,
+    verifiedAt: record.verifiedAt,
+    permalink:
+      typeof record.permalink === "string" ? record.permalink : undefined,
+    method: record.method === "READ_BACK" ? "READ_BACK" : "NOT_APPLICABLE",
+    detail: typeof record.detail === "string" ? record.detail : undefined,
+  };
 }

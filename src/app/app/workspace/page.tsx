@@ -16,13 +16,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isPlatformOwnerRole, requireSession } from "@/lib/api/auth-helpers";
-import { resolveWorkspaceAccess } from "@/lib/workspaceAccess";
+import { resolveWorkspaceAccess, type AccessibleWorkspace } from "@/lib/workspaceAccess";
 import { cn } from "@/lib/utils";
 import { getOrganizationWorkspaceOverview } from "@/lib/organizationWorkspace";
 import { OrganizationWorkspaceOperatingSystem } from "@/components/workspace/OrganizationWorkspaceOperatingSystem";
 import { WorkspaceDirectory } from "@/components/workspace/WorkspaceDirectory";
+import { WorkspaceOperatingPicture, type OperatingActionItem, type OperatingSignals } from "@/components/workspace/WorkspaceOperatingPicture";
+import { WorkspaceJourney, type JourneySignals } from "@/components/workspace/WorkspaceJourney";
+import { type WorkspaceModuleItem } from "@/components/workspace/WorkspaceOSModuleDirectory";
 import { getGatewaySessionToken } from "@/lib/auth";
-import { workspaceGateway } from "@/lib/supabase-gateway";
+import { hasDirectDatabaseConfiguration, workspaceGateway } from "@/lib/supabase-gateway";
+import { db } from "@/lib/db";
+import { clientWorkspaceModules } from "@/lib/clientWorkspaceCatalog";
+import {
+  resolveWorkspaceModuleState,
+  type WorkspaceAccessLevel,
+  type WorkspaceModuleReadinessContext,
+} from "@/lib/workspaceModuleReadiness";
 
 export const metadata: Metadata = {
   title: "Workspace | GEM Enterprise",
@@ -40,6 +50,311 @@ interface WorkspacePageProps {
 
 function firstString(value: string | string[] | undefined): string | null {
   return typeof value === "string" ? value : null;
+}
+
+function toAccessLevel(roleName: string): WorkspaceAccessLevel {
+  return /owner/i.test(roleName) ? "owner" : "member";
+}
+
+function formatDate(value: Date | null | undefined): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatDateTime(value: Date): string {
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+const OPEN_REQUEST_STATUSES: Array<"open" | "in_progress" | "pending_info"> = [
+  "open",
+  "in_progress",
+  "pending_info",
+];
+const HIGH_REQUEST_PRIORITIES: Array<"high" | "critical"> = ["high", "critical"];
+const OPEN_MEETING_STATUSES: Array<"REQUESTED" | "CONFIRMED"> = ["REQUESTED", "CONFIRMED"];
+
+/**
+ * Real workspace signals for module readiness: connectors, entitlements, KYC
+ * status, and controls — scoped to the selected workspace membership. When the
+ * session cannot observe direct database state (managed gateway mode),
+ * dataSourceKnown=false so capability gates resolve honestly instead of guessing.
+ */
+async function getWorkspaceModuleReadinessContext(
+  userId: string,
+  workspaceId: string,
+  selected: AccessibleWorkspace,
+  projectCount: number,
+  dataSourceKnown: boolean,
+): Promise<WorkspaceModuleReadinessContext> {
+  const base = {
+    access: toAccessLevel(selected.role.name),
+    emergencyLock: selected.controls.globalEmergencyLock,
+    controls: {
+      publishingDisabled: selected.controls.publishingDisabled,
+      advertisingDisabled: selected.controls.advertisingDisabled,
+      connectorDisabled: selected.controls.connectorDisabled,
+    },
+    activeProjectCount: projectCount,
+    dataSourceKnown,
+  };
+
+  if (!dataSourceKnown) {
+    return { ...base, entitlements: [], connectors: [], kycStatus: null };
+  }
+
+  const [connectors, entitlements, kyc] = await Promise.all([
+    db.connector.findMany({ where: { workspaceId }, select: { provider: true, state: true } }),
+    db.entitlement.findMany({ where: { userId, isActive: true }, select: { slug: true } }),
+    db.kYCApplication.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { status: true },
+    }),
+  ]);
+
+  return {
+    ...base,
+    entitlements: entitlements.map((entitlement) => entitlement.slug),
+    connectors: connectors.map((connector) => ({
+      provider: String(connector.provider),
+      state: String(connector.state),
+    })),
+    kycStatus: kyc ? String(kyc.status) : null,
+  };
+}
+
+type OverviewProject = {
+  id: string;
+  name: string;
+  status: string;
+  targetDate: Date | null;
+};
+
+/**
+ * Operating-picture signals: active projects, open service requests, pending
+ * approvals, the viewer's action items, and the next dated event. Every number
+ * comes from the database, scoped to the selected workspace membership.
+ */
+async function getWorkspaceOperatingSignals(
+  userId: string,
+  workspaceId: string,
+  roleName: string,
+  projects: OverviewProject[],
+): Promise<OperatingSignals> {
+  const now = new Date();
+  const [requests, approvals, meetings] = await Promise.all([
+    db.serviceRequest.findMany({
+      where: { workspaceId, status: { in: OPEN_REQUEST_STATUSES } },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      select: { id: true, subject: true, type: true, status: true, priority: true, assignedTo: true },
+    }),
+    db.approvalRequest.findMany({
+      where: { workspaceId, state: "APPROVAL_REQUIRED" },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      select: { id: true, action: true, requiredRole: true, requestedById: true, expiresAt: true },
+    }),
+    // MeetingRequest has no workspaceId; scope to the viewer's own requests.
+    db.meetingRequest.findMany({
+      where: {
+        OR: [{ requesterId: userId }, { hostId: userId }],
+        status: { in: OPEN_MEETING_STATUSES },
+        proposedAt: { gte: now },
+      },
+      orderBy: { proposedAt: "asc" },
+      take: 3,
+      select: { id: true, topic: true, proposedAt: true, status: true },
+    }),
+  ]);
+
+  const activeProjects = projects.filter((project) => project.status !== "COMPLETED").length;
+
+  const actionItems: OperatingActionItem[] = [
+    ...requests
+      .filter((request) => request.assignedTo === userId)
+      .map((request) => ({
+        id: request.id,
+        kind: "request" as const,
+        title: request.subject,
+        detail: `${request.type} · ${String(request.status).replaceAll("_", " ")} · ${String(request.priority)} priority`,
+        href: "/app/requests",
+      })),
+    // Approval records have no dedicated client surface; render as plain records.
+    ...approvals
+      .filter((approval) => approval.requiredRole === roleName || approval.requestedById === userId)
+      .map((approval) => ({
+        id: approval.id,
+        kind: "approval" as const,
+        title: `Approval needed: ${approval.action}`,
+        detail: `Requires role: ${approval.requiredRole}${approval.expiresAt ? ` · Expires ${formatDate(approval.expiresAt) ?? ""}` : ""}`,
+      })),
+  ].slice(0, 5);
+
+  const candidates: Array<{ kind: "milestone" | "meeting"; title: string; date: Date; href: string; label: string }> = [];
+  for (const project of projects) {
+    if (project.targetDate && project.targetDate >= now) {
+      candidates.push({
+        kind: "milestone",
+        title: `Target: ${project.name}`,
+        date: project.targetDate,
+        href: "#workspace-projects",
+        label: formatDate(project.targetDate) ?? "No date recorded",
+      });
+    }
+  }
+  for (const meeting of meetings) {
+    candidates.push({
+      kind: "meeting",
+      title: meeting.topic,
+      date: meeting.proposedAt,
+      href: "/app/meetings",
+      label: formatDateTime(meeting.proposedAt),
+    });
+  }
+  candidates.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const next = candidates[0] ?? null;
+
+  return {
+    available: true,
+    activeProjects,
+    openRequests: requests.length,
+    pendingApprovals: approvals.length,
+    actionItems,
+    nextEvent: next
+      ? { kind: next.kind, title: next.title, dateLabel: next.label, href: next.href }
+      : null,
+  };
+}
+
+type Overview = Awaited<ReturnType<typeof getOrganizationWorkspaceOverview>>;
+
+/**
+ * Journey signals: activation stage from organization status + intake
+ * submissions + membership, milestones from workspace projects, blockers from
+ * open high-priority service requests.
+ */
+async function getWorkspaceJourneySignals(args: {
+  userId: string;
+  workspaceId: string;
+  roleName: string;
+  overview: Overview;
+  connectors: WorkspaceModuleReadinessContext["connectors"];
+  dataSourceKnown: boolean;
+}): Promise<JourneySignals> {
+  const { userId, workspaceId, roleName, overview, connectors, dataSourceKnown } = args;
+  const projectCount = overview.projects.length;
+  const updateCount = overview.updates.length;
+
+  const intake = dataSourceKnown
+    ? await db.intakeSubmission.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, kind: true, status: true, createdAt: true },
+      })
+    : null;
+  const blockers = dataSourceKnown
+    ? await db.serviceRequest.findMany({
+        where: {
+          workspaceId,
+          status: { in: OPEN_REQUEST_STATUSES },
+          priority: { in: HIGH_REQUEST_PRIORITIES },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { id: true, subject: true, priority: true, status: true },
+      })
+    : null;
+
+  const connectedCount = connectors.filter((connector) => connector.state === "CONNECTED").length;
+
+  const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+  const stages: JourneySignals["stages"] = [
+    {
+      id: "intake",
+      label: "Application & intake",
+      detail: intake
+        ? `Intake ${String(intake.status).toLowerCase().replaceAll("_", " ")} (${String(intake.kind).toLowerCase().replaceAll("_", " ")}) on ${formatDate(intake.createdAt) ?? "the recorded date"}.`
+        : projectCount > 0
+          ? "Workspace was provisioned directly; intake treated as converted."
+          : dataSourceKnown
+            ? "No intake submission recorded for this account."
+            : "Intake records are not visible through this session.",
+      state: intake || projectCount > 0 ? "done" : "upcoming",
+    },
+    {
+      id: "activation",
+      label: "Workspace activation",
+      detail: `Active membership${roleName ? ` as ${roleName}` : ""}.`,
+      state: "done",
+    },
+    {
+      id: "delivery",
+      label: "Delivery underway",
+      detail:
+        projectCount > 0
+          ? `${plural(projectCount, "project")} in the workspace.`
+          : "No projects recorded yet — GEM provisions delivery work here.",
+      state: projectCount > 0 ? "done" : "upcoming",
+    },
+    {
+      id: "cadence",
+      label: "Operational cadence",
+      detail:
+        updateCount > 0
+          ? `${plural(updateCount, "weekly update")} submitted.`
+          : "Weekly reporting begins after delivery starts.",
+      state: updateCount > 0 ? "done" : "upcoming",
+    },
+    {
+      id: "connected",
+      label: "Connected operations",
+      detail:
+        connectedCount > 0
+          ? `${plural(connectedCount, "provider connection")} live.`
+          : dataSourceKnown
+            ? "No provider connections recorded."
+            : "Connection records are not visible through this session.",
+      state: connectedCount > 0 ? "done" : "upcoming",
+    },
+  ];
+
+  let seenOpen = false;
+  for (const stage of stages) {
+    if (stage.state === "done") continue;
+    stage.state = seenOpen ? "upcoming" : "current";
+    seenOpen = true;
+  }
+
+  return {
+    stages,
+    milestones: overview.projects.slice(0, 6).map((project) => ({
+      id: project.id,
+      name: project.name,
+      status: String(project.status),
+      targetDateLabel: formatDate(project.targetDate),
+      progress: project.progress,
+    })),
+    blockers: blockers
+      ? blockers.map((blocker) => ({
+          id: blocker.id,
+          subject: blocker.subject,
+          priority: String(blocker.priority),
+          status: String(blocker.status),
+        }))
+      : null,
+  };
 }
 
 function ControlState({ locked }: { locked: boolean }) {
@@ -133,6 +448,57 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
     ? await workspaceGateway<Awaited<ReturnType<typeof getOrganizationWorkspaceOverview>>>("overview", gatewayToken, { workspaceId: selected.id })
     : await getOrganizationWorkspaceOverview(gate.session.userId, selected.id);
 
+  // Extended workspace signals require direct database access. In managed
+  // gateway mode the signals are unavailable and the UI says so explicitly.
+  const directDb = hasDirectDatabaseConfiguration();
+  const readinessCtx = await getWorkspaceModuleReadinessContext(
+    gate.session.userId,
+    selected.id,
+    selected,
+    operatingOverview.projects.length,
+    directDb,
+  );
+  const moduleItems: WorkspaceModuleItem[] = clientWorkspaceModules.map((module) => {
+    const resolution = resolveWorkspaceModuleState(module.id, readinessCtx);
+    // Anchor hrefs become workspace-preserving deep links: the selected
+    // workspace survives reloads, shares, and bookmarks.
+    const href = module.href.startsWith("#")
+      ? `/app/workspace?workspace=${selected.id}${module.href}`
+      : module.href;
+    return {
+      id: module.id,
+      label: module.label,
+      description: module.description,
+      group: module.group,
+      href,
+      state: resolution.state,
+      reasons: resolution.reasons,
+    };
+  });
+  const operatingSignals: OperatingSignals = directDb
+    ? await getWorkspaceOperatingSignals(
+        gate.session.userId,
+        selected.id,
+        selected.role.name,
+        operatingOverview.projects,
+      )
+    : {
+        available: false,
+        activeProjects: 0,
+        openRequests: 0,
+        pendingApprovals: 0,
+        actionItems: [],
+        nextEvent: null,
+      };
+  const journeySignals = await getWorkspaceJourneySignals({
+    userId: gate.session.userId,
+    workspaceId: selected.id,
+    roleName: selected.role.name,
+    overview: operatingOverview,
+    connectors: readinessCtx.connectors,
+    dataSourceKnown: directDb,
+  });
+
   const controls = [
     ["Global emergency lock", selected.controls.globalEmergencyLock],
     ["Publishing", selected.controls.publishingDisabled],
@@ -211,7 +577,16 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
         ))}
       </section>
 
-      <OrganizationWorkspaceOperatingSystem overview={operatingOverview} />
+      <WorkspaceOperatingPicture
+        organizationName={selected.organization.name}
+        workspaceName={selected.name}
+        roleName={selected.role.name}
+        signals={operatingSignals}
+      />
+
+      <OrganizationWorkspaceOperatingSystem overview={operatingOverview} moduleItems={moduleItems} />
+
+      <WorkspaceJourney signals={journeySignals} />
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card className="border-white/10 bg-card">

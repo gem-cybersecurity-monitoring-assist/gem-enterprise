@@ -28,6 +28,7 @@ const routes = [
   "/company",
   "/about",
   "/contact",
+  "/whatsapp",
   "/get-started",
   "/eligibility/status",
   "/privacy",

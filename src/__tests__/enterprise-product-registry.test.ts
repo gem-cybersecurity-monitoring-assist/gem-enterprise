@@ -16,6 +16,10 @@ import { GET } from "@/app/api/platform-products/route";
 describe("enterprise product registry", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it("excludes Crypto Signal Bot and Certification Access from Enterprise surfaces", () => {
+    expect(JSON.stringify(enterpriseProducts)).not.toMatch(/crypto.signal.bot|certification.access/i);
+  });
+
   it("keeps IWW on its independent production, repository, auth, and data boundaries", () => {
     const iww = getEnterpriseProduct("iww");
     expect(iww).toMatchObject({

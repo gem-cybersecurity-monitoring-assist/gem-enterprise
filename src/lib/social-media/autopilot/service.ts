@@ -1,4 +1,3 @@
-import type { SocialEnvSource } from "@/lib/social-media/autopilot/policy";
 import { db } from "@/lib/db";
 import { listSocialConnectors } from "@/lib/social-media/oauth/store";
 import {
@@ -21,6 +20,10 @@ import {
   socialContentTypes,
   type SocialContentType,
 } from "@/lib/social-media/policy";
+import {
+  evaluateContentLaneDestination,
+  readContentLaneMetadata,
+} from "@/lib/social-media/orchestration/content-lanes";
 import type { DailyContentOrchestrationResult } from "@/lib/social-media/orchestration/orchestrator";
 import {
   emitTokMetricAudit,
@@ -32,13 +35,24 @@ import {
   getSocialAutopilotProviderPolicy,
   SOCIAL_AUTOPILOT_POLICY_VERSION,
   socialAutopilotAutoApprovalEnabled,
+  type SocialEnvSource,
 } from "./policy";
+import {
+  assertSocialAutopilotKillSwitchClear,
+  evaluateProviderSchedulingHealth,
+  getWorkspacePausedProviders,
+  resolveProviderPauseState,
+} from "./health";
+import {
+  autopilotCandidateWeight,
+  getAutopilotPerformanceWeights,
+} from "./learning";
 import {
   buildSocialAutopilotSlots,
   socialAutopilotDayWindow,
 } from "./scheduler";
 
-const RECENT_FINGERPRINT_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -276,6 +290,7 @@ function derivePayload(input: {
   fingerprint: string;
 }) {
   const settings = object(input.version.settings);
+  const laneMetadata = readContentLaneMetadata(settings);
   const hashtags = input.version.hashtags.map((tag) =>
     tag.startsWith("#") ? tag : `#${tag}`,
   );
@@ -316,12 +331,26 @@ function derivePayload(input: {
         ? settings.localContext.trim()
         : undefined,
     visibility,
+    syntheticContentDisclosure:
+      laneMetadata.aigcDisclosureRequired
+        ? laneMetadata.aigcDisclosureApplied
+        : undefined,
     metadata: {
       contentId: input.contentId,
       contentVersionId: input.contentVersionId,
       autopilot: true,
       autopilotFingerprint: input.fingerprint,
       autopilotPolicyVersion: SOCIAL_AUTOPILOT_POLICY_VERSION,
+      contentLane: laneMetadata.lane,
+      sourceKind: laneMetadata.sourceKind,
+      routingPolicyVersion: laneMetadata.policyVersion,
+      aigcDisclosureRequired: laneMetadata.aigcDisclosureRequired,
+      aigcDisclosureApplied: laneMetadata.aigcDisclosureApplied,
+      sourceTransformationRequired: laneMetadata.sourceTransformationRequired,
+      sourceTransformationVerified:
+        laneMetadata.sourceTransformationVerified,
+      sourceAttributionRequired: laneMetadata.sourceAttributionRequired,
+      originalConceptRequired: laneMetadata.originalConceptRequired,
     },
   } satisfies SocialPublishingPayload;
 }
@@ -370,6 +399,11 @@ export async function materializeSocialAutopilotJobs(input: {
 }) {
   const env = input.env ?? process.env;
   const now = input.now ?? new Date();
+
+  // Emergency kill switch (globalEmergencyLock / publishingDisabled): fail
+  // closed before any scheduling decision is made.
+  await assertSocialAutopilotKillSwitchClear(input.workspaceId);
+
   const egress = getSocialAutopilotEgressPolicy(env);
   if (!socialAutopilotAutoApprovalEnabled(env)) {
     return {
@@ -381,6 +415,13 @@ export async function materializeSocialAutopilotJobs(input: {
   }
 
   const connectors = await listSocialConnectors(input.workspaceId);
+  const workspacePausedProviders = await getWorkspacePausedProviders(
+    input.workspaceId,
+  );
+  const performanceWeights = await getAutopilotPerformanceWeights({
+    workspaceId: input.workspaceId,
+    env,
+  });
   const draftByFingerprint = new Map(
     input.result.plan.drafts.map((draft) => [draft.fingerprint, draft]),
   );
@@ -417,6 +458,38 @@ export async function materializeSocialAutopilotJobs(input: {
     }
 
     const policy = getSocialAutopilotProviderPolicy(provider, env);
+
+    // Provider-scoped pause: workspace-level (WS-A), env config, or a
+    // disabled connector. Paused providers schedule nothing.
+    const pauseState = resolveProviderPauseState({
+      provider,
+      env,
+      workspacePausedProviders,
+    });
+    if (pauseState.paused) {
+      blockedReasons.push(pauseState.reason ?? "AUTOPILOT_PROVIDER_PAUSED");
+      skipped += input.result.materialized.filter(
+        (item) => item.provider === provider,
+      ).length;
+      continue;
+    }
+
+    // Provider-health auto-pause: queue-depth cap, cooldown, and
+    // failure/rate-limit backoff all block new scheduling while unhealthy.
+    const health = await evaluateProviderSchedulingHealth({
+      workspaceId: input.workspaceId,
+      provider,
+      now,
+      env,
+    });
+    if (!health.allowed) {
+      blockedReasons.push(health.blockedReason ?? "PROVIDER_UNHEALTHY");
+      skipped += input.result.materialized.filter(
+        (item) => item.provider === provider,
+      ).length;
+      continue;
+    }
+
     const existingCount = await countSocialPublishingJobsForWindow({
       workspaceId: input.workspaceId,
       provider,
@@ -433,6 +506,14 @@ export async function materializeSocialAutopilotJobs(input: {
     const candidates = connectors.filter(
       (connector) =>
         connector.state === "CONNECTED" &&
+        !connector.disabledAt &&
+        connectorProviderMatches(provider, connector.provider) &&
+        accountTypeMatches(provider, connector.safeMetadata),
+    );
+    const disabledConnectors = connectors.filter(
+      (connector) =>
+        connector.state === "CONNECTED" &&
+        Boolean(connector.disabledAt) &&
         connectorProviderMatches(provider, connector.provider) &&
         accountTypeMatches(provider, connector.safeMetadata),
     );
@@ -444,10 +525,16 @@ export async function materializeSocialAutopilotJobs(input: {
     if (!selected) {
       blockedReasons.push(
         explicitConnector
-          ? `${provider}_CONFIGURED_CONNECTOR_NOT_READY`
+          ? disabledConnectors.some(
+              (connector) => connector.id === explicitConnector,
+            )
+            ? `${provider}_CONFIGURED_CONNECTOR_DISABLED`
+            : `${provider}_CONFIGURED_CONNECTOR_NOT_READY`
           : candidates.length > 1
             ? `${provider}_EXPLICIT_CONNECTOR_REQUIRED`
-            : `${provider}_CONNECTED_ACCOUNT_REQUIRED`,
+            : disabledConnectors.length > 0
+              ? `${provider}_CONNECTOR_DISABLED`
+              : `${provider}_CONNECTED_ACCOUNT_REQUIRED`,
       );
       skipped += input.result.materialized.filter(
         (item) => item.provider === provider,
@@ -455,30 +542,45 @@ export async function materializeSocialAutopilotJobs(input: {
       continue;
     }
 
-    const providerItems = input.result.materialized
-      .filter(
-        (item) =>
-          item.provider === provider &&
-          item.state === "AUTO_POLICY_READY" &&
-          item.complianceResult === "PASS",
-      )
-      .slice(0, remaining);
+    const providerItems = input.result.materialized.filter(
+      (item) =>
+        item.provider === provider &&
+        item.state === "AUTO_POLICY_READY" &&
+        item.complianceResult === "PASS",
+    );
     const slots = buildSocialAutopilotSlots({
       provider,
       planDate: input.planDate,
-      count: providerItems.length,
+      count: Math.min(remaining, providerItems.length),
       now,
       env,
     });
+    // Higher-weight candidates fill scarce slots, without burning a slot
+    // when a candidate fails current-main validation.
+    const duplicateLookbackMs = policy.duplicateContentWindowDays * DAY_MS;
+    const ranked = providerItems
+      .map((item, index) => {
+        const draft = draftByFingerprint.get(item.fingerprint);
+        const scheduledFor = slots[Math.min(index, slots.length - 1)] ?? now;
+        return {
+          item,
+          weight: draft
+            ? autopilotCandidateWeight({
+                weights: performanceWeights,
+                provider,
+                format: draft.contentType,
+                scheduledFor,
+              })
+            : 1.0,
+        };
+      })
+      .sort((a, b) => b.weight - a.weight)
+      .map((entry) => entry.item);
+    let queuedForProvider = 0;
 
-    for (let index = 0; index < providerItems.length; index += 1) {
-      const item = providerItems[index];
-      const scheduledFor = slots[index];
-      if (!scheduledFor) {
-        skipped += 1;
-        blockedReasons.push(`${provider}_NO_SAFE_SLOT_AVAILABLE`);
-        continue;
-      }
+    for (let index = 0; index < ranked.length; index += 1) {
+      if (queuedForProvider >= remaining) break;
+      const item = ranked[index];
       const draft = draftByFingerprint.get(item.fingerprint);
       if (!draft) {
         skipped += 1;
@@ -489,7 +591,7 @@ export async function materializeSocialAutopilotJobs(input: {
         workspaceId: input.workspaceId,
         provider,
         fingerprint: item.fingerprint,
-        since: new Date(now.getTime() - RECENT_FINGERPRINT_LOOKBACK_MS),
+        since: new Date(now.getTime() - duplicateLookbackMs),
       });
       if (duplicate) {
         skipped += 1;
@@ -530,6 +632,30 @@ export async function materializeSocialAutopilotJobs(input: {
         continue;
       }
 
+      const laneMetadata = readContentLaneMetadata(settings);
+      if (!laneMetadata.metadataValid) {
+        skipped += 1;
+        blockedReasons.push(`${provider}_CONTENT_LANE_METADATA_INVALID`);
+        continue;
+      }
+      const laneRouting = evaluateContentLaneDestination({
+        lane: laneMetadata.lane,
+        provider,
+        sourceKind: laneMetadata.sourceKind,
+        sourceTransformationVerified:
+          laneMetadata.sourceTransformationVerified,
+        aigcDisclosureApplied: laneMetadata.aigcDisclosureApplied,
+      });
+      if (!laneRouting.allowed) {
+        skipped += 1;
+        blockedReasons.push(
+          ...laneRouting.reasons.map(
+            (reason) => `${provider}_${reason}`,
+          ),
+        );
+        continue;
+      }
+
       const mediaAssets =
         version.mediaAssetIds.length > 0
           ? await db.mediaAsset.findMany({
@@ -553,6 +679,13 @@ export async function materializeSocialAutopilotJobs(input: {
         skipped += 1;
         blockedReasons.push(mediaBlocker);
         continue;
+      }
+
+      const scheduledFor = slots[queuedForProvider];
+      if (!scheduledFor) {
+        skipped += providerItems.length - index;
+        blockedReasons.push(`${provider}_NO_SAFE_SLOT_AVAILABLE`);
+        break;
       }
 
       const approval = await autoApproveExactVersion({
@@ -591,6 +724,7 @@ export async function materializeSocialAutopilotJobs(input: {
         maxAttempts: 3,
       });
       queued += 1;
+      queuedForProvider += 1;
     }
   }
 

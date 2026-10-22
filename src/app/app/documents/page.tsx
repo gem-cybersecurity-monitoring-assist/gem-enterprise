@@ -2,22 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { WorkspaceBreadcrumb, WorkspaceEmptyState, WorkspaceErrorState } from '@/components/workspace/WorkspaceUi'
+import Link from 'next/link'
 import {
-  Archive,
   CheckCircle2,
   Database,
-  Download,
   FileCheck2,
   FileText,
   FolderLock,
   Loader2,
   LockKeyhole,
   ShieldCheck,
-  UploadCloud,
 } from 'lucide-react'
 
 interface KycDoc {
@@ -44,26 +42,26 @@ function typeBadge(type: string) {
   return <Badge className={cls}>{type.replace(/_/g, ' ')}</Badge>
 }
 
-function DocsTable({ docs }: { docs: DocRow[] }) {
+function DocsTable({ docs, emptyAction }: { docs: DocRow[]; emptyAction?: React.ReactNode }) {
   if (docs.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-        <Archive className="mx-auto mb-3 h-8 w-8 text-slate-600" />
-        <p className="text-sm text-slate-500">No documents in this category.</p>
-      </div>
+      <WorkspaceEmptyState
+        title="No documents in this category"
+        description="Records in this category will appear here once they are added through verification or GEM operations."
+        action={emptyAction}
+      />
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10">
-      <Table>
+    <div className="overflow-x-auto rounded-2xl border border-white/10">
+      <Table className="min-w-[560px]">
         <TableHeader>
           <TableRow className="border-white/10 bg-white/5 hover:bg-white/5">
             <TableHead className="text-slate-400">Name</TableHead>
             <TableHead className="text-slate-400">Type</TableHead>
             <TableHead className="text-slate-400">Date</TableHead>
             <TableHead className="text-slate-400">Status</TableHead>
-            <TableHead className="text-slate-400">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -72,7 +70,7 @@ function DocsTable({ docs }: { docs: DocRow[] }) {
               <TableCell>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/10">
-                    <FileText className="h-4 w-4 text-cyan-400" />
+                    <FileText className="h-4 w-4 text-cyan-400" aria-hidden="true" />
                   </div>
                   <div>
                     <span className="block text-sm font-medium text-white">{doc.name}</span>
@@ -84,14 +82,9 @@ function DocsTable({ docs }: { docs: DocRow[] }) {
               <TableCell className="text-sm text-slate-400">{doc.date}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-400" aria-hidden="true" />
                   <span className="text-xs capitalize text-green-400">{doc.status}</span>
                 </div>
-              </TableCell>
-              <TableCell>
-                <Button size="sm" variant="outline" className="gap-1.5 border-white/10 text-xs text-slate-300 hover:bg-white/10 hover:text-white" disabled>
-                  <Download className="h-3 w-3" /> Download
-                </Button>
               </TableCell>
             </TableRow>
           ))}
@@ -104,23 +97,32 @@ function DocsTable({ docs }: { docs: DocRow[] }) {
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
-  useEffect(() => {
-    fetch('/api/documents')
-      .then(r => r.json())
-      .then(d => {
-        if (Array.isArray(d.documents) && d.documents.length > 0) {
-          setDocs((d.documents as KycDoc[]).map(doc => ({
-            id: doc.id,
-            name: doc.fileName,
-            type: doc.documentType,
-            date: new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            status: doc.status,
-          })))
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  const loadDocuments = async () => {
+    setLoading(true)
+    setLoadError(false)
+    try {
+      const res = await fetch('/api/documents')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const d = await res.json()
+      if (Array.isArray(d.documents) && d.documents.length > 0) {
+        setDocs((d.documents as KycDoc[]).map(doc => ({
+          id: doc.id,
+          name: doc.fileName,
+          type: doc.documentType,
+          date: new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: doc.status,
+        })))
+      }
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadDocuments() }, [])
 
   const kycDocs = docs.filter(d => ['identity', 'proof_of_address'].includes(d.type.toLowerCase()))
   const compliance = docs.filter(d => ['compliance', 'agreement'].includes(d.type.toLowerCase()))
@@ -130,8 +132,9 @@ export default function DocumentsPage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
+          <WorkspaceBreadcrumb current="Documents" />
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-mono uppercase tracking-wider text-cyan-400">
-            <FolderLock className="h-3.5 w-3.5" />
+            <FolderLock className="h-3.5 w-3.5" aria-hidden="true" />
             Encrypted Document Vault
           </div>
           <h1 className="text-2xl font-bold text-white">
@@ -141,9 +144,12 @@ export default function DocumentsPage() {
             Access KYC evidence, compliance records, statements, agreements, and institutional files through the existing document API.
           </p>
         </div>
-        <Button disabled className="gap-2 rounded-full bg-cyan-400 text-black hover:bg-cyan-500 disabled:opacity-60">
-          <UploadCloud className="h-4 w-4" /> Upload Coming Soon
-        </Button>
+        <Link
+          href="/app/requests"
+          className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-4 py-2 text-xs font-bold text-black transition hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        >
+          <FileText className="h-4 w-4" aria-hidden="true" /> Request a document
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -175,17 +181,28 @@ export default function DocumentsPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center gap-2 py-8 text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading documents…
+              <div className="flex items-center justify-center gap-2 py-8 text-slate-500" role="status">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading documents…
               </div>
+            ) : loadError ? (
+              <WorkspaceErrorState
+                title="Documents could not be loaded"
+                description="The vault could not be reached. Your records are safe — try again."
+                onRetry={loadDocuments}
+              />
             ) : docs.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center">
-                <FolderLock className="mx-auto mb-4 h-10 w-10 text-slate-600" />
-                <p className="text-sm font-medium text-white">No documents available yet</p>
-                <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                  Documents will appear here once your KYC is complete or institutional records are added to your profile.
-                </p>
-              </div>
+              <WorkspaceEmptyState
+                title="No documents available yet"
+                description="Documents appear here once your verification is complete or institutional records are added to your profile."
+                action={
+                  <Link
+                    href="/app/compliance"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-300 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Continue verification
+                  </Link>
+                }
+              />
             ) : (
               <Tabs defaultValue="all">
                 <TabsList className="mb-6 border border-white/10 bg-white/5">
@@ -196,9 +213,36 @@ export default function DocumentsPage() {
                   ))}
                 </TabsList>
                 <TabsContent value="all"><DocsTable docs={docs} /></TabsContent>
-                <TabsContent value="kyc"><DocsTable docs={kycDocs} /></TabsContent>
-                <TabsContent value="statements"><DocsTable docs={statements} /></TabsContent>
-                <TabsContent value="compliance"><DocsTable docs={compliance} /></TabsContent>
+                <TabsContent value="kyc">
+                  <DocsTable
+                    docs={kycDocs}
+                    emptyAction={
+                      <Link href="/app/compliance" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
+                        Continue verification to add identity documents
+                      </Link>
+                    }
+                  />
+                </TabsContent>
+                <TabsContent value="statements">
+                  <DocsTable
+                    docs={statements}
+                    emptyAction={
+                      <Link href="/app/requests" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
+                        Request a statement
+                      </Link>
+                    }
+                  />
+                </TabsContent>
+                <TabsContent value="compliance">
+                  <DocsTable
+                    docs={compliance}
+                    emptyAction={
+                      <Link href="/app/support" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
+                        Ask support about compliance records
+                      </Link>
+                    }
+                  />
+                </TabsContent>
               </Tabs>
             )}
           </CardContent>

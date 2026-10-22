@@ -9,8 +9,10 @@ import {
 import { redirect } from "next/navigation";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
 import { db } from "@/lib/db";
+import { getGatewaySessionToken } from "@/lib/auth";
 import { isAdminRole, requireSession } from "@/lib/api/auth-helpers";
-import { resolveWorkspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceGateway } from "@/lib/supabase-gateway";
+import { resolveWorkspaceAccess, type AccessibleWorkspace } from "@/lib/workspaceAccess";
 import { getSafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
 import {
   getSocialMediaProviderReadiness,
@@ -47,10 +49,25 @@ export default async function SocialMediaAccountsPage({
   const requestedWorkspaceId = Array.isArray(params.workspace)
     ? params.workspace[0]?.trim() || null
     : params.workspace?.trim() || null;
-  const membershipResolution = await resolveWorkspaceAccess(
-    gate.session.userId,
-    requestedWorkspaceId,
-  );
+  const gatewayToken =
+    gate.session.authSource === "supabase_gateway"
+      ? await getGatewaySessionToken()
+      : null;
+  const membershipResolution = gatewayToken
+    ? await workspaceGateway<{ workspaces: AccessibleWorkspace[] }>("access", gatewayToken).then(
+        ({ workspaces }) => ({
+          workspaces,
+          selected: requestedWorkspaceId
+            ? workspaces.find((workspace) => workspace.id === requestedWorkspaceId) ?? null
+            : workspaces[0] ?? null,
+          requestedWorkspaceId,
+          requestedDenied: Boolean(
+            requestedWorkspaceId &&
+              !workspaces.some((workspace) => workspace.id === requestedWorkspaceId),
+          ),
+        }),
+      )
+    : await resolveWorkspaceAccess(gate.session.userId, requestedWorkspaceId);
   let publishingWorkspace = membershipResolution.selected
     ? { id: membershipResolution.selected.id, name: membershipResolution.selected.name }
     : null;
@@ -58,7 +75,7 @@ export default async function SocialMediaAccountsPage({
   // Admin publishing is organization-scoped. Prefer the admin's organization,
   // then the canonical controlled-production workspace used by GEM/TokMetric.
   // This removes the dead-end manual workspace-ID requirement for GEM Admin.
-  if (!publishingWorkspace && isAdminRole(gate.session.role) && gate.session.organizationId) {
+  if (!gatewayToken && !publishingWorkspace && isAdminRole(gate.session.role) && gate.session.organizationId) {
     publishingWorkspace = await db.workspace.findFirst({
       where: {
         ...(requestedWorkspaceId ? { id: requestedWorkspaceId } : {}),
@@ -70,7 +87,7 @@ export default async function SocialMediaAccountsPage({
     });
   }
 
-  if (!publishingWorkspace && isAdminRole(gate.session.role) && !requestedWorkspaceId) {
+  if (!gatewayToken && !publishingWorkspace && isAdminRole(gate.session.role) && !requestedWorkspaceId) {
     const canonicalWorkspaceId =
       process.env.CONTENT_ORCHESTRATOR_WORKSPACE_ID?.trim();
     const serviceActorId =

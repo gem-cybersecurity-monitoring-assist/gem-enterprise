@@ -59,9 +59,25 @@ function sortForHash(value: unknown): unknown {
   return value;
 }
 
+/**
+ * The production Supabase identity gateway does not implement TokMetric's
+ * direct Prisma workspace, credential or publishing transactions.
+ * Keep authenticated gateway sessions out of the unrelated Prisma authority.
+ */
+function assertTokMetricPersistenceAuthority(session: SessionPayload): void {
+  if (session.authSource === "supabase_gateway") {
+    throw new TokMetricError(
+      503,
+      "TOKMETRIC_GATEWAY_BACKEND_REQUIRED",
+      "TokMetric workspace operations are unavailable until a transactional gateway backend is verified.",
+    );
+  }
+}
+
 export async function requireTokMetricSession(request: NextRequest): Promise<SessionPayload> {
   const session = await getSessionFromRequest(request);
   if (!session) throw new TokMetricError(401, "UNAUTHENTICATED", "Authentication is required.");
+  assertTokMetricPersistenceAuthority(session);
   return session;
 }
 
@@ -83,7 +99,32 @@ export async function requireActiveTokMetricSession(
   return session;
 }
 
+export function requireSameOriginRequest(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (!origin) {
+    throw new TokMetricError(
+      403,
+      "ORIGIN_REQUIRED",
+      "An explicit same-origin browser request is required.",
+    );
+  }
+  let requestOrigin: string;
+  try {
+    requestOrigin = new URL(origin).origin;
+  } catch {
+    throw new TokMetricError(403, "ORIGIN_INVALID", "The request origin is invalid.");
+  }
+  if (requestOrigin !== request.nextUrl.origin) {
+    throw new TokMetricError(
+      403,
+      "SAME_ORIGIN_REQUIRED",
+      "Cross-origin TokMetric operations are not allowed.",
+    );
+  }
+}
+
 export async function requireWorkspaceAccess(workspaceId: string, session: SessionPayload) {
+  assertTokMetricPersistenceAuthority(session);
   const membership = await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId: session.userId } }, include: { role: { include: { permissions: true } } } });
   if (!membership && !["admin", "super_admin", "internal"].includes(session.role)) {
     throw new TokMetricError(403, "WORKSPACE_FORBIDDEN", "You do not have access to this TokMetric workspace.");
@@ -151,5 +192,5 @@ export async function parseJson<T extends z.ZodTypeAny>(request: NextRequest, sc
 
 export function tokMetricErrorResponse(error: unknown, cid: string) {
   const safe = error instanceof TokMetricError ? error : new TokMetricError(500, "INTERNAL_ERROR", "An unexpected TokMetric error occurred.");
-  return NextResponse.json({ ok: false, error: { code: safe.code, message: safe.message, correlationId: cid } }, { status: safe.status });
+  return NextResponse.json({ ok: false, error: { code: safe.code, message: safe.message, correlationId: cid } }, { status: safe.status, headers: { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" } });
 }

@@ -9,7 +9,7 @@
 - `/app/social-media` — overview and publishing lifecycle
 - `/app/social-media/accounts` — business account and destination authorization
 - `/app/social-media/content` — cross-platform content production
-- `/app/social-media/video` — governed rendering and private video preview
+- `/app/social-media/video` — governed rendering handoff, authorized asset library, private preview, checksum-bound local-file verification, and exact-version TikTok distribution
 - `/app/social-media/tokmetric` — full TikTok and TikTok Shop operating page
 - `/app/social-media/approvals` — compliance and exact-version human approval
 - `/app/social-media/calendar` — scheduling and publishing preparation

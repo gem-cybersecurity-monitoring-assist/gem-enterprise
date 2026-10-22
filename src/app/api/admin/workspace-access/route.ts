@@ -142,9 +142,9 @@ function administrationError(error: unknown) {
   return json({ error: "Workspace access administration is unavailable." }, 500);
 }
 
-function writeLimit(request: NextRequest, actorUserId: string) {
+async function writeLimit(request: NextRequest, actorUserId: string) {
   const { ipAddress } = getRequestContext(request);
-  return rateLimit(`${actorUserId}:${ipAddress}`, {
+  return await rateLimit(`${actorUserId}:${ipAddress}`, {
     key: "admin:workspace-access:write",
     windowMs: 5 * 60_000,
     max: 20,
@@ -170,8 +170,8 @@ export async function POST(request: NextRequest) {
   const originFailure = sameOriginFailure(request);
   if (originFailure) return originFailure;
 
-  const limit = writeLimit(request, gate.session.userId);
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  const limit = await writeLimit(request, gate.session.userId);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   const body = await parsedJson(request);
   if (!body.ok) return body.response;
@@ -245,8 +245,8 @@ export async function PATCH(request: NextRequest) {
   const originFailure = sameOriginFailure(request);
   if (originFailure) return originFailure;
 
-  const limit = writeLimit(request, gate.session.userId);
-  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds);
+  const limit = await writeLimit(request, gate.session.userId);
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfterSeconds, limit.unavailable);
 
   const body = await parsedJson(request);
   if (!body.ok) return body.response;

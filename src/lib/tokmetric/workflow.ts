@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
+  evaluateContentLaneDestination,
+  readContentLaneMetadata,
+} from "@/lib/social-media/orchestration/content-lanes";
+import {
   contentHash,
   emitDomainEvent,
   emitTokMetricAudit,
@@ -572,6 +576,30 @@ export async function queuePublishJob(input: {
       "Approved content version was not found.",
     );
   }
+  const laneMetadata = readContentLaneMetadata(version.settings);
+  if (!laneMetadata.metadataValid) {
+    throw new TokMetricError(
+      409,
+      "CONTENT_LANE_METADATA_INVALID",
+      "The active content version contains an unknown content lane and cannot be queued.",
+    );
+  }
+  const laneRouting = evaluateContentLaneDestination({
+    lane: laneMetadata.lane,
+    provider: "TIKTOK",
+    sourceKind: laneMetadata.sourceKind,
+    sourceTransformationVerified:
+      laneMetadata.sourceTransformationVerified,
+    aigcDisclosureApplied: laneMetadata.aigcDisclosureApplied,
+  });
+  if (!laneRouting.allowed) {
+    throw new TokMetricError(
+      409,
+      "CONTENT_LANE_PUBLISHING_BLOCKED",
+      `Content lane policy blocked TikTok publication: ${laneRouting.reasons.join(", ")}.`,
+    );
+  }
+
   const connector = await db.connector.findFirst({
     where: {
       id: input.connectorId,

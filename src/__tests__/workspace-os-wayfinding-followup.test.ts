@@ -31,7 +31,8 @@ describe("Workspace OS wayfinding follow-up", () => {
 
   it("preserves organization management and reporting around the new directory", () => {
     const workspace = source("src/components/workspace/OrganizationWorkspaceOperatingSystem.tsx");
-    expect(workspace).toContain('<WorkspaceProjectDirectory projects={overview.projects} />');
+    expect(workspace).toContain("<WorkspaceProjectDirectory");
+    expect(workspace).toContain("projects={overview.projects}");
     expect(workspace).toContain('permits("projects")');
     expect(workspace).toContain('permits("members")');
     expect(workspace).toContain('permits("weekly_updates")');

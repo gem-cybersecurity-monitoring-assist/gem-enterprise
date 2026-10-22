@@ -55,6 +55,7 @@ describe("organization workspace operating system", () => {
   it("uses the authenticated Supabase gateway when direct Prisma is intentionally absent", () => {
     const gateway=source("supabase/functions/gem-workspace-gateway/index.ts");
     const page=source("src/app/app/workspace/page.tsx");
+    const socialAccounts=source("src/app/app/social-media/accounts/page.tsx");
     expect(gateway).toContain('claims.iss!=="gem-auth-gateway"');
     expect(gateway).toContain('await membership(u.id,w,["manage","projects"])');
     expect(gateway).toContain('action==="ai_session"');
@@ -62,6 +63,9 @@ describe("organization workspace operating system", () => {
     expect(gateway).toContain('profileId:u.id');
     expect(page).toContain('workspaceGateway<');
     expect(page).toContain('gate.session.authSource === "supabase_gateway"');
+    expect(socialAccounts).toContain('gate.session.authSource === "supabase_gateway"');
+    expect(socialAccounts).toContain('workspaceGateway<{ workspaces: AccessibleWorkspace[] }>("access"');
+    expect(socialAccounts).toContain('if (!gatewayToken && !publishingWorkspace');
   });
 
   it("keeps AI consent receipts and native news ownership explicit",()=>{

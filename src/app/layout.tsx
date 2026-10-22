@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { ProductionDisclosure } from "@/components/ProductionDisclosure";
+import { WhatsAppQuickContact } from "@/components/WhatsAppQuickContact";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -37,6 +38,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     siteName: "GEM Enterprise",
   },
+  icons: {
+    icon: [
+      { url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/apple-touch-icon.png",
+    apple: "/apple-touch-icon.png",
+  },
   robots: {
     index: true,
     follow: true,
@@ -55,6 +64,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const isPortal = headersList.get("x-is-portal") === "1";
+  const isProtected = headersList.get("x-is-protected") === "1";
+  const host = headersList.get("host")?.split(":")[0].toLowerCase();
+  const metricoolEnabled =
+    !isProtected &&
+    (host === "gemcybersecurityassist.com" || host === "www.gemcybersecurityassist.com");
 
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className="bg-[#0d121b]">
@@ -76,8 +90,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main id="main-content" className={isPortal ? undefined : "min-h-screen"}>
             {children}
           </main>
+          {!isPortal && !isProtected && <WhatsAppQuickContact />}
           {!isPortal && <Footer />}
         </Providers>
+        {metricoolEnabled && <script src="/metricool-init.js" defer />}
         <SpeedInsights />
         <Analytics />
       </body>
