@@ -18,7 +18,9 @@ import {
   unpauseSocialProvider,
 } from "@/lib/social-media/oauth/provider-pause";
 
-type RouteContext = { params: Promise<{ provider: string }> };
+// Lives under [id] (not [provider]) because Next.js rejects sibling dynamic
+// segments with different names; the segment value is the provider slug.
+type RouteContext = { params: Promise<{ id: string }> };
 
 const pauseSchema = z.object({
   workspaceId: z.string().trim().min(1),
@@ -64,7 +66,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     requireSameOrigin(request);
     const session = await requireActiveTokMetricSession(request);
-    const { provider: rawProvider } = await context.params;
+    const { id: rawProvider } = await context.params;
     provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, pauseSchema);
     workspaceId = parsed.workspaceId!;
@@ -123,7 +125,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     requireSameOrigin(request);
     const session = await requireActiveTokMetricSession(request);
-    const { provider: rawProvider } = await context.params;
+    const { id: rawProvider } = await context.params;
     provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, unpauseSchema);
     workspaceId = parsed.workspaceId!;

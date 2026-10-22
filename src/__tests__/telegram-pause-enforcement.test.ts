@@ -69,7 +69,7 @@ describe("Telegram persistent provider pause", () => {
 
   it("accepts Telegram in both operator pause and unpause routes", () => {
     const source = readFileSync(
-      join(process.cwd(), "src/app/api/social-media/connectors/[provider]/pause/route.ts"), "utf8",
+      join(process.cwd(), "src/app/api/social-media/connectors/[id]/pause/route.ts"), "utf8",
     );
     expect(source.split("parseSocialPauseProvider(rawProvider)").length - 1).toBe(2);
   });
