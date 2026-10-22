@@ -4,11 +4,23 @@
 
 ---
 
+## 0. Operating Rules (all agents)
+
+- **Secrets:** never print, log, or commit secret values. Refer to env vars by name only; real values live in Vercel / Supabase settings and untracked `.env*` files (all ignored by `.gitignore`; only `.env.example` with placeholders is tracked).
+- **Git:** never force push, `reset --hard`, rewrite shared history, or delete branches without explicit approval.
+- **Production:** never deploy to production, run `db push` / `migrate dev`, or change production data without explicit approval. Preview deploys are fine when asked.
+- **Changes:** keep them modular and minimal — one concern per commit, conventional commit messages (`fix:`, `feat:`, `chore:`, `docs:`, `test:`).
+- **Branches:** work on a feature branch (`claude/<topic>`, `fix/<topic>`, `docs/<topic>`), open a draft PR against `main`; `main` deploys to production on Vercel.
+- **Before pushing:** run `pnpm run verify:preview` (schema check, claims check, lint, typecheck, tests) and `pnpm run build`.
+
+---
+
 ## 1. Stack & Runtime
 
 | Concern | Technology | Version |
 |---|---|---|
-| Framework | Next.js (App Router) | 16.2.x |
+| Runtime | Node.js (`engines.node`) | 24.x |
+| Framework | Next.js (App Router) | 16.4.x |
 | Language | TypeScript | 5.x |
 | Database | PostgreSQL 15+ | — |
 | ORM | Prisma | 5.22.x |
@@ -470,18 +482,30 @@ pnpm install
 # Generate Prisma client (required after schema changes)
 pnpm run db:generate
 
-# Dev server
+# Dev server (cross-platform: scripts/dev.mjs)
 pnpm dev
 
-# Tests (100/100 passing)
+# Tests (vitest, 1,226 passing)
 pnpm test
 
-# Lint (0 errors)
+# Lint (0 errors, 0 warnings allowed) and typecheck
 pnpm run lint
+pnpm run typecheck
 
-# Production build
+# Production build (scripts/vercel-build.mjs; no database needed)
 pnpm run build
+
+# Everything CI checks, then build
+pnpm run verify
 ```
+
+Prisma validate/generate needs `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING` set; a local placeholder such as `postgresql://ci:ci@localhost:5432/gem_ci` is enough for generate, typecheck, tests and build.
+
+**Windows:** run `scripts/setup-windows-dev.ps1` from a normal (non-admin) PowerShell. It installs Scoop, Git, GitHub CLI, fnm + Node 24, pnpm, Vercel and Supabase CLIs and Claude Code at user scope, signs in, clones the repo and runs the checks. If HTTPS downloads fail with `CERT_NOT_YET_VALID`, the system clock is wrong — sync it in Settings → Time & language.
+
+**Route folders:** sibling dynamic segments must share one slug name (`[id]` next to `[provider]` passes `next build` but breaks `next dev` / `next start`). `src/__tests__/app-route-dynamic-segments.test.ts` enforces this.
+
+**Deploy target:** Vercel (`vercel.json`), production from `main`, previews from PR branches. Cloudflare/Wrangler is not used by this repo.
 
 ---
 
