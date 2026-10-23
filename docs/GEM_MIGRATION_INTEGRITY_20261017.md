@@ -112,3 +112,14 @@ The pack is catalog-only, runs in a read-only transaction, and was validated on 
 2. Authorize an owner (or a read-only, owner-supervised session) to run steps 0–1 and the §6 audit pack.
 3. Approve the emergency exposure fix (step 2) only if the §6 audit pack confirms exposure.
 4. Decide how raw-SQL-managed tables should be represented in Prisma (`@@ignore` models versus a documented exclusion).
+
+## 9. Update 2026-10-23: baselines added
+
+- Steps 3 and 6 were completed by PR #451 (lineage restored, production schema updated 2026-10-22).
+- Steps 1, 4 and 5 are implemented on branch `fix/migration-baseline-20261023` from a read-only, catalog-only capture of production (no row data):
+  - `20260712225000_baseline_admin_access_tokens` defines `public.admin_access_tokens` (columns, constraints, indexes, RLS) and sorts before the first migration that needs it.
+  - `20261023000100_baseline_db_push_tables` defines the six `db push`-only tables and their enums.
+  - Both are guarded (`IF NOT EXISTS`, duplicate-object handlers) and are no-ops where the objects exist.
+- Replay from an empty database with the Supabase stub (platform objects only): 45 applied, 0 skipped. This meets the first acceptance criterion in §7 when the stub is used for platform objects only.
+- Production has no `_prisma_migrations`. It tracks its own Supabase migration history, so the baselines are for rebuilds and new environments, not for applying to production.
+- Still open: representing the raw-SQL-managed tables in Prisma (decision 4, §8), and running the chain replay in CI.
