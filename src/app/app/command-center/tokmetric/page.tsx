@@ -16,6 +16,7 @@ import {
   UsersRound,
   Video,
 } from "lucide-react";
+import { TokMetricActivationPanel } from "@/components/tokmetric/TokMetricActivationPanel";
 import { TokMetricConnectorPanel } from "@/components/tokmetric/TokMetricConnectorPanel";
 import { TokMetricGptCredentialManager } from "@/components/tokmetric/TokMetricGptCredentialManager";
 
@@ -86,6 +87,7 @@ const controlState = [
   ["Native GEM Enterprise module", "READY"],
   ["Custom GPT Action contracts", "READY"],
   ["Bearer credential management", "READY"],
+  ["Command Center workflow gateway", "READY"],
   ["TikTok OAuth authorization", "AUTHORIZATION_REQUIRED"],
   ["Human approval enforcement", "ENABLED"],
   ["Live publishing", "LOCKED"],
@@ -159,6 +161,8 @@ export default function TokMetricCommandCenterPage() {
           </Link>
         ))}
       </section>
+
+      <TokMetricActivationPanel />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <TokMetricConnectorPanel />

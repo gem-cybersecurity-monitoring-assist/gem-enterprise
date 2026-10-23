@@ -21,6 +21,7 @@ supabase/functions/gem-auth-gateway/*
 
 supabase/functions/gem-admin-write/*
 !supabase/functions/gem-admin-write/index.ts
+!supabase/functions/gem-admin-write/tokmetric-command.ts
 
 supabase/functions/gem-tokmetric-gpt-gateway/*
 !supabase/functions/gem-tokmetric-gpt-gateway/index.ts
