@@ -52,3 +52,35 @@ jobs:
 
       - name: Verify repository
         run: pnpm run verify
+
+  migration-replay:
+    name: Migration chain replay
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Replay prisma/migrations into a disposable database
+        run: scripts/verify-migration-chain.sh chain_replay_test --stub scripts/verify-local-authorization.supabase-stub.sql
+

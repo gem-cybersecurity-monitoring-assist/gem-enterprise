@@ -122,4 +122,5 @@ The pack is catalog-only, runs in a read-only transaction, and was validated on 
   - Both are guarded (`IF NOT EXISTS`, duplicate-object handlers) and are no-ops where the objects exist.
 - Replay from an empty database with the Supabase stub (platform objects only): 45 applied, 0 skipped. This meets the first acceptance criterion in §7 when the stub is used for platform objects only.
 - Production has no `_prisma_migrations`. It tracks its own Supabase migration history, so the baselines are for rebuilds and new environments, not for applying to production.
-- Still open: representing the raw-SQL-managed tables in Prisma (decision 4, §8), and running the chain replay in CI.
+- CI job `migration-replay` runs the chain replay on every PR.
+- Still open: representing the raw-SQL-managed tables in Prisma (decision 4, §8).
