@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GEM Secure</title>
+<style>
+:root{font:14px system-ui,Segoe UI,Arial;color:#f6f8ff;background:#001f3f}*{box-sizing:border-box}body{margin:0;width:350px;min-height:420px}header{padding:20px;background:#092d53;border-bottom:2px solid #ffbf00}h1{font-size:20px;margin:0;color:#ffbf00}p{line-height:1.5}main{padding:18px}.panel{background:#10365a;border:1px solid #34526e;border-radius:12px;padding:14px;margin-bottom:12px}.muted{color:#c7d6e4;font-size:12px}.status{font-weight:700}button,a.button{display:block;width:100%;padding:11px;margin-top:10px;background:#ffbf00;border:0;border-radius:8px;color:#001f3f;text-align:center;font-weight:700;text-decoration:none;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid white}ul{padding-left:20px;margin-bottom:0}li{padding:3px 0}.good{color:#8fe6b5}.warn{color:#ffcf85}</style>
+</head><body><header><h1>GEM Secure</h1><div class="muted">Browser protection · Early preview</div></header><main>
+<section class="panel"><strong>Current website</strong><p id="site" aria-live="polite">Checking…</p><p id="transport" class="status" aria-live="polite"></p></section>
+<section class="panel"><strong>Browser privacy checks</strong><ul id="checks" aria-live="polite"><li>Checking settings…</li></ul><button id="refresh">Run privacy check</button></section>
+<section class="panel"><strong>Email breach monitoring</strong><p class="muted">No email addresses are accessed or uploaded by this extension. Use the authenticated GEM dashboard when an approved breach-data service is connected.</p><a class="button" href="https://portal.gemcybersecurityassist.com/" target="_blank" rel="noopener noreferrer">Open GEM portal</a></section>
+<section class="panel"><strong>VPN connection</strong><p class="warn">Not configured — no encrypted tunnel is active.</p><p class="muted">Actual VPN functionality requires a verified tunnel service and a supported client. This extension does not claim to conceal your IP address.</p></section>
+</main><script src="popup.js"></script></body></html>
