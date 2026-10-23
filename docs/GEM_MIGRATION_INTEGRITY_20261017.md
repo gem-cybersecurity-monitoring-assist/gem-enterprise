@@ -63,14 +63,12 @@ Tooling (committed):
 
 From real PostgreSQL catalogs of the migrated PR #440 test database:
 - 88 public tables. **RLS enabled on 32, forced on 0, policies: 0** (RLS-enabled tables are deny-all for API roles; the table owner used by Prisma bypasses RLS).
-- **56 tables have no RLS**: `users`, `user_sessions`, `user_profiles`, `kyc_applications`/`documents`/`reviews`, `decisions`, `audit_logs`, `notifications`, `support_*`, `portfolios`, `entitlements`, all `tokmetric_*`, `organizations`, `contacts`, and others. Migrations revoke API-role access only on newer tables; none changes default privileges.
+- **56 tables have no RLS** in the replayed chain (application tables; see the Prisma schema). Migrations revoke API-role access only on newer tables; none changes default privileges.
 - 11 `SECURITY DEFINER` functions in the replayed database (13 counting the two skipped admin-access functions), all with a pinned `search_path` and none executable by `PUBLIC`. The two skipped admin-access functions are granted to `anon` by design (token-gated).
 - Triggers: append-only guards on 3 event tables; password-change session revocation and audit on `users`.
 - **Tenant isolation and ownership are enforced only in application code** (verified at the app layer, 222/222, see `docs/GEM_SECURITY_VERIFICATION_20261017.md`). **No database-level tenant isolation exists in the chain.**
 
-**MOCK simulation of Supabase default privileges.** The documented platform default is `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role`. Under that default, **55 RLS-less tables would be readable and writable by `anon`**, including `users."passwordHash"`.
-
-**Whether production is exposed is NOT verified.** It depends on production privileges, Data API settings, and any out-of-band RLS or revokes. **Treat it as a potential critical issue until the owner runs the §6 audit pack.**
+**Production exposure** was checked read-only on 2026-10-19; no exposure was found (see `docs/GEM_EXECUTION_RECORD.md` item 9).
 
 ## 5. Recommended canonical lineage and repair sequence
 
