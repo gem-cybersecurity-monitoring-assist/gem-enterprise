@@ -2,8 +2,8 @@
 
 Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠ deployed ≠ verified in production.** Update this file in place; do not add parallel status documents.
 
-**Last updated:** 2026-10-22.
-**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_BxDeykudX7Dq6HvohTb4PC7LBQra`, READY, built from `main` `36f7ed6b` (read via Vercel API). Production now runs the restored `9f1da4f` lineage (PR #451, owner-approved 2026-10-22).
+**Last updated:** 2026-10-23.
+**Production:** Vercel project `support371-gem-enterprise`, deployment `dpl_C1mvCz68…`, READY, built from `main` `100528f8` (PR #455; read via Vercel API 2026-10-23, no runtime errors in the preceding 24 hours) (read via Vercel API). Production now runs the restored `9f1da4f` lineage (PR #451, owner-approved 2026-10-22).
 
 ## Work items
 
@@ -31,7 +31,11 @@ Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠
 | 22 | Production schema for the restored lineage | Supabase migrations `social_provider_tiktok_and_pause`, `unified_client_workspace_os`, `social_metric_snapshots`, `social_provider_telegram` | yes | Read-only check after apply | n/a | **applied** 2026-10-22 (owner-approved) | **yes** | 6 new tables (`social_provider_pauses`, `capability_readiness_overrides`, `lifecycle_funnel_states`, `social_metric_snapshots`, `provider_account_metrics`, `social_metric_sync_runs`), all with RLS on and no policies. Provider checks now allow TIKTOK and TELEGRAM. Additive only; no data changed. Supersedes row 10. |
 | 20 | Social and TikTok activation checklist | PR #450 | yes | CI green | — | n/a (docs) | — | `docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md`. |
 | 21 | Production smoke after redeploy | — | — | Anonymous GET via Vercel API, 2026-10-20 | — | — | **yes** | `/api/auth/recovery-readiness` and `/api/system/bootstrap-status` return only their minimal anonymous fields; `core.ready` is `true`. |
-| 24 | API-role privilege hardening migration | `supabase/migrations/20261023120000_harden_api_role_privileges.sql` (branch `fix/harden-api-role-privileges-20261023`) | yes | Applied twice to a disposable PostgreSQL 16 database with mimicked platform default grants: idempotent, API-role grants removed, service role unchanged, new tables inherit no API-role grants | pending | **no** (owner approval required to apply) | — | Rollback re-grant script is in the file header. |
+| 23 | Migration baselines (production rebuildable) | `20260712225000_baseline_admin_access_tokens`, `20261023000100_baseline_db_push_tables` (branch `fix/migration-baseline-20261023`) | yes | Chain replay into a disposable PostgreSQL 16 database with the Supabase stub (platform objects only): 45 applied, 0 skipped; both baselines re-run as no-ops. Definitions taken from a read-only catalog capture of production, 2026-10-23. | pending | no (not applied to production by design) | — | Production tracks its own Supabase migration history and has no `_prisma_migrations`; do not run `migrate deploy` or `migrate resolve` against it without a separate owner-approved plan. |
+| 24 | Dependency group update | PR #452, `55ef78d` | — | CI green | **yes** | **yes** (in `100528f8`) | — | — |
+| 25 | Restore local `next dev`/`next start` routing; Windows developer setup | PR #455, `100528f8` | yes | CI green | **yes** | **yes** (`dpl_C1mvCz68…`) | — | `scripts/setup-windows-dev.ps1`. |
+| 26 | CI migration chain replay | `.github/workflows/ci.yml` job `migration-replay` (branch `fix/migration-baseline-20261023`) | yes | Same script run locally against PostgreSQL 16: 45 applied, 0 skipped | pending | no | — | Uses the Supabase stub for platform objects only. |
+| 27 | API-role privilege hardening migration | `supabase/migrations/20261023120000_harden_api_role_privileges.sql` (branch `fix/harden-api-role-privileges-20261023`) | yes | Applied twice to a disposable PostgreSQL 16 database with mimicked platform default grants: idempotent, API-role grants removed, service role unchanged, new tables inherit no API-role grants | pending | **no** (owner approval required to apply) | — | Rollback re-grant script is in the file header. |
 
 ## Owner gates
 
