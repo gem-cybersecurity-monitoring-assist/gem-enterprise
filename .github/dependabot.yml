@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:17"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    versioning-strategy: increase-if-necessary
+    groups:
+      production-patches:
+        dependency-type: production
+        update-types:
+          - patch
+      development-patches:
+        dependency-type: development
+        update-types:
+          - patch

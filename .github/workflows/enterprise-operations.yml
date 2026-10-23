@@ -1,0 +1,89 @@
+name: Enterprise Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_full_verification:
+        description: Run the complete repository and dependency verification
+        required: false
+        default: false
+        type: boolean
+      base_url:
+        description: HTTPS public origin to monitor
+        required: false
+        default: https://www.gemcybersecurityassist.com
+        type: string
+  schedule:
+    - cron: "17 */4 * * *"
+    - cron: "23 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: enterprise-operations-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  production-monitor:
+    name: Production health and fail-closed controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GEM_MONITOR_BASE_URL: ${{ inputs.base_url || 'https://www.gemcybersecurityassist.com' }}
+
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Monitor production
+        run: node scripts/enterprise-operations-monitor.mjs
+
+  full-verification:
+    name: Weekly build, test, and dependency verification
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.run_full_verification ||
+      github.event_name == 'schedule' && github.event.schedule == '23 3 * * 1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ci-test-secret-min-32-characters-long-placeholder
+      POSTGRES_PRISMA_URL: postgresql://ci:ci@localhost:5432/gem_ci
+      POSTGRES_URL_NON_POOLING: postgresql://ci:ci@localhost:5432/gem_ci
+      NEXT_PUBLIC_APP_URL: https://www.gemcybersecurityassist.com
+      NEXT_PUBLIC_APP_NAME: GEM Enterprise
+      NEXT_PUBLIC_AI_DISCLOSURE_TEXT: GEM Concierge is an AI assistant. Responses are informational and require human review for sensitive decisions.
+      AUDIT_ENABLED: "true"
+      SMTP_HOST: ""
+      SMTP_PORT: "587"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      CRON_SECRET: ci-cron-secret
+
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify schema, claims, lint, types, tests, and build
+        run: pnpm run verify
+
+      - name: Reject high or critical production dependency findings
+        run: pnpm audit --prod --audit-level high
