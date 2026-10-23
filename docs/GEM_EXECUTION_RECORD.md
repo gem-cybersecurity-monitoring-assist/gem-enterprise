@@ -31,6 +31,7 @@ Single running record of delivery state. **Implemented ≠ tested ≠ merged ≠
 | 22 | Production schema for the restored lineage | Supabase migrations `social_provider_tiktok_and_pause`, `unified_client_workspace_os`, `social_metric_snapshots`, `social_provider_telegram` | yes | Read-only check after apply | n/a | **applied** 2026-10-22 (owner-approved) | **yes** | 6 new tables (`social_provider_pauses`, `capability_readiness_overrides`, `lifecycle_funnel_states`, `social_metric_snapshots`, `provider_account_metrics`, `social_metric_sync_runs`), all with RLS on and no policies. Provider checks now allow TIKTOK and TELEGRAM. Additive only; no data changed. Supersedes row 10. |
 | 20 | Social and TikTok activation checklist | PR #450 | yes | CI green | — | n/a (docs) | — | `docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md`. |
 | 21 | Production smoke after redeploy | — | — | Anonymous GET via Vercel API, 2026-10-20 | — | — | **yes** | `/api/auth/recovery-readiness` and `/api/system/bootstrap-status` return only their minimal anonymous fields; `core.ready` is `true`. |
+| 24 | API-role privilege hardening migration | `supabase/migrations/20261023120000_harden_api_role_privileges.sql` (branch `fix/harden-api-role-privileges-20261023`) | yes | Applied twice to a disposable PostgreSQL 16 database with mimicked platform default grants: idempotent, API-role grants removed, service role unchanged, new tables inherit no API-role grants | pending | **no** (owner approval required to apply) | — | Rollback re-grant script is in the file header. |
 
 ## Owner gates
 
