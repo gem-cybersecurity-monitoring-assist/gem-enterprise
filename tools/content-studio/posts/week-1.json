@@ -1,0 +1,183 @@
+[
+  {
+    "id": "w1-mon-1-phishing-3-signs", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Three checks that stop most phishing emails before they work. Save this for the next “urgent” message in your inbox.",
+    "hashtags": "#cybersecurity #phishing #onlinesafety #scamalert #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Before you click that “urgent” email…", "sub": "check these 3 things.",
+        "say": "Before you click that urgent email, check these three things.", "footage": "woman reading phone worried" },
+      { "type": "point", "dur": 4, "chip": "1 / 3", "title": "Read the real sender", "body": "Not the display name. The full address.",
+        "say": "One. Read the full sender address, not just the name. One wrong letter in the domain gives it away.",
+        "mock": { "type": "email", "name": "NorthBank Security", "address": "alerts@northbank-secure.co", "highlight": "northbank-secure.co", "subject": "Unusual sign-in detected", "preview": "We noticed a login from a new device. Verify your account now to avoid suspension." } },
+      { "type": "point", "dur": 4, "chip": "2 / 3", "title": "Hold the link first", "body": "Press and hold to see where it really goes.",
+        "say": "Two. Press and hold the link before you tap it, and look at where it really goes.",
+        "mock": { "type": "link", "button": "Verify account", "url": "http://northbank-verify.login-help.xyz/secure" } },
+      { "type": "point", "dur": 4, "chip": "3 / 3", "title": "Pressure is the trick", "body": "Real companies give you time.",
+        "say": "Three. Deadlines and threats are the trick. Real companies give you time.",
+        "mock": { "type": "alert", "text": "Your account will be closed in 24 hours unless you verify.", "seconds": 86400 } },
+      { "type": "end", "dur": 3, "lines": ["Pause.", "Check.", "Then click."], "cta": "Follow for one security tip a day.",
+        "say": "Pause. Check. Then click. Follow for one security tip a day.", "footage": "man smiling using laptop office" }
+    ]
+  },
+  {
+    "id": "w1-mon-2-public-wifi", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Free Wi-Fi is fine for browsing. Here's what to skip until you're on a network you trust.",
+    "hashtags": "#cybersecurity #publicwifi #privacy #techtips #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "On café Wi-Fi right now?", "sub": "Skip these 2 things.",
+        "say": "On cafe Wi-Fi right now? Skip these two things.", "footage": "people working laptops coffee shop" },
+      { "type": "point", "dur": 4, "chip": "Skip", "title": "Banking and payments", "body": "Use mobile data or wait until you're on a network you trust.",
+        "say": "First, banking and payments. Switch to mobile data, or wait until you're home.", "footage": "person paying with phone cafe" },
+      { "type": "point", "dur": 4, "chip": "Skip", "title": "Networks you didn't confirm", "body": "“Free_Cafe_WiFi” can be anyone's hotspot. Ask staff for the real name.",
+        "say": "Second, networks you didn't confirm. Anyone can name a hotspot free cafe Wi-Fi. Ask staff for the real one.", "footage": "barista talking to customer" },
+      { "type": "end", "dur": 3, "lines": ["Browse freely.", "Pay at home."], "cta": "Follow for one security tip a day.",
+        "say": "Browse freely. Pay at home.", "footage": "woman relaxing home laptop" }
+    ]
+  },
+  {
+    "id": "w1-mon-3-password-manager", "format": "video", "brand": "GEM Enterprise",
+    "caption": "One strong, unique password per account, without memorizing any of them.",
+    "hashtags": "#cybersecurity #passwords #passwordmanager #techtips #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Same password everywhere?", "sub": "One leak opens every door.",
+        "say": "Using the same password everywhere? One leak opens every door.", "footage": "frustrated man computer" },
+      { "type": "point", "dur": 4, "chip": "Fix", "title": "Use a password manager", "body": "It creates and remembers a unique password for every account.",
+        "say": "Use a password manager. It creates and remembers a different password for every account.", "footage": "person typing on laptop close up" },
+      { "type": "point", "dur": 4, "chip": "Start", "title": "Email first, then banking", "body": "Your email resets everything else, so protect it first.",
+        "say": "Start with your email, because it can reset everything else. Then your banking.", "footage": "woman checking email phone" },
+      { "type": "end", "dur": 3, "lines": ["One account.", "One password."], "cta": "Follow for one security tip a day.",
+        "say": "One account. One password.", "footage": "happy woman phone" }
+    ]
+  },
+  {
+    "id": "w1-mon-4-founder-why", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Why GEM Enterprise posts a security tip every day.",
+    "hashtags": "#cybersecurity #smallbusiness #onlinesafety #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 3, "text": "Most scams don't need hackers.", "sub": "They need one rushed click.",
+        "say": "Most scams don't need clever hackers. They need one rushed click.", "footage": "busy person walking phone city" },
+      { "type": "point", "dur": 4, "chip": "Why", "title": "Small habits stop big losses", "body": "Checking a sender or a link takes seconds.",
+        "say": "Small habits stop big losses. Checking a sender or a link takes seconds.", "footage": "team meeting office laptop" },
+      { "type": "end", "dur": 3, "lines": ["One tip.", "Every day."], "cta": "Follow GEM Enterprise.",
+        "say": "That's why we share one tip, every day. Follow along.", "footage": "smiling team office" }
+    ]
+  },
+  {
+    "id": "w1-mon-5-scam-red-flags-carousel", "format": "carousel", "brand": "GEM Enterprise",
+    "caption": "Five red flags that a message is a scam. Swipe, then save.",
+    "hashtags": "#scamalert #cybersecurity #onlinesafety #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 1, "text": "5 signs a message is a scam", "sub": "Swipe →" },
+      { "type": "point", "dur": 1, "chip": "1", "title": "It's urgent", "body": "“Act now or lose access.”" },
+      { "type": "point", "dur": 1, "chip": "2", "title": "It asks for a code", "body": "No real company asks for the code they just texted you." },
+      { "type": "point", "dur": 1, "chip": "3", "title": "The link looks almost right", "body": "One extra letter or word in the domain." },
+      { "type": "point", "dur": 1, "chip": "4", "title": "It wants gift cards or crypto", "body": "Untraceable payment is the goal." },
+      { "type": "point", "dur": 1, "chip": "5", "title": "It's too good to be true", "body": "Prizes you never entered for." },
+      { "type": "end", "dur": 1, "lines": ["Spot it.", "Stop it."], "cta": "Save this and share it with family." }
+    ]
+  },
+  {
+    "id": "w1-mon-6-2fa-checklist-carousel", "format": "carousel", "brand": "GEM Enterprise",
+    "caption": "Turn on two-step login for these accounts first.",
+    "hashtags": "#2fa #accountsecurity #cybersecurity #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 1, "text": "Turn on 2-step login here first", "sub": "In this order →" },
+      { "type": "point", "dur": 1, "chip": "1", "title": "Email", "body": "It can reset every other password." },
+      { "type": "point", "dur": 1, "chip": "2", "title": "Banking and payments", "body": "Where the money is." },
+      { "type": "point", "dur": 1, "chip": "3", "title": "Social media", "body": "Hijacked accounts are used to scam your contacts." },
+      { "type": "end", "dur": 1, "lines": ["App codes", "beat SMS."], "cta": "Use an authenticator app or passkey where offered." }
+    ]
+  },
+  {
+    "id": "w1-tue-seed-phrase", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Your seed phrase is the wallet itself. Nobody legitimate will ever ask you for it.",
+    "hashtags": "#bitcoin #crypto #cryptosecurity #fintech #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Your crypto wallet has 12 words.", "sub": "Here's the one rule.",
+        "say": "Your crypto wallet has twelve words. Here's the one rule.", "footage": "man looking at phone serious" },
+      { "type": "point", "dur": 4, "chip": "Fact", "title": "Those words ARE the wallet", "body": "Whoever has them controls the funds.",
+        "say": "Those words are the wallet. Whoever has them controls the funds.", "footage": "writing in notebook close up" },
+      { "type": "point", "dur": 4, "chip": "Rule", "title": "Never share them", "body": "No exchange, support agent or app will ever ask.",
+        "say": "Never share them. No exchange, support agent or app will ever ask for them.", "footage": "customer support headset office" },
+      { "type": "end", "dur": 3, "lines": ["Your keys.", "Your rules."], "cta": "Education only. Not financial advice.",
+        "say": "Your keys. Your rules.", "footage": "woman smiling phone outdoors" }
+    ]
+  },
+  {
+    "id": "w1-wed-closing-wire-fraud", "format": "video", "brand": "Alliance Trust Realty",
+    "caption": "Fake payment instructions are one of the most common property scams. One phone call stops it.",
+    "hashtags": "#realestate #homebuying #fraudprevention #propertytips #alliancetrustrealty",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Buying property?", "sub": "This email could cost you the deposit.",
+        "say": "Buying property? This email could cost you the deposit.", "footage": "couple looking at house keys" },
+      { "type": "point", "dur": 4, "chip": "The scam", "title": "“Updated” bank details", "body": "Sent right before closing, looking like your agent.",
+        "say": "Scammers send updated bank details right before closing, made to look like your agent.", "footage": "worried woman reading laptop" },
+      { "type": "point", "dur": 4, "chip": "The fix", "title": "Call a number you already have", "body": "Confirm the account out loud before you pay.",
+        "say": "Before you pay, call your agent on a number you already have, and confirm the account out loud.", "footage": "man on phone call home" },
+      { "type": "end", "dur": 3, "lines": ["Verify by phone.", "Every time."], "cta": "Follow for safer property deals.",
+        "say": "Verify by phone. Every time.", "footage": "real estate agent handing keys" }
+    ]
+  },
+  {
+    "id": "w1-thu-sms-codes", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Text-message codes are better than nothing. An authenticator app or passkey is much harder to steal.",
+    "hashtags": "#cybersecurity #2fa #passkeys #accountsecurity #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Your 2FA codes by text can be stolen.", "sub": "Do this instead.",
+        "say": "Your login codes by text can be stolen. Do this instead.", "footage": "person receiving text message phone" },
+      { "type": "point", "dur": 4, "chip": "Risk", "title": "SIM swap", "body": "A scammer moves your number to their SIM and gets your codes.",
+        "say": "In a SIM swap, a scammer moves your number to their SIM, and your codes go to them.", "footage": "phone sim card" },
+      { "type": "point", "dur": 4, "chip": "Fix", "title": "Authenticator app or passkey", "body": "Codes stay on your device, not your number.",
+        "say": "Use an authenticator app or a passkey instead. The codes stay on your device.", "footage": "unlocking phone face" },
+      { "type": "end", "dur": 3, "lines": ["Lock the", "front door first."], "cta": "Start with your email account.",
+        "say": "Start with your email account today.", "footage": "man smiling at phone" }
+    ]
+  },
+  {
+    "id": "w1-fri-hot-cold-wallet", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Hot wallets are for convenience, cold wallets are for storage. Education only, not financial advice.",
+    "hashtags": "#bitcoin #cryptowallet #coldstorage #fintech #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Hot wallet or cold wallet?", "sub": "20 seconds.",
+        "say": "Hot wallet or cold wallet? Twenty seconds.", "footage": "person using phone payment" },
+      { "type": "point", "dur": 4, "chip": "Hot", "title": "An app on a connected device", "body": "Convenient for spending. More exposed.",
+        "say": "A hot wallet is an app on a connected device. Convenient, but more exposed.", "footage": "contactless payment phone shop" },
+      { "type": "point", "dur": 4, "chip": "Cold", "title": "Keys kept offline", "body": "Built for long-term storage.",
+        "say": "A cold wallet keeps your keys offline. It's built for long-term storage.", "footage": "usb device on desk" },
+      { "type": "end", "dur": 3, "lines": ["Know where", "your keys live."], "cta": "Education only. Not financial advice.",
+        "say": "Know where your keys live.", "footage": "woman thinking laptop" }
+    ]
+  },
+  {
+    "id": "w1-sat-verify-ownership", "format": "video", "brand": "Alliance Trust Realty",
+    "caption": "Fake sellers are a real risk in property deals. Verify ownership before you pay anything.",
+    "hashtags": "#realestate #landbuying #duediligence #propertytips #alliancetrustrealty",
+    "scenes": [
+      { "type": "hook", "dur": 2.5, "text": "Before you pay for land or a house…", "sub": "check who really owns it.",
+        "say": "Before you pay for land or a house, check who really owns it.", "footage": "aerial land plot" },
+      { "type": "point", "dur": 4, "chip": "Step 1", "title": "Title documents and ID", "body": "Ask the seller for both.",
+        "say": "Ask the seller for the title documents and their ID.", "footage": "documents on desk signing" },
+      { "type": "point", "dur": 4, "chip": "Step 2", "title": "Check the official registry", "body": "Then have a lawyer review it all.",
+        "say": "Check the title with the official land registry yourself, then have a lawyer review everything.", "footage": "lawyer meeting client office" },
+      { "type": "end", "dur": 3, "lines": ["Verify first.", "Pay second."], "cta": "Follow for safer property deals.",
+        "say": "Verify first. Pay second.", "footage": "family new home" }
+    ]
+  },
+  {
+    "id": "w1-sun-approval-flow", "format": "video", "brand": "GEM Enterprise",
+    "caption": "Inside GEM: every post goes from draft to human approval to publish, with every step logged.",
+    "hashtags": "#buildinpublic #saas #automation #cybersecurity #gementerprise",
+    "scenes": [
+      { "type": "hook", "dur": 3, "text": "Nothing we post goes out unapproved.", "sub": "Here's the flow.",
+        "say": "Nothing we post goes out without a person approving it. Here's the flow.", "footage": "team working computers office" },
+      { "type": "point", "dur": 4, "chip": "1", "title": "Draft", "body": "Every post starts as a draft.",
+        "say": "Every post starts as a draft.", "footage": "person typing laptop" },
+      { "type": "point", "dur": 4, "chip": "2", "title": "Human approval", "body": "A person checks the exact version.",
+        "say": "Then a person approves the exact version that will go out.", "footage": "manager reviewing work screen" },
+      { "type": "point", "dur": 4, "chip": "3", "title": "Publish, logged", "body": "Only the approved version can publish.",
+        "say": "Only that approved version can publish, and every step is logged.", "footage": "data center servers" },
+      { "type": "end", "dur": 3, "lines": ["Built for", "operators."], "cta": "Follow GEM Enterprise.",
+        "say": "Built for operators. Follow GEM Enterprise." }
+    ]
+  }
+]

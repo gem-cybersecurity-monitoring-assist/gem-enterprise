@@ -48,3 +48,8 @@ bun.lockb
 *.tsbuildinfo
 .vercel
 .env*
+
+# Content studio (Python)
+__pycache__/
+.venv/
+voices/
