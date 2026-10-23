@@ -1,7 +1,7 @@
 /** Vendor-neutral, tenant-scoped security event normalization. Never accept tenant scope from untrusted connector payloads. */
 export const SECURITY_EVENT_SOURCES = ["wazuh", "suricata", "osquery", "prowler", "trivy", "gem"] as const;
 export type SecurityEventSource = (typeof SECURITY_EVENT_SOURCES)[number];
-export type SecuritySeverity = "informational" | "low" | "medium" | "high" | "critical";
+export type SecuritySeverity = "unknown" | "informational" | "low" | "medium" | "high" | "critical";
 export type SecurityEvent = Readonly<{
   id: string;
   tenantId: string;
@@ -44,12 +44,14 @@ export function normalizeSecurityEvent(input: {
   const p = record(input.payload), rule = record(p.rule), alert = record(p.alert);
   const sourceEventId = scalar(p.id ?? p.event_id ?? p.uuid, 128);
   if (!sourceEventId) throw new Error("Source event ID required");
-  const rawLevel = source === "wazuh" ? Number(rule.level) : source === "suricata" ? Number(alert.severity) : NaN;
+  const rawSeverity = source === "wazuh" ? rule.level : source === "suricata" ? alert.severity : undefined;
+  const rawLevel = typeof rawSeverity === "number" || (typeof rawSeverity === "string" && rawSeverity.trim() !== "") ? Number(rawSeverity) : NaN;
+  // Fail safe: no source mapping or no usable level means "unknown" (human review), never "informational".
   const severity: SecuritySeverity = source === "wazuh" && Number.isFinite(rawLevel)
     ? severityForWazuh(rawLevel)
     : source === "suricata" && Number.isFinite(rawLevel)
       ? severityForSuricata(rawLevel)
-      : "informational";
+      : "unknown";
   const candidateTime = scalar(p.timestamp ?? p.time, 64);
   const occurredAt = candidateTime && Number.isFinite(Date.parse(candidateTime)) ? new Date(candidateTime).toISOString() : receivedAt;
   const title = scalar(rule.description ?? alert.signature ?? p.title, 200) || "Security event";

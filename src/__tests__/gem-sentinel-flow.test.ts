@@ -14,9 +14,17 @@ describe("GEM Sentinel observe-only workflow", () => {
     const make=(tenantId:string)=>assessSentinelEvent(normalizeSecurityEvent({tenantId,source:"suricata",receivedAt:"2026-10-11T19:00:00Z",payload:{event_id:"same",alert:{severity:1}}}));
     expect(make("tenant_a").caseKey).not.toBe(make("tenant_b").caseKey);
   });
-  it("keeps low-priority cases in manual triage without containment", () => {
+  it("fails safe: unmapped sources require human review without containment", () => {
     const item=assessSentinelEvent(normalizeSecurityEvent({tenantId:"test",source:"osquery",receivedAt:"2026-10-11T19:00:00Z",payload:{id:"evt1"}}));
-    expect(item.requiresHumanReview).toBe(false);
+    expect(item.severity).toBe("unknown");
+    expect(item.requiresHumanReview).toBe(true);
     expect(item.state).toBe("triage_pending");
+  });
+  it("treats missing or null Wazuh levels as unknown, and low mapped levels as not requiring review", () => {
+    const mk=(payload:unknown)=>assessSentinelEvent(normalizeSecurityEvent({tenantId:"test",source:"wazuh",receivedAt:"2026-10-11T19:00:00Z",payload}));
+    expect(mk({id:"a"}).severity).toBe("unknown");
+    expect(mk({id:"b",rule:{level:null}}).severity).toBe("unknown");
+    expect(mk({id:"c",rule:{level:3}}).requiresHumanReview).toBe(false);
+    expect(mk({id:"d",rule:{level:13}}).requiresHumanReview).toBe(true);
   });
 });

@@ -14,7 +14,7 @@ export type SentinelCase = Readonly<{
 }>;
 
 const PRIORITY: Record<SecuritySeverity, number> = {
-  informational: 0, low: 1, medium: 2, high: 3, critical: 4,
+  unknown: 3, informational: 0, low: 1, medium: 2, high: 3, critical: 4,
 };
 
 export function assessSentinelEvent(event: SecurityEvent): SentinelCase {
@@ -23,7 +23,10 @@ export function assessSentinelEvent(event: SecurityEvent): SentinelCase {
   }
   const priority = PRIORITY[event.severity];
   if (priority === undefined) throw new Error("Unsupported severity");
-  const steps = priority >= 3
+  const unknown = event.severity === "unknown";
+  const steps = unknown
+    ? ["Verify source authenticity and asset ownership", "Determine severity manually; no source severity mapping is available", "Escalate to a human security operator", "Document disposition"]
+    : priority >= 3
     ? ["Verify source authenticity and asset ownership", "Escalate to a human security operator", "Collect minimally necessary evidence", "Request authorization before containment"]
     : ["Verify source authenticity", "Correlate with recent authorized telemetry", "Document disposition"];
   return Object.freeze({
@@ -33,7 +36,7 @@ export function assessSentinelEvent(event: SecurityEvent): SentinelCase {
     sourceEventId: event.sourceEventId,
     severity: event.severity,
     state: "triage_pending" as const,
-    requiresHumanReview: priority >= 3,
+    requiresHumanReview: priority >= 3 || unknown,
     recommendedSteps: Object.freeze(steps),
     evidence: Object.freeze({eventId: event.id,receivedAt: event.receivedAt}),
   });
