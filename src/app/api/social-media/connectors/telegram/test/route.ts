@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
   try {
     requireSameOrigin(request);
     const session = await requireActiveTokMetricSession(request);
-    const body = await parseJson(request, testSchema) as z.infer<typeof testSchema>;
+    const parsed = await parseJson(request, testSchema);
+    // parseJson has validated both fields; narrow the inferred optional types.
+    const body = { workspaceId: parsed.workspaceId!, connectorId: parsed.connectorId! };
     const membership = await requireWorkspaceAccess(body.workspaceId, session);
     requirePermission(membership, "manage", "connectors");
     await enforceEmergencyLocks(body.workspaceId, "connector");
