@@ -114,6 +114,22 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | LAST VERIFIED HEAD | `f084e96457ffa8480be9fadfbb0698bf489da5cd` |
 | NEXT SAFE ACTION | Publish the exact frontend/gateway head and validate its canonical Vercel preview; keep Supabase activation blocked until project permission is available. |
 
+## Integration Logo Catalogue
+
+| Field | Value |
+|---|---|
+| TASK | [INTEGRATION-LOGO-CATALOG](tasks/INTEGRATION-LOGO-CATALOG.md) |
+| OWNER | Codex / Workspace OS integrations lane |
+| SOURCE PR/ISSUE | User-directed product completion |
+| BASE SHA | `f084e96457ffa8480be9fadfbb0698bf489da5cd` |
+| WORKING BRANCH | `codex/integration-logo-catalog` |
+| OWNED FILES/SCOPE | Workspace integration catalogue data, card UI, page composition, focused tests, this task record |
+| FORBIDDEN OVERLAP | Active PR #291/#292/#252 files; Prisma; auth; credentials; IWW repository |
+| STATUS | IMPLEMENTED — LOCAL GATES PASSED |
+| BLOCKER CLASS | NONE |
+| LAST VERIFIED HEAD | `f084e96457ffa8480be9fadfbb0698bf489da5cd` |
+| NEXT SAFE ACTION | Publish the exact implementation head, validate its Git-integrated preview, then assess merge readiness. |
+
 ## PR #291
 
 | Field | Value |

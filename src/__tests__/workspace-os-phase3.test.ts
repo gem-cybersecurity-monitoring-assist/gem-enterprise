@@ -12,6 +12,9 @@ describe("Workspace OS phase 3 integration surfaces", () => {
     expect(page).toContain("configured provider is not an authorized provider");
     expect(catalog).toContain('placeholder="Search integrations"');
     expect(catalog).toContain('aria-pressed={category===item}');
+    expect(catalog).toContain("ConnectorLogo");
+    expect(catalog).toContain("providerLogoUrl");
+    expect(catalog).toContain("INITIAL_VISIBLE_CONNECTORS");
   });
 
   it("keeps project and workspace context on governed destinations", () => {
@@ -19,6 +22,7 @@ describe("Workspace OS phase 3 integration surfaces", () => {
     expect(catalog).toContain('params.set("workspace", workspaceId)');
     expect(catalog).toContain('params.set("project", projectId)');
     expect(catalog).toContain("Open governed surface");
+    expect(catalog).toContain('item.kind === "GEM_SURFACE"');
   });
 
   it("uses the shared Radix dialog for focus-managed integration details", () => {

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, KeyRound, Plug, ShieldCheck } from "lucide-react";
-import { WorkspaceIntegrationCatalog, type WorkspaceIntegrationItem } from "@/components/command-center/WorkspaceIntegrationCatalog";
+import { WorkspaceIntegrationCatalog } from "@/components/command-center/WorkspaceIntegrationCatalog";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
 import type { SocialMediaReadinessState } from "@/lib/social-media/providers";
+import {
+  mergeWorkspaceIntegrations,
+  type WorkspaceIntegrationItem,
+} from "@/lib/workspaceIntegrationCatalog";
 
 export const metadata: Metadata = {
   title: "Integrations | GEM Enterprise Command Center",
@@ -24,6 +28,21 @@ function providerStateLabel(state: SocialMediaReadinessState) {
   return state.toLowerCase().replaceAll("_", " ");
 }
 
+const socialProviderLogoDomains: Record<string, string> = {
+  TIKTOK: "tiktok.com",
+  FACEBOOK_PAGE: "facebook.com",
+  INSTAGRAM_PROFESSIONAL: "instagram.com",
+  X: "x.com",
+  NEXTDOOR: "nextdoor.com",
+  INDEED_EMPLOYER: "indeed.com",
+  LINKEDIN_COMPANY: "linkedin.com",
+  YOUTUBE: "youtube.com",
+};
+
+function gemSurface(item: Omit<WorkspaceIntegrationItem, "kind">): WorkspaceIntegrationItem {
+  return { ...item, kind: "GEM_SURFACE" };
+}
+
 export default async function IntegrationsCommandCenterPage({
   searchParams,
 }: {
@@ -35,112 +54,138 @@ export default async function IntegrationsCommandCenterPage({
   const workspaceId = firstString(params.workspace);
   const projectId = firstString(params.project);
 
-  const integrationCards: WorkspaceIntegrationItem[] = [
-    {
+  const integrationCards = mergeWorkspaceIntegrations([
+    gemSurface({
+      id: "native-news-automation",
       href: "/app/command-center/integrations/news",
       title: "Native News Automation",
       description: "Review GEM's source catalog, scheduled ingestion, attributed stories, video discovery, and native news experience.",
       category: "Intelligence",
       status: "Supabase ingestion active",
       readiness: "READY",
-    },
-    {
+      logoDomain: "gemcybersecurityassist.com",
+    }),
+    gemSurface({
+      id: "social-media-operations",
       href: "/app/command-center/social-media",
       title: "Social Media Operations",
       description: "TikTok, Facebook Pages, Instagram professional accounts, X, Nextdoor, Indeed Employer, LinkedIn, and YouTube readiness.",
       category: "Publishing",
       status: `${configured}/${socialProviders.length} configured`,
       readiness: configured === socialProviders.length ? "READY" : configured > 0 ? "PARTIAL" : "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "gemcybersecurityassist.com",
+    }),
+    gemSurface({
+      id: "content-video-studio",
       href: "/app/command-center/social-media/content-studio",
       title: "Content and Video Studio",
       description: "Generate governed daily content, queue realistic videos on the local renderer, register completed media, and return exact versions to compliance and approval.",
       category: "AI & Media",
       status: "Local renderer remains fail-closed until its Windows host is healthy",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "gemcybersecurityassist.com",
+    }),
+    gemSurface({
+      id: "tokmetric",
       href: "/app/command-center/tokmetric",
       title: "TokMetric",
       description: "TikTok OAuth, content production, compliance, exact-version approvals, publishing preflight, analytics, and audit controls.",
       category: "Publishing",
       status: "External publishing remains authorization-gated",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "tiktok.com",
+    }),
+    gemSurface({
+      id: "gem-ai-support",
       href: "/app/support",
       title: "GEM AI Support",
       description: "Governed AI-assisted platform support with consent, safety boundaries, and human escalation rather than unrestricted agent action.",
       category: "AI & Media",
       status: "Platform support session service available",
       readiness: "READY",
-    },
-    {
+      logoDomain: "openai.com",
+    }),
+    gemSurface({
+      id: "gem-sentinel-intelligence",
       href: "/intel",
       title: "GEM Sentinel Intelligence",
       description: "Open the native monitoring and intelligence environment used for project signals, news, notifications, and cross-domain situational awareness.",
       category: "Security",
       status: "Read-only intelligence surface available",
       readiness: "READY",
-    },
-    ...socialProviders.map((provider) => ({
+      logoDomain: "gemcybersecurityassist.com",
+    }),
+    ...socialProviders.map((provider) => gemSurface({
+      id: `social-${provider.id.toLowerCase()}`,
       href: `/app/social-media/accounts?provider=${encodeURIComponent(provider.id)}`,
       title: `${provider.label} connector`,
       description: `${provider.purpose} Supported content: ${provider.supportedContent.join(", ").toLowerCase()}.`,
       category: "Provider apps",
       status: `${provider.connectionMode === "OAUTH" ? "OAuth" : "Employer feed"} · ${providerStateLabel(provider.state)}`,
       readiness: providerReadiness(provider.state),
+      logoDomain: socialProviderLogoDomains[provider.id],
     })),
-    {
+    gemSurface({
+      id: "github-source-control",
       href: "/app/command-center/development",
       title: "GitHub source control",
       description: "Repository, pull-request, review, and release evidence entry point for governed development work.",
       category: "Development & delivery",
       status: "Connection authority remains in the approved GitHub installation",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "github.com",
+    }),
+    gemSurface({
+      id: "vercel-deployment",
       href: "/app/command-center/development",
       title: "Vercel deployment",
       description: "Canonical preview and production delivery surface for the GEM Next.js application.",
       category: "Development & delivery",
       status: "Production delivery remains Git-integration controlled",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "vercel.com",
+    }),
+    gemSurface({
+      id: "cloudflare-edge-services",
       href: "/app/command-center/monitoring",
       title: "Cloudflare edge services",
       description: "Edge, DNS, security, worker, storage, and operational health entry point.",
       category: "Infrastructure",
       status: "Account authorization and resource health are verified separately",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "cloudflare.com",
+    }),
+    gemSurface({
+      id: "supabase-data-services",
       href: "/app/command-center/development",
       title: "Supabase data services",
       description: "Workspace data, identity gateway, private storage, and backend operations entry point.",
       category: "Data & identity",
       status: "Database, identity, and storage readiness remain independently gated",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "supabase.com",
+    }),
+    gemSurface({
+      id: "comfyui-render-worker",
       href: "/app/social-media/video",
       title: "ComfyUI render worker",
       description: "Private Windows-hosted AI video generation and verified render return path for GEM campaigns.",
       category: "AI & Media",
       status: "Requires a healthy owner-controlled Windows renderer",
       readiness: "HUMAN_REQUIRED",
-    },
-    {
+      logoDomain: "comfy.org",
+    }),
+    gemSurface({
+      id: "obs-media-bridge",
       href: "/app/social-media/video",
       title: "OBS media bridge",
       description: "Governed live-video composition and Virtual Camera bridge for approved GEM call and showcase workflows.",
       category: "AI & Media",
       status: "Requires local OBS, WebSocket, camera, and device acceptance",
       readiness: "HUMAN_REQUIRED",
-    },
-  ];
+      logoDomain: "obsproject.com",
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
