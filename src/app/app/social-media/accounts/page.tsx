@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
+import { TelegramConnectorCard } from "@/components/social-media/TelegramConnectorCard";
 import { db } from "@/lib/db";
 import { getGatewaySessionToken } from "@/lib/auth";
 import { isAdminRole, requireSession } from "@/lib/api/auth-helpers";
@@ -160,6 +161,8 @@ export default async function SocialMediaAccountsPage({
         workspaceLabel={publishingWorkspace?.name ?? null}
         allowManualWorkspaceInput={false}
       />
+
+      <TelegramConnectorCard workspaceId={publishingWorkspace?.id ?? null} />
 
       <section className="grid gap-4 lg:grid-cols-2">
         {providers.map((provider) => (

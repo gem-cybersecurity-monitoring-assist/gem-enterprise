@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { loadSocialConnectorCredential } from "@/lib/social-media/oauth/lifecycle-store";
+import { loadPublishingConnectorCredential } from "@/lib/social-media/oauth/lifecycle-store";
 import { evaluateSocialPublishingAuthorization } from "@/lib/social-media/policy";
 import {
   evaluateContentLaneDestination,
@@ -242,7 +242,7 @@ async function processJob(job: SocialPublishingJobRecord) {
     );
   }
 
-  const loaded = await loadSocialConnectorCredential({
+  const loaded = await loadPublishingConnectorCredential({
     workspaceId: job.workspaceId,
     connectorId: job.connectorId,
   });

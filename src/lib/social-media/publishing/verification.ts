@@ -199,5 +199,12 @@ export async function verifySocialPublication(input: {
         ...notApplicable(),
         permalink: input.externalPostUrl,
       };
+    case "TELEGRAM":
+      // The Bot API has no read-by-id endpoint for bots; a successful
+      // send returns the message_id, which is the delivery confirmation.
+      return {
+        ...notApplicable(),
+        permalink: input.externalPostUrl,
+      };
   }
 }

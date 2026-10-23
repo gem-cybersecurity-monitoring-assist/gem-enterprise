@@ -68,6 +68,7 @@ export function accountTypeMatches(
   if (provider === "NEXTDOOR") {
     return accountType === "NEXTDOOR_ENTITY_PROFILE";
   }
+  if (provider === "TELEGRAM") return accountType === "TELEGRAM_CHAT";
   return false;
 }
 
@@ -92,6 +93,10 @@ export function missingPublishingScopes(
         const configured = process.env.NEXTDOOR_PUBLISH_SCOPE?.trim();
         return configured ? [configured] : ["NEXTDOOR_PUBLISH_SCOPE_NOT_CONFIGURED"];
       }
+      case "TELEGRAM":
+        // Bot tokens carry no OAuth scopes; posting rights are verified
+        // against the Bot API when the connector is registered.
+        return [];
     }
   })();
   return required.filter((scope) => !granted.has(scope));

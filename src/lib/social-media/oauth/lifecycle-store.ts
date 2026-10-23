@@ -9,7 +9,10 @@ import type { SocialConnectorRecord, StoredSocialCredential } from "./store";
 
 const REFRESH_CLAIM_TTL_MS = 45_000;
 
-interface ConnectorCredentialRow extends SocialConnectorRecord {
+// The stored provider is any connector provider (OAuth or bot-token), so the
+// row keeps it as a plain string until a loader narrows it.
+interface ConnectorCredentialRow extends Omit<SocialConnectorRecord, "provider"> {
+  provider: string;
   secretRef: string;
   credentialExpiresAt: Date | null;
   credentialRefreshExpiresAt: Date | null;
@@ -36,7 +39,7 @@ function storeUnavailable(error: unknown): never {
   throw error;
 }
 
-export async function loadSocialConnectorCredential(input: {
+async function fetchConnectorCredentialRow(input: {
   workspaceId: string;
   connectorId: string;
 }) {
@@ -76,37 +79,95 @@ export async function loadSocialConnectorCredential(input: {
         "Active social connector authorization was not found.",
       );
     }
-    const provider = parseSocialOAuthProvider(row.provider);
-    const credential = decryptSocialCredential<StoredSocialCredential>(row.secretRef);
-    if (credential.provider !== provider || credential.externalAccountId !== row.externalAccountId) {
-      throw new TokMetricError(
-        409,
-        "SOCIAL_CONNECTOR_CREDENTIAL_MISMATCH",
-        "Stored connector authorization does not match the selected provider account.",
-      );
-    }
-    return {
-      connector: {
-        id: row.id,
-        workspaceId: row.workspaceId,
-        provider,
-        state: row.state,
-        displayName: row.displayName,
-        externalAccountId: row.externalAccountId,
-        grantedScopes: row.grantedScopes,
-        safeMetadata: row.safeMetadata,
-        lastHealthAt: row.lastHealthAt,
-        disabledAt: row.disabledAt,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      } satisfies SocialConnectorRecord,
-      credential,
-      credentialRotatedAt: row.credentialRotatedAt?.toISOString() || null,
-    };
+    return row;
   } catch (error) {
     if (error instanceof TokMetricError) throw error;
     return storeUnavailable(error);
   }
+}
+
+function connectorRecordFrom<P extends string>(row: ConnectorCredentialRow, provider: P) {
+  return {
+    id: row.id,
+    workspaceId: row.workspaceId,
+    provider,
+    state: row.state,
+    displayName: row.displayName,
+    externalAccountId: row.externalAccountId,
+    grantedScopes: row.grantedScopes,
+    safeMetadata: row.safeMetadata,
+    lastHealthAt: row.lastHealthAt,
+    disabledAt: row.disabledAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function credentialMismatch(): never {
+  throw new TokMetricError(
+    409,
+    "SOCIAL_CONNECTOR_CREDENTIAL_MISMATCH",
+    "Stored connector authorization does not match the selected provider account.",
+  );
+}
+
+/** Loads an OAuth connector and its decrypted credential. Rejects non-OAuth connectors. */
+export async function loadSocialConnectorCredential(input: {
+  workspaceId: string;
+  connectorId: string;
+}) {
+  const row = await fetchConnectorCredentialRow(input);
+  const provider = parseSocialOAuthProvider(row.provider);
+  const credential = decryptSocialCredential<StoredSocialCredential>(row.secretRef);
+  if (credential.provider !== provider || credential.externalAccountId !== row.externalAccountId) {
+    credentialMismatch();
+  }
+  return {
+    connector: connectorRecordFrom(row, provider) satisfies SocialConnectorRecord,
+    credential,
+    credentialRotatedAt: row.credentialRotatedAt?.toISOString() || null,
+  };
+}
+
+export type PublishingConnectorProvider = SocialConnectorRecord["provider"] | "TELEGRAM";
+
+/**
+ * Loads any connector the publishing worker can dispatch to: OAuth connectors
+ * and bot-token connectors (Telegram). Telegram stores its bot token as the
+ * encrypted `accessToken`; it has no scopes, refresh, or OAuth configuration.
+ */
+export async function loadPublishingConnectorCredential(input: {
+  workspaceId: string;
+  connectorId: string;
+}): Promise<{
+  connector: Omit<SocialConnectorRecord, "provider"> & { provider: PublishingConnectorProvider };
+  credential: { accessToken: string; grantedScopes: string[]; externalAccountId?: string };
+  credentialRotatedAt: string | null;
+}> {
+  const row = await fetchConnectorCredentialRow(input);
+  if (row.provider !== "TELEGRAM") return loadSocialConnectorCredential(input);
+  const credential = decryptSocialCredential<{
+    provider: string;
+    accessToken: string;
+    grantedScopes?: string[];
+    externalAccountId?: string;
+  }>(row.secretRef);
+  if (
+    credential.provider !== "TELEGRAM" ||
+    !credential.accessToken ||
+    credential.externalAccountId !== row.externalAccountId
+  ) {
+    credentialMismatch();
+  }
+  return {
+    connector: connectorRecordFrom(row, "TELEGRAM" as const),
+    credential: {
+      accessToken: credential.accessToken,
+      grantedScopes: credential.grantedScopes ?? [],
+      externalAccountId: credential.externalAccountId,
+    },
+    credentialRotatedAt: row.credentialRotatedAt?.toISOString() || null,
+  };
 }
 
 export async function claimSocialConnectorCredentialRefresh(input: {

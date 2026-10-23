@@ -47,9 +47,13 @@ export async function disconnectSocialConnector(input: {
     const loaded = await loadSocialConnectorCredential(input);
     revocationInput = { provider: loaded.connector.provider, credential: loaded.credential };
   } catch (error) {
+    // Bot-token connectors (Telegram) are not OAuth grants: there is nothing to
+    // revoke at the provider, so they fall through to the local deletion.
+    // The owner rotates the token with @BotFather if it must be invalidated.
     if (
       !(error instanceof TokMetricError) ||
-      error.code !== "SOCIAL_CONNECTOR_CREDENTIAL_NOT_FOUND"
+      (error.code !== "SOCIAL_CONNECTOR_CREDENTIAL_NOT_FOUND" &&
+        error.code !== "UNSUPPORTED_SOCIAL_PROVIDER")
     ) {
       throw error;
     }
