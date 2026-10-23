@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 3,
+  "authoritative": true,
+  "environment": {
+    "classification": "CODEX_CLOUD",
+    "observedAt": "2026-08-10T22:06:45Z",
+    "basis": "Linux workspace at /workspace/gem-enterprise; no Windows-local runtime evidence was inspected or claimed."
+  },
+  "repositoryBaseline": {
+    "repository": "support371/gem-enterprise",
+    "baseBranch": "main",
+    "baseSha": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+    "baseShaExistsLocally": true,
+    "localCheckout": {
+      "branch": "work (ephemeral local checkout; not the authoritative GitHub PR branch)",
+      "head": "c54c0f0ddabb24a5f8d303efb4c3d5ba0ca9a742",
+      "workingTreeCleanBeforeReconciliation": true
+    },
+    "githubPullRequest": {
+      "number": 291,
+      "state": "DRAFT",
+      "headSha": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "baseBranch": "main",
+      "baseSha": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+      "ahead": 1,
+      "behind": 0,
+      "passingStatuses": 11,
+      "unresolvedReviewThreads": 0,
+      "evidenceSource": "Current external live evidence supplied by ChatGPT work on 2026-08-10",
+      "headReachableLocally": false
+    },
+    "localLedgerArtifactCommit": "c54c0f0ddabb24a5f8d303efb4c3d5ba0ca9a742",
+    "packageVersion": "1.0.0",
+    "routeFileCount": 388,
+    "migrationFileCount": 32,
+    "protectedDrift": "NONE_IN_LOCAL_COMPARISON",
+    "protectedComparison": "1128771e2b8dfc767fb50a7394dee4b5de5a8544..c54c0f0ddabb24a5f8d303efb4c3d5ba0ca9a742",
+    "publicationState": "PENDING: no Git remote is configured, so this reconciliation commit cannot be published to existing PR #291 from this workspace."
+  },
+  "statusValues": [
+    "NOT_STARTED",
+    "IN_PROGRESS",
+    "PASS",
+    "PARTIAL",
+    "BLOCKED",
+    "HUMAN_REQUIRED"
+  ],
+  "failureTaxonomy": [
+    "SOURCE",
+    "CONFIGURATION",
+    "DEPENDENCY",
+    "AUTHORIZATION",
+    "DATABASE",
+    "NETWORK",
+    "PROVIDER",
+    "MEDIA",
+    "SECURITY",
+    "ENVIRONMENT",
+    "HUMAN_GOVERNANCE",
+    "UNKNOWN"
+  ],
+  "subsystems": [
+    {
+      "name": "Persistent completion ledger",
+      "executionLane": "CODEX_CLOUD",
+      "status": "PASS",
+      "dependencies": [],
+      "evidence": [
+        "artifacts/GEM-COMPLETION-STATE.json",
+        "artifacts/GEM-COMPLETION-REPORT.md",
+        "artifacts/GEM-HUMAN-ACTIONS.md",
+        "artifacts/GEM-ROLLBACK-REGISTER.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [
+        "JSON parse",
+        "required-field/status/dependency validation",
+        "evidence path existence",
+        "git diff --check",
+        "protected hash comparison",
+        "repository identity check"
+      ],
+      "testsPassed": [
+        "JSON parse",
+        "required-field/status/dependency validation",
+        "evidence path existence",
+        "git diff --check",
+        "protected hash comparison",
+        "repository identity check"
+      ],
+      "blocker": null,
+      "rollbackPoint": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "When publication becomes available, apply this reconciliation to existing PR #291 only, then verify its published head and checks without creating a new PR.",
+      "blockerClass": null
+    },
+    {
+      "name": "Cloud repository verification gate",
+      "executionLane": "CODEX_CLOUD",
+      "status": "BLOCKED",
+      "dependencies": [
+        "Persistent completion ledger"
+      ],
+      "evidence": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "scripts/vercel-build.mjs"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [
+        "node --version",
+        "pnpm --version",
+        "disk availability",
+        "registry DNS resolution",
+        "corepack enable",
+        "pnpm install --frozen-lockfile",
+        "pnpm run verify"
+      ],
+      "testsPassed": [
+        "node --version",
+        "pnpm --version",
+        "disk availability",
+        "registry DNS resolution",
+        "corepack enable",
+        "pnpm install --frozen-lockfile"
+      ],
+      "blocker": "The full repository verification command requires database configuration unavailable in this process; this does not block configuration-independent engineering checks.",
+      "rollbackPoint": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After approved secret injection makes the required database variables available, run the full pnpm run verify gate once; meanwhile continue configuration-independent checks in their separate subsystem.",
+      "blockerClass": "CONFIGURATION"
+    },
+    {
+      "name": "Prisma readiness and authenticated persistence",
+      "executionLane": "CODEX_CLOUD",
+      "status": "PARTIAL",
+      "dependencies": [
+        "Cloud repository verification gate"
+      ],
+      "evidence": [
+        "prisma/schema.prisma",
+        "prisma/migrations",
+        "src/lib/db.ts",
+        "src/lib/auth.ts"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [
+        "migration file inventory",
+        "configuration SHA-256 baseline"
+      ],
+      "testsPassed": [
+        "migration file inventory",
+        "configuration SHA-256 baseline"
+      ],
+      "blocker": "Migration files and schema exist, but authorized runtime migration state and repeated authenticated persistence evidence are absent.",
+      "rollbackPoint": "Application rollback is commit 1128771e2b8dfc767fb50a7394dee4b5de5a8544; database rollback implications require migration-specific review and owner approval.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After the full repository gate can run, inspect authorized non-secret migration state and repeat authenticated positive and negative persistence requests without mutating production.",
+      "blockerClass": "DATABASE"
+    },
+    {
+      "name": "Configuration-independent security engineering checks",
+      "executionLane": "CODEX_CLOUD",
+      "status": "PARTIAL",
+      "dependencies": [
+        "Persistent completion ledger"
+      ],
+      "evidence": [
+        "src/lib/auth.ts",
+        "src/lib/audit.ts",
+        "src"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Configuration-independent static, unit, secret-containment, authorization-source, and fail-closed checks have not yet been consolidated into sanitized evidence.",
+      "rollbackPoint": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "Inventory and run configuration-independent security, static, unit, and secret checks now; add only missing deterministic cases and retain sanitized output.",
+      "blockerClass": "SECURITY"
+    },
+    {
+      "name": "Authenticated persistence and security acceptance",
+      "executionLane": "CODEX_CLOUD",
+      "status": "PARTIAL",
+      "dependencies": [
+        "Prisma readiness and authenticated persistence",
+        "Configuration-independent security engineering checks"
+      ],
+      "evidence": [
+        "src/lib/auth.ts",
+        "src/lib/db.ts",
+        "src/lib/audit.ts",
+        "src"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Runtime database readiness and repeated authenticated authorization, tenant-isolation, and private-record tests are absent.",
+      "rollbackPoint": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After Prisma readiness and independent security checks pass, run repeated authenticated positive and negative security acceptance tests in an authorized non-production environment.",
+      "blockerClass": "DATABASE"
+    },
+    {
+      "name": "Canonical Vercel preview and cloud platform",
+      "executionLane": "CODEX_CLOUD",
+      "status": "HUMAN_REQUIRED",
+      "dependencies": [
+        "Persistent completion ledger",
+        "Configuration-independent security engineering checks"
+      ],
+      "evidence": [
+        "docs/VERCEL_CANONICAL_PROJECT.md",
+        "scripts/vercel-build.mjs"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "PR #291 existence, draft state, head, base relationship, passing-status count, and review-thread state are externally verified; the canonical Vercel preview identity/logs and previous deployment identifier remain unverified.",
+      "rollbackPoint": "Use the previous real Vercel deployment identifier after it is recorded and validated; no direct production deployment is authorized.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "Inspect the canonical Vercel preview identifier, logs, affected routes, and previous deployment identifier for exact PR head 9db0e5d3240bc529de8fcffad6080219214646bc.",
+      "blockerClass": "AUTHORIZATION"
+    },
+    {
+      "name": "GEM Studio and controller runtime",
+      "executionLane": "GEM_ASSIST_WINDOWS",
+      "status": "BLOCKED",
+      "dependencies": [],
+      "evidence": [
+        "artifacts/GEM-HUMAN-ACTIONS.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "This CODEX_CLOUD session cannot inspect Windows-local configuration, processes, ports, controller state, OBS, Virtual Camera, or Voicemod.",
+      "rollbackPoint": "No Windows mutation occurred. Record readable controller package and configuration backups before any GEM_ASSIST_WINDOWS mutation.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "Resume only in GEM_ASSIST_WINDOWS; baseline protected Windows configuration before mutation, then run controller security, resource, and bounded soak checks.",
+      "blockerClass": "ENVIRONMENT"
+    },
+    {
+      "name": "GEM Studio real media acceptance",
+      "executionLane": "GEM_ASSIST_WINDOWS",
+      "status": "HUMAN_REQUIRED",
+      "dependencies": [
+        "GEM Studio and controller runtime"
+      ],
+      "evidence": [
+        "artifacts/GEM-HUMAN-ACTIONS.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Consented human visual/audio acceptance is absent and cannot precede sustained GEM_ASSIST_WINDOWS readiness evidence.",
+      "rollbackPoint": "Keep media auto-start disabled and restore the recorded Windows configuration backup if acceptance fails.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After sustained controller and videoCallReady evidence passes in GEM_ASSIST_WINDOWS, obtain consented human visual/audio acceptance.",
+      "blockerClass": "HUMAN_GOVERNANCE"
+    },
+    {
+      "name": "News Forge production activation",
+      "executionLane": "CODEX_CLOUD",
+      "status": "HUMAN_REQUIRED",
+      "dependencies": [
+        "Authenticated persistence and security acceptance",
+        "Canonical Vercel preview and cloud platform"
+      ],
+      "evidence": [
+        "artifacts/GEM-HUMAN-ACTIONS.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Human approval for a real story, rights/consent, speech acceptance, and publication is absent; security and canonical preview prerequisites also remain incomplete.",
+      "rollbackPoint": "Keep production publication disabled; revert only a future activation-specific change, not shared infrastructure.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After application security and canonical preview prerequisites pass, test one owner-approved story and speech flow; keep automatic publication disabled pending approval.",
+      "blockerClass": "HUMAN_GOVERNANCE"
+    },
+    {
+      "name": "Notion publication integration",
+      "executionLane": "CODEX_CLOUD",
+      "status": "HUMAN_REQUIRED",
+      "dependencies": [
+        "Configuration-independent security engineering checks",
+        "Authenticated persistence and security acceptance"
+      ],
+      "evidence": [
+        "artifacts/GEM-HUMAN-ACTIONS.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Authorized provider consent and controlled negative/positive publication evidence are absent; human identity and publication approvals remain downstream requirements.",
+      "rollbackPoint": "Keep publication disabled and revoke only the dedicated integration credential if an owner later activates it.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "After provider consent and application security pass, prove rejection first and then one controlled record; require explicit identity, consent, and publication approval.",
+      "blockerClass": "PROVIDER"
+    },
+    {
+      "name": "Release candidate freeze and final dossier",
+      "executionLane": "CODEX_CLOUD",
+      "status": "BLOCKED",
+      "dependencies": [
+        "Cloud repository verification gate",
+        "Authenticated persistence and security acceptance",
+        "Canonical Vercel preview and cloud platform",
+        "GEM Studio real media acceptance",
+        "News Forge production activation",
+        "Notion publication integration"
+      ],
+      "evidence": [
+        "artifacts/GEM-COMPLETION-REPORT.md",
+        "artifacts/GEM-ROLLBACK-REGISTER.md"
+      ],
+      "repository": "support371/gem-enterprise",
+      "branch": "PR #291 (GitHub branch name not supplied)",
+      "commit": "9db0e5d3240bc529de8fcffad6080219214646bc",
+      "testsRun": [],
+      "testsPassed": [],
+      "blocker": "Full verification, authenticated persistence/security, canonical preview, Windows runtime/media, provider, rollback, and governance prerequisites remain incomplete.",
+      "rollbackPoint": "No release candidate has been frozen and no deployment mutation occurred.",
+      "lastUpdated": "2026-08-10T22:06:45Z",
+      "nextSafeAction": "Do not freeze. Complete all dependencies, rollback validation, and human approvals before creating one versioned final evidence directory and release candidate.",
+      "blockerClass": "DEPENDENCY"
+    }
+  ],
+  "pullRequest": {
+    "number": 291,
+    "state": "DRAFT",
+    "headSha": "9db0e5d3240bc529de8fcffad6080219214646bc",
+    "baseBranch": "main",
+    "baseSha": "1128771e2b8dfc767fb50a7394dee4b5de5a8544",
+    "ahead": 1,
+    "behind": 0,
+    "passingStatuses": 11,
+    "unresolvedReviewThreads": 0,
+    "evidenceSource": "Current external live evidence supplied by ChatGPT work on 2026-08-10",
+    "headReachableLocally": false,
+    "publicationAuthorization": "PR read evidence satisfied; branch publication unavailable locally",
+    "canonicalVercelEvidence": "UNVERIFIED"
+  }
+}
