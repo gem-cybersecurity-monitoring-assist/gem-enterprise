@@ -82,3 +82,35 @@
 - No desktop visual defect was classified in the standalone preview; authenticated mobile/device acceptance remains.
 
 final result: blocked (authenticated application publication only; standalone visual preview passed)
+
+---
+
+## Platform Support conversation repair — 2026-08-31
+
+**Source visual truth**
+
+- User-provided iPhone screenshots of the existing Platform Support panel.
+- Target state: preserve the approved dark mobile panel, spacing, hierarchy, and controls while replacing repetitive fallback behavior with contextual guidance and a transparent human handoff.
+
+**Implementation evidence**
+
+- The existing production component and design tokens were preserved.
+- New UI is limited to compact suggested-reply chips inside the existing assistant bubble and an explicit human-agent waiting/active status inside the existing support conversation.
+- Rendered component tests passed for disclosure, session start, handoff, case reference, and the human case destination.
+- The exact screenshot phrases now route to Access Intake and Products and Services in deterministic continuity mode.
+- The full repository suite, lint, TypeScript, Prisma validation, and production build passed.
+
+**Browser evidence**
+
+- `http://terminal.local:4173/` rendered the GEM application shell in the cloud browser.
+- A development-only support harness rendered server-side, but its client event handlers did not hydrate in the cloud preview.
+- The harness and its preview-only runtime adapter were removed from the product diff.
+- No application console error was captured; only unrelated browser-extension metadata errors appeared.
+
+**Findings**
+
+- [P1] Authenticated interactive browser acceptance remains pending.
+  - Impact: automated component behavior is verified, but the exact hosted mobile interaction is not yet browser-accepted.
+  - Fix: publish the exact branch to the canonical Vercel preview, sign in with a test member, and repeat the three screenshot requests plus human transfer.
+
+final result: blocked (hosted authenticated interaction verification pending; code and production build passed)

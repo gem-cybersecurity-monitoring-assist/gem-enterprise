@@ -60,6 +60,8 @@ describe("GEM platform access directory", () => {
     expect(directory).toContain("scroll-mt-24");
     expect(login).toContain('<nav className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Choose sign-in portal">');
     expect(login).toContain('aria-current={item.kind === portal ? "page" : undefined}');
+    expect(login).toContain("normalizeLoginError(body.error)");
+    expect(login).not.toContain("setServerError(body.error ||");
     expect(login).not.toContain('<h2 className="mt-8 max-w-xl');
   });
 });

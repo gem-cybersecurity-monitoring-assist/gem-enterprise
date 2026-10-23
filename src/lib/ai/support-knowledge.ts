@@ -62,7 +62,20 @@ const SUPPORT_KNOWLEDGE: readonly SupportKnowledgeEntry[] = [
     title: "Products and services",
     href: "/app/products",
     description: "Review scoped products, services, and entitlements.",
-    keywords: ["product", "service", "entitlement", "plan", "coverage", "activate"],
+    keywords: [
+      "product",
+      "service",
+      "entitlement",
+      "plan",
+      "coverage",
+      "activate",
+      "offer",
+      "capability",
+      "capabilities",
+      "feature",
+      "gem assist",
+      "what can gem",
+    ],
     guidance:
       "Products shown in the portal are subject to eligibility, scope, provider availability, jurisdiction, and contract checks. Display does not itself activate a service.",
   },
@@ -126,7 +139,21 @@ const SUPPORT_KNOWLEDGE: readonly SupportKnowledgeEntry[] = [
     title: "Access intake",
     href: "/eligibility",
     description: "Start or review the controlled access and eligibility path.",
-    keywords: ["signup", "sign up", "register", "eligibility", "application", "apply", "onboarding"],
+    keywords: [
+      "signup",
+      "sign up",
+      "register",
+      "eligibility",
+      "application",
+      "apply",
+      "onboarding",
+      "account",
+      "create account",
+      "new account",
+      "open account",
+      "join gem",
+      "get started",
+    ],
     guidance:
       "Use Access Intake to select the supported applicant track and begin the controlled onboarding flow. Applicant input cannot grant a privileged role or entitlement.",
   },
@@ -194,7 +221,7 @@ const DETERMINISTIC_RESPONSES: Readonly<Record<string, string>> = {
   Documents:
     "Open Documents to review records currently available to your account. Only use an approved private upload flow for sensitive files; do not paste document numbers into chat.",
   "Products and services":
-    "Open Products and Services to review what is available to your account. A displayed service is not active until its eligibility, scope, provider, jurisdiction, and contract checks pass.",
+    "GEM Assist combines an organization Workspace OS with project operations, team and client collaboration, service requests, meetings, governed AI support, news, social publishing, security monitoring, and approved integrations. Open Products and Services to review what is available to your account; availability still depends on your role, service scope, provider readiness, jurisdiction, and contract.",
   Portfolios:
     "Open Portfolios to review information already assigned to your account. I can explain navigation and records, but investment or allocation decisions require an authorized human advisor.",
   Meetings:
@@ -210,7 +237,7 @@ const DETERMINISTIC_RESPONSES: Readonly<Record<string, string>> = {
   "Video Studio":
     "Open Video Studio to select approved content, verify the exact media asset, and prepare governed publishing. Local OBS, camera, microphone, GPU, and ComfyUI checks still require the prepared Windows media host.",
   "Access intake":
-    "Open Access Intake to choose the supported applicant track and continue onboarding. That choice controls routing only; it cannot grant an administrator role or entitlement.",
+    "I understand that you want to create a GEM account. Open Access Intake, choose the applicant type that matches you, complete the application, and submit it for review. After approval, use the portal assigned to your verified role; choosing an applicant track cannot grant administrator access.",
   Administration:
     "Open Administration if your verified role permits it. User, role, and access changes remain server-authorized and cannot be elevated through chat or routing input.",
 };
@@ -227,5 +254,29 @@ export function createDeterministicSupportReply(
   const primary = entries[0];
   if (primary) return DETERMINISTIC_RESPONSES[primary.title] ?? primary.description;
 
-  return "I can help with your GEM account, organization workspace, project tools, requests, verification, products, meetings, news, social media, video, and human-support cases. Tell me what you were trying to do and what happened on the screen, and I will route you to the verified next step.";
+  return "I want to make sure I understand your request correctly. Are you trying to create or access an account, manage an organization or project, or resolve an existing request? Describe the result you need, and I will give you the verified next step or transfer the conversation to a human support agent.";
+}
+
+export function createSupportSuggestedReplies(
+  query: string,
+  entries: readonly SupportKnowledgeEntry[],
+): string[] {
+  const normalized = normalize(query);
+  const primary = entries[0]?.title;
+
+  if (primary === "Access intake" || /\b(create|open|new|need|want)\b.*\baccount\b/.test(normalized)) {
+    return ["I already submitted an application", "I cannot sign in", "Speak with human support"];
+  }
+  if (primary === "Products and services") {
+    return ["How does Workspace OS work?", "Which services can clients use?", "Speak with human support"];
+  }
+  if (primary === "Account security") {
+    return ["I forgot my password", "My account is locked", "Speak with human support"];
+  }
+  if (primary === "Organization workspace") {
+    return ["Create an organization workspace", "Open my projects", "Speak with human support"];
+  }
+  if (primary === "Human support") return [];
+
+  return ["Help me create an account", "Explain GEM Assist services", "Speak with human support"];
 }

@@ -31,6 +31,7 @@ interface ChatMessage {
   role: "user" | "assistant" | "system";
   text: string;
   links?: KnowledgeLink[];
+  suggestedReplies?: string[];
   responseSource?: "gateway" | "fallback" | "policy";
   providerStatus?: "available" | "disabled" | "budget_limited" | "rate_limited" | "unavailable";
 }
@@ -116,6 +117,9 @@ function EscalationScreen({
         <h3 className="text-lg font-semibold text-white">Human-support request recorded</h3>
         <p className="text-sm leading-6 text-slate-300">
           Your request is assigned to <span className="font-medium text-white">{handoff.queue}</span>. It is now a tracked case, not another automated reply.
+        </p>
+        <p className="text-xs leading-5 text-slate-400">
+          Your conversation and the attempted resolution are attached. The case will show when an authorized human agent claims it; until then, its status remains waiting for support.
         </p>
       </div>
       {reference ? (
@@ -267,6 +271,7 @@ export function AIChatWidget({
           role: "assistant",
           text: data.reply,
           links: Array.isArray(data.knowledgeLinks) ? data.knowledgeLinks : [],
+          suggestedReplies: Array.isArray(data.suggestedReplies) ? data.suggestedReplies.slice(0, 3) : [],
           responseSource: data.responseSource,
           providerStatus: data.providerStatus,
         },
@@ -374,6 +379,21 @@ export function AIChatWidget({
                           {link.title}
                           <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                  {message.role === "assistant" && message.suggestedReplies && message.suggestedReplies.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3" aria-label="Suggested follow-up questions">
+                      {message.suggestedReplies.map((reply) => (
+                        <button
+                          type="button"
+                          key={`${message.id}-${reply}`}
+                          onClick={() => void sendMessage(reply)}
+                          disabled={loading}
+                          className="min-h-9 rounded-full border border-cyan-300/20 bg-cyan-400/[0.06] px-3 py-1.5 text-left text-xs leading-4 text-cyan-100 hover:border-cyan-300/40 hover:bg-cyan-400/10 disabled:opacity-50"
+                        >
+                          {reply}
+                        </button>
                       ))}
                     </div>
                   ) : null}

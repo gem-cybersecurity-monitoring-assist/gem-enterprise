@@ -114,9 +114,28 @@ export function SupportCaseConversation({
   }
 
   const closed = ticket.status === "resolved" || ticket.status === "closed";
+  const humanJoined = Boolean(ticket.assignedTo) || messages.some((item) => item.actorType === "staff");
 
   return (
     <div className="space-y-4">
+      {!closed ? (
+        <div
+          aria-live="polite"
+          className={`flex items-start gap-3 rounded-xl border p-4 ${humanJoined ? "border-emerald-400/20 bg-emerald-400/10" : "border-amber-400/20 bg-amber-400/10"}`}
+        >
+          {humanJoined ? <UserCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" /> : <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />}
+          <div>
+            <p className={`text-sm font-medium ${humanJoined ? "text-emerald-100" : "text-amber-100"}`}>
+              {humanJoined ? "Human support conversation active" : "Waiting for a GEM support agent"}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              {humanJoined
+                ? "An authorized support operator has joined this case. Replies here are visible to both you and the support team."
+                : "Your transcript is safely attached to the case. This page refreshes automatically and will show when an authorized agent joins."}
+            </p>
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-300">{ticket.id}</p>

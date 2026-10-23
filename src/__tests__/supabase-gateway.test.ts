@@ -157,4 +157,29 @@ describe("Supabase gateway client", () => {
       code: "INVALID_CREDENTIALS",
     } satisfies Partial<GatewayRequestError>);
   });
+
+  it("normalizes object-shaped gateway failures before they reach the UI", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "AUTH_GATEWAY_REJECTED",
+              message: "Authentication could not be completed.",
+            },
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    await expect(
+      loginWithGateway("admin@example.com", "password"),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: "AUTH_GATEWAY_REJECTED",
+      message: "Authentication could not be completed.",
+    } satisfies Partial<GatewayRequestError>);
+  });
 });

@@ -115,6 +115,7 @@ export interface OrchestrationResult {
     href: string;
     description: string;
   }>;
+  suggestedReplies?: string[];
   responseSource?: "gateway" | "fallback" | "policy";
   providerStatus?: "available" | "disabled" | "budget_limited" | "rate_limited" | "unavailable";
   metadata?: Record<string, unknown>;

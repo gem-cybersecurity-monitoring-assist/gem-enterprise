@@ -3,6 +3,7 @@ import { APICallError, stepCountIs, ToolLoopAgent } from "ai";
 import {
   formatSupportKnowledge,
   createDeterministicSupportReply,
+  createSupportSuggestedReplies,
   retrieveSupportKnowledge,
   toSupportKnowledgeLinks,
   type SupportKnowledgeLink,
@@ -28,6 +29,7 @@ export interface GemSupportReply {
   source: "gateway" | "fallback";
   model: string;
   knowledgeLinks: SupportKnowledgeLink[];
+  suggestedReplies: string[];
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -89,6 +91,7 @@ export async function generateGemSupportReply(
 ): Promise<GemSupportReply> {
   const knowledge = retrieveSupportKnowledge(input.message);
   const knowledgeLinks = toSupportKnowledgeLinks(knowledge);
+  const suggestedReplies = createSupportSuggestedReplies(input.message, knowledge);
   const model = resolveModelId();
   const fallback = fallbackText(input.message);
 
@@ -98,6 +101,7 @@ export async function generateGemSupportReply(
       source: "fallback",
       model: "gem-deterministic-support-v2",
       knowledgeLinks,
+      suggestedReplies,
       providerStatus: "disabled",
     };
   }
@@ -132,6 +136,7 @@ export async function generateGemSupportReply(
         source: "fallback",
         model: "gem-deterministic-support-v2",
         knowledgeLinks,
+        suggestedReplies,
         providerStatus: "unavailable",
       };
     }
@@ -141,6 +146,7 @@ export async function generateGemSupportReply(
       source: "gateway",
       model,
       knowledgeLinks,
+      suggestedReplies,
       usage: {
         inputTokens: result.usage.inputTokens,
         outputTokens: result.usage.outputTokens,
@@ -154,6 +160,7 @@ export async function generateGemSupportReply(
       source: "fallback",
       model: "gem-deterministic-support-v2",
       knowledgeLinks,
+      suggestedReplies,
       providerStatus: providerStatus(error),
     };
   }

@@ -38,6 +38,7 @@ describe("AIChatWidget", () => {
           reply: "I am recording a human-support handoff now.",
           shouldEscalate: true,
           knowledgeLinks: [],
+          suggestedReplies: [],
           handoff: {
             success: true,
             queue: "General Member Support",
@@ -60,6 +61,7 @@ describe("AIChatWidget", () => {
     fireEvent.click(screen.getByRole("button", { name: "Request human support" }));
     expect(await screen.findByRole("heading", { name: "Human-support request recorded" })).toBeTruthy();
     expect(screen.getByText("ticket-123")).toBeTruthy();
+    expect(screen.getByText(/conversation and the attempted resolution are attached/i)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Reply and track updates/i }).getAttribute("href")).toBe("/app/support?ticket=ticket-123");
 
     await waitFor(() => {

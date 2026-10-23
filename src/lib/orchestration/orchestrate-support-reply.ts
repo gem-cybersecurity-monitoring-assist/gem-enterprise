@@ -70,6 +70,7 @@ export async function orchestrateSupportReply(
     shouldEscalate: false,
     queue: policyResult.path === "billing" ? "Billing / Accounts" : undefined,
     knowledgeLinks: aiReply.knowledgeLinks,
+    suggestedReplies: aiReply.suggestedReplies,
     responseSource: aiReply.source,
     providerStatus: aiReply.providerStatus,
     metadata: {

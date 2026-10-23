@@ -27,7 +27,16 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type LoginResponse = { success?: boolean; role?: string; redirect?: string; error?: string };
+type LoginResponse = { success?: boolean; role?: string; redirect?: string; error?: unknown };
+
+function normalizeLoginError(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value === "object") {
+    const message = (value as Record<string, unknown>).message;
+    if (typeof message === "string" && message.trim()) return message.trim();
+  }
+  return null;
+}
 
 function safeRedirectTarget(value: string | null | undefined) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
@@ -59,7 +68,7 @@ export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
       const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: data.email, password: data.password }) });
       const body = (await response.json().catch(() => ({}))) as LoginResponse;
       if (!response.ok) {
-        setServerError(body.error || "Invalid credentials. Check your email and password.");
+        setServerError(normalizeLoginError(body.error) ?? "Invalid credentials. Check your email and password.");
         return;
       }
       const requested = safeRedirectTarget(searchParams.get("next"));

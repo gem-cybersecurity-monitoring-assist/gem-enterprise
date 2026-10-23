@@ -20,8 +20,32 @@ export class GatewayRequestError extends Error {
 }
 
 interface GatewayErrorBody {
-  error?: string;
-  code?: string;
+  error?: unknown;
+  code?: unknown;
+  message?: unknown;
+}
+
+function nonEmptyString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function gatewayFailure(body: GatewayErrorBody): { code: string; message: string } {
+  const nested =
+    body.error && typeof body.error === "object"
+      ? (body.error as Record<string, unknown>)
+      : null;
+
+  return {
+    code:
+      nonEmptyString(body.code) ??
+      nonEmptyString(nested?.code) ??
+      "GATEWAY_REQUEST_FAILED",
+    message:
+      nonEmptyString(body.error) ??
+      nonEmptyString(nested?.message) ??
+      nonEmptyString(body.message) ??
+      "Gateway request failed.",
+  };
 }
 
 interface GatewayLoginResponse {
@@ -95,10 +119,11 @@ async function invokeGateway<T>(
 
     if (!response.ok) {
       const errorBody = body as GatewayErrorBody;
+      const failure = gatewayFailure(errorBody);
       throw new GatewayRequestError(
         response.status,
-        errorBody.code || "GATEWAY_REQUEST_FAILED",
-        errorBody.error || "Gateway request failed.",
+        failure.code,
+        failure.message,
       );
     }
 
@@ -158,10 +183,15 @@ export async function evidenceGatewayHealth<T = {
     const body = (await response.json().catch(() => ({}))) as T | GatewayErrorBody;
     if (!response.ok) {
       const errorBody = body as GatewayErrorBody;
+      const failure = gatewayFailure(errorBody);
       throw new GatewayRequestError(
         response.status,
-        errorBody.code || "EVIDENCE_GATEWAY_UNAVAILABLE",
-        errorBody.error || "Evidence gateway is unavailable.",
+        failure.code === "GATEWAY_REQUEST_FAILED"
+          ? "EVIDENCE_GATEWAY_UNAVAILABLE"
+          : failure.code,
+        failure.message === "Gateway request failed."
+          ? "Evidence gateway is unavailable."
+          : failure.message,
       );
     }
     return body as T;

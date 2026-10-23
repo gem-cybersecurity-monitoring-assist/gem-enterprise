@@ -169,6 +169,7 @@ export async function POST(request: NextRequest) {
       shouldEscalate: result.orchestration.shouldEscalate,
       queue: result.orchestration.queue,
       knowledgeLinks: result.orchestration.knowledgeLinks ?? [],
+      suggestedReplies: result.orchestration.suggestedReplies ?? [],
       responseSource: result.orchestration.responseSource,
       providerStatus: result.orchestration.providerStatus,
       handoff: handoff

@@ -98,6 +98,22 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | LAST VERIFIED HEAD | `718f143` (implementation content verified before publication) |
 | NEXT SAFE ACTION | Publish the reviewable branch without merging, then configure the Partner Center values and complete owner authorization after TikTok approval. |
 
+## GEM Support Conversation Handoff
+
+| Field | Value |
+|---|---|
+| TASK | [SUPPORT-CONVERSATION-HANDOFF](tasks/SUPPORT-CONVERSATION-HANDOFF.md) |
+| OWNER | Codex / GEM support experience lane |
+| SOURCE PR/ISSUE | User-reported repetitive Platform Support responses |
+| BASE SHA | `ec6ad016cef7599d06155187e666ce7af820e75e` |
+| WORKING BRANCH | `codex/support-conversation-handoff` |
+| OWNED FILES/SCOPE | Support knowledge, orchestration, chat widget, human case conversation status, focused tests, this task record |
+| FORBIDDEN OVERLAP | Auth and portal isolation; Prisma; credentials; integrations; news; IWW; unrelated active PR files |
+| STATUS | IMPLEMENTED — LOCAL CODE GATES PASSED |
+| BLOCKER CLASS | PREVIEW (hosted interactive verification pending) |
+| LAST VERIFIED HEAD | `ec6ad016cef7599d06155187e666ce7af820e75e` |
+| NEXT SAFE ACTION | Publish the exact branch, inspect its canonical Vercel deployment, and complete authenticated mobile acceptance. |
+
 ## GEM News Scroll Autoplay
 
 | Field | Value |

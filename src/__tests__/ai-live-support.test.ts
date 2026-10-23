@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import {
   createDeterministicSupportReply,
+  createSupportSuggestedReplies,
   retrieveSupportKnowledge,
 } from "@/lib/ai/support-knowledge";
 import {
@@ -43,6 +44,26 @@ describe("complete AI and live-support flow", () => {
       title: "Social Media Hub",
       href: "/app/social-media",
     });
+  });
+
+  it("understands account creation and detailed GEM Assist questions", () => {
+    const accountQuery = "I want to create account";
+    const accountEntries = retrieveSupportKnowledge(accountQuery);
+    expect(accountEntries[0]).toMatchObject({ title: "Access intake", href: "/eligibility" });
+    expect(createDeterministicSupportReply(accountQuery, accountEntries)).toContain("create a GEM account");
+    expect(createSupportSuggestedReplies(accountQuery, accountEntries)).toContain("I already submitted an application");
+
+    const offerQuery = "What does GEM Assist offer in details?";
+    const offerEntries = retrieveSupportKnowledge(offerQuery);
+    expect(offerEntries[0]).toMatchObject({ title: "Products and services", href: "/app/products" });
+    expect(createDeterministicSupportReply(offerQuery, offerEntries)).toContain("organization Workspace OS");
+  });
+
+  it("asks a focused clarification rather than repeating a catalogue fallback", () => {
+    const reply = createDeterministicSupportReply("Can you sort this out for me?", []);
+    expect(reply).toContain("understand your request correctly");
+    expect(reply).toContain("transfer the conversation to a human support agent");
+    expect(reply).not.toContain("I can help with your GEM account, organization workspace");
   });
 
   it("blocks credential-like input and valid payment-card numbers before persistence", () => {
