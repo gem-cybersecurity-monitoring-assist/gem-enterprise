@@ -1,0 +1,98 @@
+name: GEM Laptop Backend
+
+on:
+  pull_request:
+    paths:
+      - "ops/gem-laptop-backend/**"
+      - ".github/workflows/gem-laptop-backend.yml"
+  push:
+    branches:
+      - "feat/gem-laptop-backend-v3.2.0"
+    paths:
+      - "ops/gem-laptop-backend/**"
+      - ".github/workflows/gem-laptop-backend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  node-control-plane:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ops/gem-laptop-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Syntax check
+        run: npm run check
+      - name: Unit tests
+        run: npm test
+
+  relay-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ops/gem-laptop-backend/relay
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python compile check
+        run: python -m py_compile wake_relay.py
+      - name: Relay unit tests
+        run: python -m unittest -v test_wake_relay.py
+      - name: Bash syntax check
+        run: bash -n install-relay.sh
+
+  windows-powershell-parse:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse every Windows PowerShell file
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $files = Get-ChildItem "ops/gem-laptop-backend/windows" -Filter "*.ps1" -File
+          if (-not $files) { throw "No PowerShell files found." }
+          $failed = $false
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $file.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "Parse failure: $($file.FullName)" -ForegroundColor Red
+              $errors | ForEach-Object { Write-Host $_.Message -ForegroundColor Red }
+            } else {
+              Write-Host "PASS: $($file.Name)" -ForegroundColor Green
+            }
+          }
+          if ($failed) { throw "One or more PowerShell files failed parsing." }
+
+  secret-pattern-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject common committed-secret patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude='SECURITY.md' --exclude='*.test.mjs' --exclude='test_*.py' \
+            '(DECART_API_KEY[[:space:]]*=|sk-[A-Za-z0-9_-]{20,}|tskey-[A-Za-z0-9_-]{20,}|BEGIN (RSA |OPENSSH )?PRIVATE KEY|Authorization:[[:space:]]*Bearer[[:space:]]+[A-Za-z0-9._-]{20,})' \
+            ops/gem-laptop-backend; then
+            echo "Potential secret material detected."
+            exit 1
+          fi
+          echo "No prohibited secret patterns found."

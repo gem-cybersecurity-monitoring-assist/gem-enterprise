@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GEM Laptop Studio</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { margin: 0; background: #08101f; color: #eef4ff; }
+    main { max-width: 860px; margin: 0 auto; padding: 28px 18px 64px; }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 6vw, 46px); }
+    p { color: #aebbd0; line-height: 1.55; }
+    .card { background: #101a2c; border: 1px solid #263451; border-radius: 18px; padding: 18px; margin-top: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .metric { background: #0b1425; border-radius: 14px; padding: 14px; }
+    .metric strong { display: block; margin-top: 6px; font-size: 18px; }
+    label { display: block; color: #c8d4e8; font-size: 14px; margin-bottom: 7px; }
+    input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #354563; border-radius: 10px; color: white; background: #091222; }
+    button { border: 0; border-radius: 11px; padding: 12px 15px; font-weight: 700; cursor: pointer; background: #2f78ff; color: white; }
+    button.secondary { background: #22314b; }
+    button.danger { background: #a73744; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .ok { color: #62e09a; }
+    .bad { color: #ff7886; }
+    .muted { color: #8fa0b9; }
+    pre { overflow: auto; background: #07101d; padding: 14px; border-radius: 12px; min-height: 90px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>GEM Laptop Studio</h1>
+  <p>Private control surface for the laptop-hosted Decart, Pinokio, and OBS workflow. The laptop must be powered, online, and signed in to the GEM ASSIST desktop for GUI video components.</p>
+
+  <section class="card">
+    <label for="token">Laptop access token</label>
+    <input id="token" type="password" autocomplete="off" placeholder="Paste the token created by the Windows installer" />
+    <div class="actions" style="margin-top:12px">
+      <button id="saveToken">Use token for this tab</button>
+      <button id="refresh" class="secondary">Refresh status</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="grid" id="metrics"></div>
+  </section>
+
+  <section class="card">
+    <div class="actions">
+      <button data-action="start">Start Complete Studio</button>
+      <button data-action="restart" class="secondary">Restart Studio</button>
+      <button data-action="open" class="secondary">Open Interfaces</button>
+      <button data-action="base44" class="secondary">Open Base44</button>
+      <button data-action="doctor" class="secondary">Diagnostics</button>
+      <button data-action="stop" class="danger">Stop Studio</button>
+      <button data-action="sleep" class="danger">Sleep PC</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <strong>Activity</strong>
+    <pre id="output">Enter the installer-created token, then refresh status.</pre>
+  </section>
+</main>
+<script>
+  const tokenInput = document.querySelector('#token');
+  const output = document.querySelector('#output');
+  const metrics = document.querySelector('#metrics');
+  tokenInput.value = sessionStorage.getItem('gemLaptopToken') || '';
+
+  function token() { return tokenInput.value.trim(); }
+  function authHeaders() { return { Authorization: `Bearer ${token()}` }; }
+  function setOutput(value) { output.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
+  function boolLabel(value) { return value ? '<span class="ok">Ready</span>' : '<span class="bad">Not ready</span>'; }
+
+  function renderStatus(s) {
+    const items = [
+      ['Desktop agent', s.agentFresh ? 'Online' : 'Offline/stale', s.agentFresh],
+      ['Backend', s.backendHealthy ? 'Healthy' : 'Unavailable', s.backendHealthy],
+      ['Pipeline', s.pipelineReady ? 'READY' : 'Stopped/not ready', s.pipelineReady],
+      ['Pinokio', s.pinokioRunning ? 'Running' : 'Off', s.pinokioRunning],
+      ['OBS', s.obsRunning ? 'Running' : 'Off', s.obsRunning],
+      ['OBS WebSocket', s.obsWebSocket ? 'Connected' : 'Disconnected', s.obsWebSocket],
+      ['SSH', s.openSshPort22 ? 'Listening' : 'Unavailable', s.openSshPort22],
+      ['Last action', s.lastAction || 'None', true],
+    ];
+    metrics.innerHTML = items.map(([label, value, ok]) => `<div class="metric"><span class="muted">${label}</span><strong class="${ok ? 'ok' : 'bad'}">${value}</strong></div>`).join('');
+  }
+
+  async function refresh() {
+    if (!token()) return setOutput('Enter the installer-created token first.');
+    const response = await fetch('/api/status', { headers: authHeaders(), cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    renderStatus(data);
+    setOutput(data);
+  }
+
+  async function command(action) {
+    if (!token()) return setOutput('Enter the installer-created token first.');
+    const buttons = [...document.querySelectorAll('button')];
+    buttons.forEach((button) => { button.disabled = true; });
+    try {
+      const response = await fetch(`/api/commands/${encodeURIComponent(action)}`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      setOutput(data);
+      setTimeout(() => refresh().catch((error) => setOutput(error.message)), 2500);
+    } finally {
+      buttons.forEach((button) => { button.disabled = false; });
+    }
+  }
+
+  document.querySelector('#saveToken').addEventListener('click', () => {
+    sessionStorage.setItem('gemLaptopToken', token());
+    refresh().catch((error) => setOutput(error.message));
+  });
+  document.querySelector('#refresh').addEventListener('click', () => refresh().catch((error) => setOutput(error.message)));
+  document.querySelectorAll('[data-action]').forEach((button) => {
+    button.addEventListener('click', () => command(button.dataset.action).catch((error) => setOutput(error.message)));
+  });
+</script>
+</body>
+</html>

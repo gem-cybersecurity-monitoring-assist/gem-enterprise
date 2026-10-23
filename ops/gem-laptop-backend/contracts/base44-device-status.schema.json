@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.gemcybersecurityassist.com/schemas/gem-laptop-device-status-v1.json",
+  "title": "GEM Laptop Device Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "deviceName",
+    "continuityVersion",
+    "coreVersion",
+    "online",
+    "backendHealthy",
+    "pipelineReady",
+    "obsReady",
+    "pinokioRunning",
+    "lastAction",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "deviceName": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "continuityVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "coreVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "online": { "type": "boolean" },
+    "backendHealthy": { "type": "boolean" },
+    "pipelineReady": { "type": "boolean" },
+    "obsReady": { "type": "boolean" },
+    "pinokioRunning": { "type": "boolean" },
+    "lastAction": { "type": ["string", "null"], "maxLength": 80 },
+    "updatedAt": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "description": "No-secret device telemetry for optional internal Base44 orchestration. This schema cannot carry credentials, user authority, approvals, entitlements, private sessions, or customer data."
+}
