@@ -341,17 +341,18 @@ def build_audio(post, work, total):
     """One track: each scene's narration starting at the scene start, padded to its duration."""
     inputs, filters, labels = [], [], []
     for i, s in enumerate(post["scenes"]):
+        # ffmpeg numbers inputs by "-i" occurrence, so input i is scene i.
         if s.get("_audio"):
             inputs += ["-i", s["_audio"]]
-            n = len(inputs) // 2 - 1
-            filters.append(f"[{n}:a]aresample=44100,apad,atrim=0:{s['dur']:.3f}[s{i}]")
+            filters.append(f"[{i}:a]aresample=44100,aformat=channel_layouts=mono,apad,atrim=0:{s['dur']:.3f}[s{i}]")
         else:
             inputs += ["-f", "lavfi", "-t", f"{s['dur']:.3f}", "-i", "anullsrc=channel_layout=mono:sample_rate=44100"]
-            n = len(inputs) // 2 - 1
-            filters.append(f"[{n}:a]aresample=44100[s{i}]")
+            filters.append(f"[{i}:a]aresample=44100,aformat=channel_layouts=mono[s{i}]")
         labels.append(f"[s{i}]")
     out = f"{work}/voice.m4a"
-    graph = ";".join(filters) + ";" + "".join(labels) + f"concat=n={len(labels)}:v=0:a=1,loudnorm=I=-16:TP=-1.5[a]"
+    voiced = any(s.get("_audio") for s in post["scenes"])
+    tail = ",loudnorm=I=-16:TP=-1.5" if voiced else ""
+    graph = ";".join(filters) + ";" + "".join(labels) + f"concat=n={len(labels)}:v=0:a=1{tail}[a]"
     subprocess.run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", graph, "-map", "[a]",
                     "-t", f"{total:.3f}", "-c:a", "aac", "-b:a", "160k", out], check=True)
     return out
