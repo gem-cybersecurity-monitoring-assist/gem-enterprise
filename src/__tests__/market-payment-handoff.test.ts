@@ -118,6 +118,28 @@ describe("market proposal and payment handoff", () => {
     expect(workflow).toContain('APPROVED: ["CONVERTED", "CLOSED"]');
   });
 
+  it("adds a fail-closed Klarna app handoff with direct and provider-backed transports", () => {
+    const handoff = readFileSync("src/app/api/market/klarna/handoff/route.ts", "utf8");
+    const button = readFileSync("src/components/market/ProposalCheckoutButton.tsx", "utf8");
+
+    expect(handoff).toContain('result.submission.status !== "APPROVED"');
+    expect(handoff).toContain('type: "HANDOVER"');
+    expect(handoff).toContain("payment_request_url");
+    expect(handoff).toContain('url.hostname === "pay.klarna.com"');
+    expect(handoff).toContain('url.hostname === "pay.test.klarna.com"');
+    expect(handoff).toContain('handoff: "klarna_app"');
+    expect(handoff).toContain("KLARNA_APP_HANDOFF_NOT_CONFIGURED");
+    expect(handoff).toContain("GEM_KLARNA_PROVIDER_HANDOFF_URL");
+    expect(handoff).toContain("GEM_KLARNA_PROVIDER_TOKEN");
+    expect(handoff).toContain('mode: "provider"');
+    expect(handoff).toContain('mode: "direct"');
+    expect(handoff).toContain("return provider || direct");
+    expect(handoff).not.toContain("window.location");
+    expect(button).toContain('/api/market/klarna/handoff');
+    expect(button).toContain("Open Klarna app");
+    expect(button).toContain("window.location.assign(result.url)");
+  });
+
   it("never turns a Stripe webhook directly into workspace access", () => {
     const webhook = readFileSync("src/app/api/market/stripe/webhook/route.ts", "utf8");
     const onboarding = readFileSync("src/components/market/ConvertedClientOnboarding.tsx", "utf8");
