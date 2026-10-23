@@ -1,62 +1,64 @@
-# Content Studio
+# Free video renderer for the trusted render worker
 
-Renders TikTok / Reels videos and photo carousels from a JSON post list, for free:
+The governed video flow in [`docs/VIDEO_RENDER_WORKER.md`](../../docs/VIDEO_RENDER_WORKER.md) was built for a self-hosted ComfyUI machine. This folder supplies a free replacement for that machine, so the flow runs with no paid service and no server of your own:
 
-| Piece | Source | Cost |
-|---|---|---|
-| Real-people footage | [Pexels](https://www.pexels.com/license/) video API | Free (API key) |
-| Voiceover | [Piper](https://github.com/OHF-Voice/piper1-gpl) open-source voice | Free |
-| Captions | Burned in, timed to the voiceover | Free |
-| Rendering | GitHub Actions (public repo) | Free |
-
-Nothing is published automatically. The output is a download you review, then post (TikTok in the app until the Content Posting API audit passes; other channels through `/app/social-media`).
-
-## One-time setup
-
-1. Create a free Pexels API key at <https://www.pexels.com/api/>.
-2. In GitHub: **Settings → Secrets and variables → Actions → New repository secret**, name `PEXELS_API_KEY`, paste the key.
-
-Without the key, scenes fall back to the branded animated background. Voice works without any key.
-
-## Render a batch
-
-1. GitHub → **Actions → Content Studio → Run workflow**.
-2. Keep the defaults (or pick a voice, or a single post id), then **Run**.
-3. When it finishes (about 1 minute per video), open the run and download the **content-N** artifact.
-
-Each post produces:
-
-- `<id>.mp4` for videos, or `<id>-1.png … <id>-N.png` for carousels
-- `<id>.txt`: the caption and hashtags, ready to paste
-- `CREDITS.json`: the Pexels clips used (licence allows commercial use without attribution; crediting is good practice)
-
-## Writing posts
-
-Add or edit a file in `posts/`. Each post:
-
-```json
-{
-  "id": "w2-mon-1-example", "format": "video", "brand": "GEM Enterprise",
-  "caption": "Caption pasted into TikTok.", "hashtags": "#cybersecurity #gementerprise",
-  "scenes": [
-    { "type": "hook", "dur": 2.5, "text": "Big opening line", "sub": "smaller teal line",
-      "say": "What the voice says.", "footage": "pexels search words" },
-    { "type": "point", "dur": 4, "chip": "1 / 3", "title": "Point title", "body": "Supporting line",
-      "say": "Narration for this point.", "footage": "person using laptop office",
-      "mock": { "type": "email | link | alert", "...": "see posts/week-1.json" } },
-    { "type": "end", "dur": 3, "lines": ["Closing", "line."], "cta": "Follow for more.", "say": "Closing line." }
-  ]
-}
+```text
+05:10 UTC  daily orchestrator → ≥ 20 TikTok drafts with video recipes (CONTENT_ORCHESTRATOR_MINIMUM_TIKTOK_ITEMS)
+operator   Content Studio → "Produce all videos" → durable DISPATCHING render jobs
+hourly     GitHub Actions "Video Render Worker":
+             comfy_compat.py   ComfyUI-compatible API on 127.0.0.1:8188
+             video:worker      existing worker, unchanged: lease → render → upload → verify → finalize
+approval   a person approves each exact rendered version
+publish    TokMetric TikTok controls (Direct Post), never automatic from this worker
 ```
 
-- `dur` is a minimum; a scene stretches to fit its narration.
-- `footage` is optional per scene; scenes with a `mock` read better without footage.
-- `format: "carousel"` renders one 1080×1920 image per scene (no voice or footage).
+| File | Role |
+|---|---|
+| `comfy_compat.py` | Implements the ComfyUI endpoints the worker uses (`/system_stats`, `/queue`, `/prompt`, `/history`, `/view`). Parses the recipe prompt written by `rendererPrompt()` back into scenes and renders it. |
+| `gem_reels.py` | Renderer: 1080×1920 MP4, text inside TikTok's safe area, captions timed to narration. |
+| `media.py` | Pexels real-people footage (`PEXELS_API_KEY`) and Piper open-source narration (`PIPER_MODEL`). Each degrades gracefully: no key → branded background; no voice → silent. |
+| `run-worker-batch.sh` | Runs `video:worker:once` in cycles until the render queue is drained. |
 
-## Content rules
+## Setup
 
-- Education only: no returns, guarantees or "get rich" claims. Mark money topics "Not financial advice".
-- Mock emails and links use fictional brands (for example "NorthBank"). Never imitate a real company.
-- Pexels licence: don't show identifiable people in a negative light or as endorsing GEM.
-- The voice is synthetic: switch on TikTok's **AI-generated content** label when posting.
-- Add music from TikTok's sound library in the app; uploaded tracks need their own licence.
+### Vercel (project `support371-gem-enterprise`)
+
+| Variable | Value |
+|---|---|
+| `VIDEO_RENDER_DISPATCH_MODE` | `worker` |
+| `COMFYUI_WORKFLOW_JSON` | `{"6":{"class_type":"GemReelsPrompt","inputs":{"text":""}},"3":{"class_type":"GemReelsSeed","inputs":{"seed":0}}}` |
+| `COMFYUI_PROMPT_NODE_ID` | `6` |
+| `COMFYUI_SEED_NODE_ID` | `3` |
+| `VIDEO_RENDER_CALLBACK_SECRET` | new random secret (`openssl rand -hex 32`) |
+| `VIDEO_RENDER_STORAGE_URL`, `VIDEO_RENDER_STORAGE_AUTH_ORIGIN`, `VIDEO_ASSET_ALLOWED_ORIGINS` | your Supabase project URL |
+| `VIDEO_RENDER_STORAGE_KEY` | restricted storage credential for the render bucket |
+
+Create a private Supabase Storage bucket named `gem-video-renders`.
+
+### GitHub (Settings → Secrets and variables → Actions)
+
+| Secret | Value |
+|---|---|
+| `VIDEO_RENDER_CALLBACK_SECRET` | same value as Vercel |
+| `VIDEO_RENDER_STORAGE_URL` | Supabase project URL |
+| `VIDEO_RENDER_STORAGE_KEY` | same restricted storage credential |
+| `PEXELS_API_KEY` | free key from <https://www.pexels.com/api/> |
+
+Optional repository variables: `GEM_VIDEO_WORKER_API_URL` (defaults to `https://www.gemcybersecurityassist.com`), `VIDEO_RENDER_STORAGE_BUCKET` (defaults to `gem-video-renders`).
+
+Until the three required secrets exist, the scheduled workflow exits early with a notice instead of failing.
+
+## Local preview
+
+Render a recipe without the worker:
+
+```bash
+python3 tools/content-studio/comfy_compat.py &   # then POST a workflow to http://127.0.0.1:8188/prompt
+```
+
+## Content rules carried into every render
+
+- Real-people footage only from Pexels; the licence forbids showing identifiable people negatively or as endorsing GEM. `CREDITS.json` records every clip.
+- Mock screens use fictional brands only.
+- Narration is synthetic: the TikTok AI-generated content disclosure applies when posting.
+- Music is added from TikTok's sound library at publish time.

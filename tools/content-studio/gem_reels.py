@@ -251,12 +251,15 @@ def scene_end(img, s, p, t, post):
     d = ImageDraw.Draw(img)
     k = ease(p / 0.4)
     cy = SAFE_T + 260
-    font = F(112, "Black")
+    size = 112
+    while size > 60 and any(d.textlength(line, font=F(size, "Black")) > SAFE_R - SAFE_L for line in s["lines"]):
+        size -= 6  # shrink long closing lines to stay inside the safe area
+    font = F(size, "Black")
     for i, line in enumerate(s["lines"]):
         ki = ease((p - i * 0.12) / 0.35)
         color = TEAL if i == len(s["lines"]) - 1 else INK
         d.text((SAFE_L, cy + int(40 * (1 - ki))), line, font=font, fill=tuple(int(c * ki) for c in color))
-        cy += 130
+        cy += int(size * 1.16)
     d.line([(SAFE_L, cy + 50), (SAFE_L + int(320 * k), cy + 50)], fill=TEAL, width=6)
     d.text((SAFE_L, cy + 90), post["brand"], font=F(50, "Bold"), fill=INK)
     if s.get("cta"):

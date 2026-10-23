@@ -1,0 +1,123 @@
+name: Video Render Worker
+
+# Runs the existing trusted video worker (scripts/video-render-worker.ts)
+# against the free ComfyUI-compatible renderer in tools/content-studio:
+# Pexels real-people footage + Piper open-source narration + timed captions.
+#
+# Flow (unchanged from docs/VIDEO_RENDER_WORKER.md): the daily orchestrator
+# creates TikTok drafts → an operator queues renders ("Produce all videos") →
+# this worker leases the jobs, renders, uploads to private storage, verifies,
+# and finalizes them into the exact-version approval queue. It never publishes.
+
+on:
+  schedule:
+    - cron: "25 6-21 * * *"   # hourly after the 05:10 UTC orchestrator run
+  workflow_dispatch:
+    inputs:
+      voice:
+        description: Piper voice
+        required: true
+        default: en_US-lessac-medium
+
+permissions:
+  contents: read
+
+concurrency:
+  group: video-render-worker
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GEM_VIDEO_WORKER_API_URL: ${{ vars.GEM_VIDEO_WORKER_API_URL || 'https://www.gemcybersecurityassist.com' }}
+      VIDEO_RENDER_CALLBACK_SECRET: ${{ secrets.VIDEO_RENDER_CALLBACK_SECRET }}
+      VIDEO_RENDER_STORAGE_URL: ${{ secrets.VIDEO_RENDER_STORAGE_URL }}
+      VIDEO_RENDER_STORAGE_KEY: ${{ secrets.VIDEO_RENDER_STORAGE_KEY }}
+      VIDEO_RENDER_STORAGE_BUCKET: ${{ vars.VIDEO_RENDER_STORAGE_BUCKET || 'gem-video-renders' }}
+      VIDEO_RENDER_STORAGE_PREFIX: renders
+      COMFYUI_BASE_URL: http://127.0.0.1:8188
+      COMFYUI_MAX_QUEUE_ITEMS: "20"
+      VIDEO_RENDER_WORKER_BATCH_SIZE: "20"
+      VIDEO_RENDER_WORKER_DISPATCH_LEASE_MS: "600000"
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      VOICE: ${{ inputs.voice || 'en_US-lessac-medium' }}
+    steps:
+      - name: Check configuration
+        id: gate
+        run: |
+          missing=()
+          for name in VIDEO_RENDER_CALLBACK_SECRET VIDEO_RENDER_STORAGE_URL VIDEO_RENDER_STORAGE_KEY; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::notice::Render worker not configured; missing secrets: ${missing[*]}"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: steps.gate.outputs.ready == 'true'
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install worker dependencies
+        if: steps.gate.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install renderer (ffmpeg, fonts, Piper)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-inter fonts-dejavu-core
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet numpy pillow piper-tts
+          case "$VOICE" in
+            en_US-lessac-medium|en_US-ryan-high|en_GB-alan-medium) ;;
+            *) echo "Unsupported voice: $VOICE" >&2; exit 1 ;;
+          esac
+          lang="${VOICE%%-*}"; rest="${VOICE#*-}"; name="${rest%-*}"; quality="${rest##*-}"
+          base="https://huggingface.co/rhasspy/piper-voices/resolve/main/${lang%%_*}/${lang}/${name}/${quality}"
+          mkdir -p "$RUNNER_TEMP/voices"
+          curl -fsSL -o "$RUNNER_TEMP/voices/${VOICE}.onnx" "${base}/${VOICE}.onnx"
+          curl -fsSL -o "$RUNNER_TEMP/voices/${VOICE}.onnx.json" "${base}/${VOICE}.onnx.json"
+
+      - name: Start render service
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          PIPER_MODEL: ${{ runner.temp }}/voices/${{ inputs.voice || 'en_US-lessac-medium' }}.onnx
+          COMFY_COMPAT_OUTPUT_DIR: ${{ runner.temp }}/renders
+        run: |
+          nohup "$RUNNER_TEMP/venv/bin/python" tools/content-studio/comfy_compat.py > "$RUNNER_TEMP/render-service.log" 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS "$COMFYUI_BASE_URL/system_stats" && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/render-service.log"; exit 1
+
+      - name: Worker readiness check
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          VIDEO_RENDER_WORKER_STATE_DIR: ${{ runner.temp }}/worker-state
+        run: pnpm run --silent video:worker:check
+
+      - name: Drain render queue
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          VIDEO_RENDER_WORKER_STATE_DIR: ${{ runner.temp }}/worker-state
+        run: bash tools/content-studio/run-worker-batch.sh
+
+      - name: Render service log
+        if: always() && steps.gate.outputs.ready == 'true'
+        run: tail -n 200 "$RUNNER_TEMP/render-service.log" || true
