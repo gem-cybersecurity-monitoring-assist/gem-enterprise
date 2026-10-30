@@ -99,8 +99,24 @@ export default async function IntegrationsCommandCenterPage({
         YOUTUBE: "https://console.cloud.google.com/",
         TELEGRAM: "https://my.telegram.org/",
       } as Record<string, string>)[provider.id],
-      authorizationPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${provider.id === "FACEBOOK_PAGE" || provider.id === "INSTAGRAM_PROFESSIONAL" ? "meta" : provider.id.toLowerCase()}/start?workspaceId={workspaceId}` : undefined,
-      callbackPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${provider.id === "FACEBOOK_PAGE" || provider.id === "INSTAGRAM_PROFESSIONAL" ? "meta" : provider.id.toLowerCase()}/callback` : undefined,
+      authorizationPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${({
+        TIKTOK: "TIKTOK",
+        FACEBOOK_PAGE: "META",
+        INSTAGRAM_PROFESSIONAL: "META",
+        X: "X",
+        NEXTDOOR: "NEXTDOOR",
+        LINKEDIN_COMPANY: "LINKEDIN",
+        YOUTUBE: "YOUTUBE",
+      } as Record<string, string>)[provider.id]}/start?workspaceId={workspaceId}` : undefined,
+      callbackPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${({
+        TIKTOK: "TIKTOK",
+        FACEBOOK_PAGE: "META",
+        INSTAGRAM_PROFESSIONAL: "META",
+        X: "X",
+        NEXTDOOR: "NEXTDOOR",
+        LINKEDIN_COMPANY: "LINKEDIN",
+        YOUTUBE: "YOUTUBE",
+      } as Record<string, string>)[provider.id]}/callback` : undefined,
       href: `/app/social-media/accounts?provider=${encodeURIComponent(provider.id)}`,
       title: `${provider.label} connector`,
       description: `${provider.purpose} Supported content: ${provider.supportedContent.join(", ").toLowerCase()}.`,
@@ -177,7 +193,7 @@ export default async function IntegrationsCommandCenterPage({
             <Plug className="h-6 w-6 text-cyan-300" />
           </div>
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
               <ShieldCheck className="h-3.5 w-3.5" />Route and configuration inventory — not connection proof
             </div>
             <h1 className="text-2xl font-bold text-white sm:text-3xl">Integration Command Center</h1>
