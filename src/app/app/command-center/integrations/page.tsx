@@ -40,6 +40,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/integrations/news",
       title: "Native News Automation",
       description: "Review GEM's source catalog, scheduled ingestion, attributed stories, video discovery, and native news experience.",
+      externalUrl: "https://supabase.com/dashboard",
       category: "Intelligence",
       status: "Supabase ingestion active",
       readiness: "READY",
@@ -48,6 +49,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/social-media",
       title: "Social Media Operations",
       description: "TikTok, Facebook Pages, Instagram professional accounts, X, Nextdoor, Indeed Employer, LinkedIn, and YouTube readiness.",
+      externalUrl: "https://developers.facebook.com/",
       category: "Publishing",
       status: `${configured}/${socialProviders.length} configured`,
       readiness: configured === socialProviders.length ? "READY" : configured > 0 ? "PARTIAL" : "HUMAN_REQUIRED",
@@ -64,6 +66,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/tokmetric",
       title: "TokMetric",
       description: "TikTok OAuth, content production, compliance, exact-version approvals, publishing preflight, analytics, and audit controls.",
+      externalUrl: "https://developers.tiktok.com/",
       category: "Publishing",
       status: "External publishing remains authorization-gated",
       readiness: "HUMAN_REQUIRED",
@@ -85,6 +88,19 @@ export default async function IntegrationsCommandCenterPage({
       readiness: "READY",
     },
     ...socialProviders.map((provider) => ({
+      externalUrl: ({
+        TIKTOK: "https://developers.tiktok.com/",
+        FACEBOOK_PAGE: "https://developers.facebook.com/",
+        INSTAGRAM_PROFESSIONAL: "https://developers.facebook.com/",
+        X: "https://developer.x.com/",
+        NEXTDOOR: "https://business.nextdoor.com/",
+        INDEED_EMPLOYER: "https://employers.indeed.com/",
+        LINKEDIN_COMPANY: "https://www.linkedin.com/developers/",
+        YOUTUBE: "https://console.cloud.google.com/",
+        TELEGRAM: "https://my.telegram.org/",
+      } as Record<string, string>)[provider.id],
+      authorizationPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${provider.id === "FACEBOOK_PAGE" || provider.id === "INSTAGRAM_PROFESSIONAL" ? "meta" : provider.id.toLowerCase()}/start?workspaceId={workspaceId}` : undefined,
+      callbackPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${provider.id === "FACEBOOK_PAGE" || provider.id === "INSTAGRAM_PROFESSIONAL" ? "meta" : provider.id.toLowerCase()}/callback` : undefined,
       href: `/app/social-media/accounts?provider=${encodeURIComponent(provider.id)}`,
       title: `${provider.label} connector`,
       description: `${provider.purpose} Supported content: ${provider.supportedContent.join(", ").toLowerCase()}.`,
@@ -96,6 +112,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/development",
       title: "GitHub source control",
       description: "Repository, pull-request, review, and release evidence entry point for governed development work.",
+      externalUrl: "https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise",
       category: "Development & delivery",
       status: "Connection authority remains in the approved GitHub installation",
       readiness: "HUMAN_REQUIRED",
@@ -104,6 +121,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/development",
       title: "Vercel deployment",
       description: "Canonical preview and production delivery surface for the GEM Next.js application.",
+      externalUrl: "https://vercel.com/",
       category: "Development & delivery",
       status: "Production delivery remains Git-integration controlled",
       readiness: "HUMAN_REQUIRED",
@@ -112,6 +130,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/monitoring",
       title: "Cloudflare edge services",
       description: "Edge, DNS, security, worker, storage, and operational health entry point.",
+      externalUrl: "https://dash.cloudflare.com/",
       category: "Infrastructure",
       status: "Account authorization and resource health are verified separately",
       readiness: "HUMAN_REQUIRED",
@@ -120,6 +139,7 @@ export default async function IntegrationsCommandCenterPage({
       href: "/app/command-center/development",
       title: "Supabase data services",
       description: "Workspace data, identity gateway, private storage, and backend operations entry point.",
+      externalUrl: "https://supabase.com/dashboard",
       category: "Data & identity",
       status: "Database, identity, and storage readiness remain independently gated",
       readiness: "HUMAN_REQUIRED",
@@ -158,11 +178,11 @@ export default async function IntegrationsCommandCenterPage({
           </div>
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
-              <ShieldCheck className="h-3.5 w-3.5" />Governed connectors
+              <ShieldCheck className="h-3.5 w-3.5" />Route and configuration inventory — not connection proof
             </div>
             <h1 className="text-2xl font-bold text-white sm:text-3xl">Integration Command Center</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              Review configuration readiness, authorization requirements, live gates, account scope, and the exact controls that must pass before any external action is permitted.
+              Review internal routes, provider management destinations, redirect callbacks, configuration checks, and authorization requirements. A route or configured credential is never presented as a connected account.
             </p>
           </div>
         </div>
