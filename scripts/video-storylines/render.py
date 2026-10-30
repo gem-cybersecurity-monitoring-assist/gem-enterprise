@@ -1,9 +1,9 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Render a GEM video storyline into platform-ready MP4s.
 
-Pipeline: storyline JSON -> Pexels clips (API) -> per-beat voiceover (Kokoro,
-Apache-2.0) -> 9:16 master with burned captions and GEM branding -> 4:5 and
-16:9 variants -> ffprobe validation -> manifest.json.
+Pipeline: storyline JSON -> Pexels clips (API) + recorded human voice tracks
+(one WAV file per beat) -> 9:16 master with burned captions and GEM branding ->
+4:5 and 16:9 variants -> ffprobe validation -> manifest.json.
 
 Usage:
   python3 -I scripts/video-storylines/render.py --storyline <id> --out <dir>
@@ -14,7 +14,8 @@ Usage:
 so the ffmpeg graph, captions, variants and validation can be exercised with
 no network or secrets. Offline output is never publishable (manifest marks it).
 
-Secrets: PEXELS_API_KEY (env). Never printed.
+Inputs: PEXELS_API_KEY (env); recorded voice files supplied with --voice-dir.
+Human recordings are the production default. Synthetic narration is not used.
 """
 from __future__ import annotations
 
@@ -410,7 +411,7 @@ def main() -> int:
     ap.add_argument("--storyline")
     ap.add_argument("--rotate", action="store_true")
     ap.add_argument("--offline", action="store_true")
-    ap.add_argument("--voice", default="am_michael")
+    ap.add_argument("--voice-dir", help="Directory containing beat00.wav, beat01.wav, ... recorded human narration tracks")
     ap.add_argument("--library", default=str(LIBRARY))
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -429,15 +430,35 @@ def main() -> int:
             return 2
         pexels = Pexels(key)
 
-    voice = Voice(args.offline, args.voice)
+    voice_dir = Path(args.voice_dir).expanduser() if args.voice_dir else None
+    if not args.offline and voice_dir is None:
+        log("A recorded human voice track is required. Pass --voice-dir; synthetic narration is disabled.")
+        return 5
+    if voice_dir is not None and not voice_dir.is_dir():
+        log(f"voice directory does not exist: {voice_dir}")
+        return 6
+
     with tempfile.TemporaryDirectory(prefix="gemvid-") as tmp:
         work = Path(tmp)
         beats = [Beat(i, b["role"], b["caption"], b["voiceover"], b["clip"], span_seconds(b["time"]))
                  for i, b in enumerate(story["beats"])]
         t = 0.0
         for b in beats:
-            b.vo_path = work / f"vo{b.index:02d}.wav"
-            b.vo_seconds = voice.synth(b.voiceover, b.vo_path)
+            if args.offline:
+                b.vo_path = work / f"vo{b.index:02d}.wav"
+                words = len(b.voiceover.split())
+                b.vo_seconds = max(words / WORDS_PER_SEC_OFFLINE, 1.0)
+                run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"sine=frequency=220:sample_rate={SAMPLE_RATE}:duration={b.vo_seconds:.2f}", "-af", "volume=0.05", "-ac", "1", str(b.vo_path)])
+            else:
+                b.vo_path = voice_dir / f"beat{b.index:02d}.wav"
+                if not b.vo_path.is_file():
+                    log(f"missing recorded voice track: {b.vo_path.name}")
+                    return 7
+                audio = next((x for x in probe(b.vo_path)["streams"] if x.get("codec_type") == "audio"), None)
+                if not audio:
+                    log(f"voice track has no audio stream: {b.vo_path.name}")
+                    return 8
+                b.vo_seconds = duration_of(b.vo_path)
             length = max(b.planned, b.vo_seconds + VO_TAIL_SEC)
             b.start, b.end = t, t + length
             t += length
@@ -474,7 +495,7 @@ def main() -> int:
             "tags": story["tags"], "renderedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "status": "OFFLINE_TEST_NOT_PUBLISHABLE" if args.offline else "DRAFT_PENDING_APPROVAL",
             "post": story["post"], "outputs": records, "validation": {"passed": not failures, "failures": failures},
-            "disclosures": {"syntheticVoice": not args.offline, "voiceModel": None if args.offline else f"kokoro:{args.voice}",
+            "disclosures": {"syntheticVoice": False, "voiceType": "offline_test_tone" if args.offline else "recorded_human_voice",
                             "stockFootage": "Pexels License", "peopleAreStockTalent": True},
             "credits": credits,
             "timeline": [{"beat": b.index, "role": b.role, "start": round(b.start, 2), "end": round(b.end, 2)} for b in beats],
