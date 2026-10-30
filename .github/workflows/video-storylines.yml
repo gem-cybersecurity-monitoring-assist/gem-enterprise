@@ -74,6 +74,8 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter
 
       - name: Require recorded human narration
+        env:
+          STORYLINE: ${{ github.event.inputs.storyline }}
         run: |
           VOICE_DIR="voice-recordings/${STORYLINE:-$(python3 -c 'import json; d=json.load(open("content/video-storylines/gem-storylines.v1.json")); import datetime; print(d["storylines"][datetime.date.today().toordinal() % len(d["storylines"])]["id"])')}"
           if [ ! -d "$VOICE_DIR" ]; then
