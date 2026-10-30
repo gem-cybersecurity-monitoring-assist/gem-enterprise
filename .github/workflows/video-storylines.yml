@@ -92,7 +92,7 @@ jobs:
             if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
               echo "::error::Invalid storyline id"; exit 1
             fi
-            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --voice-dir "$VOICE_DIR" --out out
+            python3 -I scripts/video-storylines/render.py --storyline "$STORYLINE" --voice-dir "$VOICE_DIR" --out out
           else
             .venv/bin/python -I scripts/video-storylines/render.py --rotate --voice-dir "$VOICE_DIR" --out out
           fi
