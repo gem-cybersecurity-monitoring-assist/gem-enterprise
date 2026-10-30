@@ -70,14 +70,17 @@ jobs:
             exit 1
           fi
 
-      - name: Install ffmpeg, espeak-ng and fonts
-        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg espeak-ng fonts-inter
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter
 
-      - name: Install voice model (Kokoro, CPU)
+      - name: Require recorded human narration
         run: |
-          python3 -m venv .venv
-          .venv/bin/pip install -q --upgrade pip
-          .venv/bin/pip install -q --extra-index-url https://download.pytorch.org/whl/cpu "kokoro==0.9.4" "soundfile==0.12.1"
+          VOICE_DIR="voice-recordings/${STORYLINE:-$(python3 -c 'import json; d=json.load(open("content/video-storylines/gem-storylines.v1.json")); import datetime; print(d["storylines"][datetime.date.today().toordinal() % len(d["storylines"])]["id"])')}"
+          if [ ! -d "$VOICE_DIR" ]; then
+            echo "::error::Missing $VOICE_DIR. Add one licensed human narration WAV per beat (beat00.wav, beat01.wav, ...) before production rendering."
+            exit 1
+          fi
+          echo "VOICE_DIR=$VOICE_DIR" >> "$GITHUB_ENV"
 
       - name: Render storyline
         env:
@@ -87,9 +90,9 @@ jobs:
             if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
               echo "::error::Invalid storyline id"; exit 1
             fi
-            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --voice-dir "$VOICE_DIR" --out out
           else
-            .venv/bin/python -I scripts/video-storylines/render.py --rotate --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --rotate --voice-dir "$VOICE_DIR" --out out
           fi
 
       - name: Upload drafts
