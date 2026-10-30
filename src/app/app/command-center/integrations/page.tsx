@@ -99,7 +99,7 @@ export default async function IntegrationsCommandCenterPage({
         YOUTUBE: "https://console.cloud.google.com/",
         TELEGRAM: "https://my.telegram.org/",
       } as Record<string, string>)[provider.id],
-      authorizationPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${({
+      authorizationPath: provider.connectionMode === "OAUTH" && workspaceId ? `/api/social-media/oauth/${({
         TIKTOK: "TIKTOK",
         FACEBOOK_PAGE: "META",
         INSTAGRAM_PROFESSIONAL: "META",
@@ -107,7 +107,7 @@ export default async function IntegrationsCommandCenterPage({
         NEXTDOOR: "NEXTDOOR",
         LINKEDIN_COMPANY: "LINKEDIN",
         YOUTUBE: "YOUTUBE",
-      } as Record<string, string>)[provider.id]}/start?workspaceId={workspaceId}` : undefined,
+      } as Record<string, string>)[provider.id]}/start?workspaceId=${encodeURIComponent(workspaceId)}&redirectAfter=%2Fapp%2Fsocial-media%2Faccounts` : undefined,
       callbackPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${({
         TIKTOK: "TIKTOK",
         FACEBOOK_PAGE: "META",
