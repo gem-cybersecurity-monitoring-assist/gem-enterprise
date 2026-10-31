@@ -499,7 +499,562 @@
           "#GEMEnterprise"
         ]
       }
+    },
+    {
+      "id": "gem-cyber-qr-code-trap",
+      "title": "The QR Code Trap",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "qr-code",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake QR codes stuck over real ones steal card details. How to check before you scan.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "That parking QR code could be a trap.",
+          "caption": "Is that QR code real?",
+          "clip": {
+            "source": "pexels",
+            "id": 5377694,
+            "title": "A hacker wearing a mask",
+            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Scammers stick fake codes over the real ones to capture your card details.",
+          "caption": "Fake code over real",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Before you scan, check the sticker for tampering and preview the link it opens.",
+          "caption": "Preview the link first",
+          "clip": {
+            "source": "pexels",
+            "id": 8348315,
+            "title": "Man writing on clipboard while looking at screen",
+            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Pay through the operator's official app or site, never a code you cannot verify.",
+          "caption": "Verify before you pay",
+          "clip": {
+            "source": "pexels",
+            "id": 7580287,
+            "title": "Man using laptop",
+            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise runs scam-awareness and security reviews, scoped before work starts. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 6931109,
+            "title": "Handshake of business partners",
+            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Fake QR codes are everywhere. Check the sticker, preview the link, and pay only through the official app.",
+        "hashtags": [
+          "#ScamAwareness",
+          "#QRCode",
+          "#CyberSecurity",
+          "#FraudPrevention",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-phishing-red-flags",
+      "title": "Spot the Phish",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "phishing",
+        "email"
+      ],
+      "durationSec": 27,
+      "summary": "The three red flags in a phishing email and how to check a link safely.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "One wrong click can hand over your whole inbox.",
+          "caption": "One click. Big loss.",
+          "clip": {
+            "source": "pexels",
+            "id": 7822027,
+            "title": "A man talking while typing on laptop",
+            "url": "https://www.pexels.com/video/a-man-talking-while-typing-on-laptop-7822027/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Phishing emails fake urgency, a name you know, and a link that is almost right.",
+          "caption": "Urgency + fake sender",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Hover the link, read the real domain, and never type a password from an email.",
+          "caption": "Check the real domain",
+          "clip": {
+            "source": "pexels",
+            "id": 8721658,
+            "title": "Woman typing on keyboards",
+            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "If a message rushes you, slow down and verify through the official site.",
+          "caption": "Slow down. Verify.",
+          "clip": {
+            "source": "pexels",
+            "id": 8348315,
+            "title": "Man writing on clipboard while looking at screen",
+            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise coordinates phishing tests and security reviews, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 7643473,
+            "title": "Handshake to start a business meeting",
+            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Phishing works by rushing you. Slow down, check the real domain, and never enter a password from an email.",
+        "hashtags": [
+          "#Phishing",
+          "#CyberSecurity",
+          "#ScamAwareness",
+          "#OnlineSafety",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-fake-delivery-text",
+      "title": "The Missed-Delivery Text",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "smishing",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake delivery and bank texts (smishing) and the one rule that stops them.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "A missed-delivery text is one of the most common scams running.",
+          "caption": "That text is a scam",
+          "clip": {
+            "source": "pexels",
+            "id": 5377694,
+            "title": "A hacker wearing a mask",
+            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "They ask for a small fee and your card to reschedule a parcel you never sent.",
+          "caption": "Small fee = big theft",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Real couriers do not text for card details. Open their app, not the link.",
+          "caption": "Use the app, not the link",
+          "clip": {
+            "source": "pexels",
+            "id": 7580287,
+            "title": "Man using laptop",
+            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Report the message and delete it. Never reply to a scam text.",
+          "caption": "Report, don't reply",
+          "clip": {
+            "source": "pexels",
+            "id": 8721658,
+            "title": "Woman typing on keyboards",
+            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise helps you set up alerts and safer habits, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 6931109,
+            "title": "Handshake of business partners",
+            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "That 'missed delivery' text is a scam. Real couriers never text for card details - use their app, not the link.",
+        "hashtags": [
+          "#Smishing",
+          "#ScamAwareness",
+          "#TextScam",
+          "#CyberSecurity",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-password-2fa",
+      "title": "One Password, One Breach",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "passwords",
+        "2fa"
+      ],
+      "durationSec": 27,
+      "summary": "Why reused passwords are dangerous and the two habits that fix it.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "If one password unlocks everything, one breach unlocks everything.",
+          "caption": "One leak, every account",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Reused passwords let a single leaked site open your email, bank, and cloud.",
+          "caption": "Reuse = exposure",
+          "clip": {
+            "source": "pexels",
+            "id": 6331006,
+            "title": "Man working with cyber security",
+            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Use a password manager and a different password for every account.",
+          "caption": "Unique passwords",
+          "clip": {
+            "source": "pexels",
+            "id": 8721658,
+            "title": "Woman typing on keyboards",
+            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Turn on two-factor authentication on your email and bank first.",
+          "caption": "2FA on everything",
+          "clip": {
+            "source": "pexels",
+            "id": 7580287,
+            "title": "Man using laptop",
+            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can set up password and 2FA protection, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 7643473,
+            "title": "Handshake to start a business meeting",
+            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Reusing passwords means one leak opens everything. Use a password manager and turn on two-factor.",
+        "hashtags": [
+          "#PasswordSecurity",
+          "#2FA",
+          "#CyberSecurity",
+          "#OnlineSafety",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-public-wifi",
+      "title": "Free Wi-Fi Isn't Free",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "wifi",
+        "privacy"
+      ],
+      "durationSec": 24,
+      "summary": "The risk of banking on open Wi-Fi and the safer way to connect.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Free Wi-Fi can cost you your accounts.",
+          "caption": "Free Wi-Fi isn't free",
+          "clip": {
+            "source": "pexels",
+            "id": 5377694,
+            "title": "A hacker wearing a mask",
+            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "On open networks, attackers can sit between you and the sites you use.",
+          "caption": "Open = exposed",
+          "clip": {
+            "source": "pexels",
+            "id": 6331006,
+            "title": "Man working with cyber security",
+            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Avoid banking on public Wi-Fi, or connect through a trusted VPN.",
+          "caption": "No banking on open Wi-Fi",
+          "clip": {
+            "source": "pexels",
+            "id": 8721658,
+            "title": "Woman typing on keyboards",
+            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can harden your network and devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 6931109,
+            "title": "Handshake of business partners",
+            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Open Wi-Fi exposes your accounts. Skip banking on public networks, or use a trusted VPN.",
+        "hashtags": [
+          "#WiFiSecurity",
+          "#CyberSecurity",
+          "#Privacy",
+          "#ScamAwareness",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-tech-support-popup",
+      "title": "The Fake Virus Pop-Up",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "tech-support-scam",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake 'your computer is infected' pop-ups and how to shut them down safely.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "That your-computer-is-infected pop-up is the scam.",
+          "caption": "The pop-up IS the scam",
+          "clip": {
+            "source": "pexels",
+            "id": 5377694,
+            "title": "A hacker wearing a mask",
+            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Fake warnings push you to call a number and give a stranger remote access.",
+          "caption": "Don't call the number",
+          "clip": {
+            "source": "pexels",
+            "id": 5378125,
+            "title": "Person woman sitting computer",
+            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Real security alerts never demand a phone call or a gift-card payment.",
+          "caption": "No calls. No gift cards.",
+          "clip": {
+            "source": "pexels",
+            "id": 8348315,
+            "title": "Man writing on clipboard while looking at screen",
+            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Close the tab. If it will not close, restart the device.",
+          "caption": "Close the tab",
+          "clip": {
+            "source": "pexels",
+            "id": 7580287,
+            "title": "Man using laptop",
+            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can clean up and protect your devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pexels",
+            "id": 7643473,
+            "title": "Handshake to start a business meeting",
+            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
+            "orientation": "portrait",
+            "license": "pexels"
+          }
+        }
+      ],
+      "post": {
+        "caption": "The 'your computer is infected' pop-up is the scam. Never call the number - close the tab or restart.",
+        "hashtags": [
+          "#TechSupportScam",
+          "#ScamAwareness",
+          "#CyberSecurity",
+          "#FraudPrevention",
+          "#GEMEnterprise"
+        ]
+      }
     }
   ]
 }
-

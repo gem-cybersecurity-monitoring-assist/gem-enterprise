@@ -14,8 +14,8 @@ Usage:
 so the ffmpeg graph, captions, variants and validation can be exercised with
 no network or secrets. Offline output is never publishable (manifest marks it).
 
-Inputs: PEXELS_API_KEY (env); recorded voice files supplied with --voice-dir.
-Human recordings are the production default. Synthetic narration is not used.
+Inputs: PEXELS_API_KEY (env); recorded voice files supplied with --voice-dir, or opt-in Kokoro narration with --synthetic-voice.
+Human recordings remain the production default.
 """
 from __future__ import annotations
 
@@ -412,6 +412,8 @@ def main() -> int:
     ap.add_argument("--rotate", action="store_true")
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--voice-dir", help="Directory containing beat00.wav, beat01.wav, ... recorded human narration tracks")
+    ap.add_argument("--synthetic-voice", action="store_true", help="Opt in to Kokoro synthetic narration; human recordings remain the default")
+    ap.add_argument("--voice", default="af_heart", help="Kokoro voice id used only with --synthetic-voice (default: af_heart)")
     ap.add_argument("--library", default=str(LIBRARY))
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -431,12 +433,13 @@ def main() -> int:
         pexels = Pexels(key)
 
     voice_dir = Path(args.voice_dir).expanduser() if args.voice_dir else None
-    if not args.offline and voice_dir is None:
-        log("A recorded human voice track is required. Pass --voice-dir; synthetic narration is disabled.")
+    if not args.offline and not args.synthetic_voice and voice_dir is None:
+        log("A recorded human voice track is required by default. Pass --voice-dir, or explicitly opt in with --synthetic-voice.")
         return 5
-    if voice_dir is not None and not voice_dir.is_dir():
+    if not args.offline and not args.synthetic_voice and voice_dir is not None and not voice_dir.is_dir():
         log(f"voice directory does not exist: {voice_dir}")
         return 6
+    synthetic_voice = Voice(offline=False, voice=args.voice) if args.synthetic_voice and not args.offline else None
 
     with tempfile.TemporaryDirectory(prefix="gemvid-") as tmp:
         work = Path(tmp)
@@ -449,6 +452,9 @@ def main() -> int:
                 words = len(b.voiceover.split())
                 b.vo_seconds = max(words / WORDS_PER_SEC_OFFLINE, 1.0)
                 run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"sine=frequency=220:sample_rate={SAMPLE_RATE}:duration={b.vo_seconds:.2f}", "-af", "volume=0.05", "-ac", "1", str(b.vo_path)])
+            elif synthetic_voice is not None:
+                b.vo_path = work / f"vo{b.index:02d}.wav"
+                b.vo_seconds = synthetic_voice.synth(b.voiceover, b.vo_path)
             else:
                 b.vo_path = voice_dir / f"beat{b.index:02d}.wav"
                 if not b.vo_path.is_file():
@@ -495,7 +501,9 @@ def main() -> int:
             "tags": story["tags"], "renderedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "status": "OFFLINE_TEST_NOT_PUBLISHABLE" if args.offline else "DRAFT_PENDING_APPROVAL",
             "post": story["post"], "outputs": records, "validation": {"passed": not failures, "failures": failures},
-            "disclosures": {"syntheticVoice": False, "voiceType": "offline_test_tone" if args.offline else "recorded_human_voice",
+            "disclosures": {"syntheticVoice": bool(synthetic_voice),
+                            "voiceType": "offline_test_tone" if args.offline else ("synthetic_kokoro" if synthetic_voice else "recorded_human_voice"),
+                            "aiGeneratedContent": bool(synthetic_voice),
                             "stockFootage": "Pexels License", "peopleAreStockTalent": True},
             "credits": credits,
             "timeline": [{"beat": b.index, "role": b.role, "start": round(b.start, 2), "end": round(b.end, 2)} for b in beats],

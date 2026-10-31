@@ -38,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - name: Install ffmpeg and fonts
-        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter espeak-ng python3-venv
       - name: Validate storyline library
         run: |
           python3 -I - <<'PY'
@@ -71,18 +71,13 @@ jobs:
           fi
 
       - name: Install ffmpeg and fonts
-        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter espeak-ng python3-venv
 
-      - name: Require recorded human narration
-        env:
-          STORYLINE: ${{ github.event.inputs.storyline }}
+      - name: Install Kokoro narration dependencies
         run: |
-          VOICE_DIR="voice-recordings/${STORYLINE:-$(python3 -c 'import json; d=json.load(open("content/video-storylines/gem-storylines.v1.json")); import datetime; print(d["storylines"][datetime.date.today().toordinal() % len(d["storylines"])]["id"])')}"
-          if [ ! -d "$VOICE_DIR" ]; then
-            echo "::error::Missing $VOICE_DIR. Add one licensed human narration WAV per beat (beat00.wav, beat01.wav, ...) before production rendering."
-            exit 1
-          fi
-          echo "VOICE_DIR=$VOICE_DIR" >> "$GITHUB_ENV"
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install kokoro soundfile numpy
 
       - name: Render storyline
         env:
@@ -92,9 +87,9 @@ jobs:
             if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
               echo "::error::Invalid storyline id"; exit 1
             fi
-            python3 -I scripts/video-storylines/render.py --storyline "$STORYLINE" --voice-dir "$VOICE_DIR" --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --synthetic-voice --out out
           else
-            .venv/bin/python -I scripts/video-storylines/render.py --rotate --voice-dir "$VOICE_DIR" --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --rotate --synthetic-voice --out out
           fi
 
       - name: Upload drafts
