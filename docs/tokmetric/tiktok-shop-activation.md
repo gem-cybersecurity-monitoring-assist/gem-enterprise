@@ -5,13 +5,13 @@ TikTok Shop Seller authorization is provided by TikTok Shop Partner Center. It i
 ## Provider setup
 
 1. Sign in to TikTok Shop Partner Center with the shop's main seller account.
-2. Register as an in-house Seller developer and create the Shop application/service.
+2. Choose the correct Partner Center developer type before creating the app: use a seller-developer custom app only when GEM is connecting its own shop; use the eCommerce system-integrator/SaaS path if GEM will authorize shops belonging to other businesses. Create the corresponding Shop application/service.
 3. Request the minimum read scopes required for initial activation:
    - seller authorization/shop information
    - seller product basic/read
 4. Set the redirect URL exactly to:
 
-   `https://gemcybersecurityassist.com/api/tokmetric/shop/oauth/callback`
+   `https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/callback`
 
 5. Complete TikTok Shop testing/review and record the approved service ID, app key, and app secret.
 
