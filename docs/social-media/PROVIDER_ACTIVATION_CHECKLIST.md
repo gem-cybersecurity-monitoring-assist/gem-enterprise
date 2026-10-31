@@ -44,7 +44,7 @@ TikTok connects only through TokMetric. See `docs/tokmetric/activation-runbook.m
 | Redirect URL | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/callback` |
 | Variables | `TOKMETRIC_TIKTOK_CLIENT_KEY`, `TOKMETRIC_TIKTOK_CLIENT_SECRET`, `TOKMETRIC_TIKTOK_OAUTH_REDIRECT_URL`, `TOKMETRIC_TIKTOK_OAUTH_ENABLED=true`, `TIKTOK_ENVIRONMENT=sandbox` until app review passes |
 | Connect | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/start`, then check `/tokmetric/accounts` |
-| TikTok Shop (optional) | `TIKTOK_SHOP_APP_KEY`, `TIKTOK_SHOP_APP_SECRET`, `TIKTOK_SHOP_SERVICE_ID`, `TIKTOK_SHOP_REDIRECT_URI` (`/api/tokmetric/shop/oauth/callback`), `TIKTOK_SHOP_OAUTH_ENABLED=true`; connect at `/api/tokmetric/shop/oauth/start` |
+| TikTok Shop (optional) | Partner Center app credentials and approval; set `TIKTOK_SHOP_REDIRECT_URI=https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/callback`; connect at `https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/start` |
 
 ## Verify after each connection
 
