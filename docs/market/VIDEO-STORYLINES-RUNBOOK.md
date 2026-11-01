@@ -18,7 +18,7 @@ Production video drafts use licensed stock B-roll from the **Pixabay Video API b
 1. Create a Pixabay account and obtain an API key from the [Pixabay API documentation](https://pixabay.com/api/docs/).
 2. Store the key as the GitHub Actions repository secret `PIXABAY_API_KEY`. Never place API keys in source files, issues, workflow artifacts, or chat.
 3. The workflow restores and saves `.cache/pixabay/` between runs. Search responses are cached for at least 24 hours, as required by Pixabay's API documentation.
-4. The renderer searches using each storyline clip title as a relevance hint, then falls back to the storyline theme and beat role. It filters for portrait MP4 variants, downloads the selected clip, and records the actual Pixabay video ID, source page and creator in `manifest.json`.
+4. The renderer uses a beat's `clip.searchQuery` when provided (all cybersecurity storylines now have scene-specific prompts); otherwise it uses the legacy clip title. It then falls back to the storyline theme and beat role. It filters for portrait MP4 variants, downloads the selected clip, and records the actual Pixabay video ID, source page and creator in `manifest.json`.
 5. Keep one storyline per workflow run. Do not run systematic bulk-download jobs; Pixabay's API terms restrict automated mass collection.
 
 Pixabay's API defaults to 100 requests per 60 seconds. The renderer caches searches for 24 hours, performs only a small number of per-beat searches, and fails closed if no suitable portrait result is returned. Review each selected clip for recognisable people, trademarks, logos and any additional rights before approving a draft. Pixabay's Content License permits free use and adaptation subject to its prohibited-use rules; the full licence, not the summary, is legally binding.
@@ -98,6 +98,7 @@ The workflow is gated by `GEM_STORYLINES_RENDER_ENABLED`, uploads draft artifact
 
 ```bash
 python3 -I scripts/video-storylines/test_pixabay.py
+python3 -I scripts/video-storylines/test_storyline_content.py
 python3 -I scripts/video-storylines/render.py \
   --storyline gem-master-one-controlled-path --offline --out out
 ```
