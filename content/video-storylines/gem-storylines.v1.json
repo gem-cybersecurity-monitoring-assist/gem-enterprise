@@ -10,12 +10,12 @@
       "16:9 1920x1080 (X, LinkedIn, YouTube)"
     ],
     "style": "cut on beat boundaries; word-level burned captions; GEM logo only on the 2s end card; no watermark over footage",
-    "landscapeClips": "none: all clips are vertical 9:16 sources; feed and 16:9 variants are reframed from the vertical master",
+    "landscapeClips": "Portrait clips are preferred; landscape clips may be used only as a crop fallback. Feed and 16:9 variants are reframed from the vertical master.",
     "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pixabay clip from the same beat theme; it never loops or slows footage."
   },
   "contentRules": [
-    "All clips are Pixabay Content License: free commercial and social use, modification allowed, no attribution required (credit appreciated). Mixkit excluded because part of its catalogue is personal-use only.",
-    "People shown are not GEM clients, staff or endorsers. Never caption them as such (Pixabay prohibits implied endorsement).",
+    "All clips are selected through the Pixabay video API under the Pixabay Content License. Commercial use and modification are allowed subject to prohibited-use restrictions; attribution is appreciated but not required. Review third-party rights before advertising use.",
+    "People shown are stock talent, not GEM clients, staff or endorsers. Never imply a person or brand endorses GEM.",
     "No identifiable person may be shown in a negative light; threat beats use masked or faceless footage only.",
     "No SLAs, certifications, response times or guarantees in voiceover or captions (public-claims control).",
     "Each video stays DRAFT until approved in Approvals; exact-version approval required before publishing."
