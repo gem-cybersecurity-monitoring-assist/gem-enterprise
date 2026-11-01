@@ -354,7 +354,7 @@ def offline_clip(dest: Path, seconds: float, index: int) -> None:
 
 
 def fetch_clips(beats: list[Beat], work: Path, stock: Pexels | Pixabay | None, theme: str) -> None:
-    used: set[int] = set()
+    used: set[int] = {int(b.clip["id"]) for b in beats} if isinstance(stock, Pexels) else set()
     for b in beats:
         need = b.seconds
         primary = work / f"beat{b.index:02d}_a.mp4"
