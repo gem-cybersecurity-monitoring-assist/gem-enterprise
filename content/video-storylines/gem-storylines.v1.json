@@ -706,7 +706,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "A missed-delivery text is one of the most common scams running.",
+          "voiceover": "That delivery text may be fake.",
           "caption": "That text is a scam",
           "clip": {
             "source": "pexels",
