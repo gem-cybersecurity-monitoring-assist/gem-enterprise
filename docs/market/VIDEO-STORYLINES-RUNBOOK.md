@@ -13,6 +13,11 @@ Production video drafts use licensed stock B-roll from the **Pixabay Video API b
 | Runner | GitHub Actions `video-storylines.yml` | Scheduled render stays disabled until explicitly enabled |
 | Review | Workflow artifact `gem-video-drafts-<run>` (14 days) | Draft only; no automatic publishing |
 
+
+## Narration and storyboard QA
+
+The offline content validator checks beat boundaries, total durations, HTTPS clip references, social captions and hashtags. Keep voiceover pace at or below 150 words per minute for a natural short-form delivery. It also requires scene-specific Pixabay search prompts for cybersecurity storylines; queries must be no longer than 100 characters.
+
 ## Pixabay API and caching
 
 1. Create a Pixabay account and obtain an API key from the [Pixabay API documentation](https://pixabay.com/api/docs/).
