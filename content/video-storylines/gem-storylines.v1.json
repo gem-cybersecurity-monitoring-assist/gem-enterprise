@@ -530,7 +530,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "Scammers stick fake codes over the real ones to capture your card details.",
+          "voiceover": "Scammers can place fake codes over real ones to steal payment details.",
           "caption": "Fake code over real",
           "clip": {
             "source": "pexels",
@@ -544,7 +544,7 @@
         {
           "time": "9-15",
           "role": "solution",
-          "voiceover": "Before you scan, check the sticker for tampering and preview the link it opens.",
+          "voiceover": "Before scanning, check for tampering and preview the destination before opening it.",
           "caption": "Preview the link first",
           "clip": {
             "source": "pexels",
@@ -558,7 +558,7 @@
         {
           "time": "15-21",
           "role": "solution",
-          "voiceover": "Pay through the operator's official app or site, never a code you cannot verify.",
+          "voiceover": "Use the operator's official app or website to make the payment.",
           "caption": "Verify before you pay",
           "clip": {
             "source": "pexels",
@@ -572,7 +572,7 @@
         {
           "time": "21-27",
           "role": "cta",
-          "voiceover": "GEM Enterprise runs scam-awareness and security reviews, scoped before work starts. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -585,7 +585,7 @@
         }
       ],
       "post": {
-        "caption": "Fake QR codes are everywhere. Check the sticker, preview the link, and pay only through the official app.",
+        "caption": "A QR code is only a link. Check for tampering, preview the destination and pay through the operator's official app or website.",
         "hashtags": [
           "#ScamAwareness",
           "#QRCode",
@@ -625,7 +625,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "Phishing emails fake urgency, a name you know, and a link that is almost right.",
+          "voiceover": "Phishing emails fake urgency, a familiar name and a link that is almost right.",
           "caption": "Urgency + fake sender",
           "clip": {
             "source": "pexels",
@@ -639,7 +639,7 @@
         {
           "time": "9-15",
           "role": "solution",
-          "voiceover": "Hover the link, read the real domain, and never type a password from an email.",
+          "voiceover": "Read the domain carefully; don't sign in through an email link.",
           "caption": "Check the real domain",
           "clip": {
             "source": "pexels",
@@ -653,7 +653,7 @@
         {
           "time": "15-21",
           "role": "solution",
-          "voiceover": "If a message rushes you, slow down and verify through the official site.",
+          "voiceover": "When a message rushes you, verify through the official site.",
           "caption": "Slow down. Verify.",
           "clip": {
             "source": "pexels",
@@ -667,7 +667,7 @@
         {
           "time": "21-27",
           "role": "cta",
-          "voiceover": "GEM Enterprise coordinates phishing tests and security reviews, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -680,7 +680,7 @@
         }
       ],
       "post": {
-        "caption": "Phishing works by rushing you. Slow down, check the real domain, and never enter a password from an email.",
+        "caption": "Phishing messages often rely on urgency and look-alike domains. Verify the sender, inspect the domain and open the service through its official app or a saved bookmark.",
         "hashtags": [
           "#Phishing",
           "#CyberSecurity",
@@ -734,7 +734,7 @@
         {
           "time": "9-15",
           "role": "solution",
-          "voiceover": "Real couriers do not text for card details. Open their app, not the link.",
+          "voiceover": "Don't enter payment details through a text link. Use the courier's official app.",
           "caption": "Use the app, not the link",
           "clip": {
             "source": "pexels",
@@ -748,7 +748,7 @@
         {
           "time": "15-21",
           "role": "solution",
-          "voiceover": "Report the message and delete it. Never reply to a scam text.",
+          "voiceover": "Report the message, then delete it. Do not reply.",
           "caption": "Report, don't reply",
           "clip": {
             "source": "pexels",
@@ -762,7 +762,7 @@
         {
           "time": "21-27",
           "role": "cta",
-          "voiceover": "GEM Enterprise helps you set up alerts and safer habits, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -775,7 +775,7 @@
         }
       ],
       "post": {
-        "caption": "That 'missed delivery' text is a scam. Real couriers never text for card details - use their app, not the link.",
+        "caption": "An unexpected delivery text may be fake. Don't use its link or enter payment details; check the courier's official app or a known support number.",
         "hashtags": [
           "#Smishing",
           "#ScamAwareness",
@@ -801,7 +801,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "If one password unlocks everything, one breach unlocks everything.",
+          "voiceover": "One reused password can expose several accounts.",
           "caption": "One leak, every account",
           "clip": {
             "source": "pexels",
@@ -815,7 +815,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "Reused passwords let a single leaked site open your email, bank, and cloud.",
+          "voiceover": "A single breach can put other accounts at risk.",
           "caption": "Reuse = exposure",
           "clip": {
             "source": "pexels",
@@ -829,7 +829,7 @@
         {
           "time": "9-15",
           "role": "solution",
-          "voiceover": "Use a password manager and a different password for every account.",
+          "voiceover": "Use a unique password for every important account.",
           "caption": "Unique passwords",
           "clip": {
             "source": "pexels",
@@ -843,7 +843,7 @@
         {
           "time": "15-21",
           "role": "solution",
-          "voiceover": "Turn on two-factor authentication on your email and bank first.",
+          "voiceover": "Enable two-factor authentication, starting with email and banking.",
           "caption": "2FA on everything",
           "clip": {
             "source": "pexels",
@@ -857,7 +857,7 @@
         {
           "time": "21-27",
           "role": "cta",
-          "voiceover": "GEM Enterprise can set up password and 2FA protection, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -870,7 +870,7 @@
         }
       ],
       "post": {
-        "caption": "Reusing passwords means one leak opens everything. Use a password manager and turn on two-factor.",
+        "caption": "Reusing a password can put several accounts at risk. Use a unique password for each important account and enable two-factor authentication.",
         "hashtags": [
           "#PasswordSecurity",
           "#2FA",
@@ -896,7 +896,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "Free Wi-Fi can cost you your accounts.",
+          "voiceover": "Public Wi-Fi needs a little caution.",
           "caption": "Free Wi-Fi isn't free",
           "clip": {
             "source": "pexels",
@@ -910,7 +910,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "On open networks, attackers can sit between you and the sites you use.",
+          "voiceover": "An untrusted network may expose traffic or fake sign-in pages.",
           "caption": "Open = exposed",
           "clip": {
             "source": "pexels",
@@ -924,7 +924,7 @@
         {
           "time": "9-17",
           "role": "solution",
-          "voiceover": "Avoid banking on public Wi-Fi, or connect through a trusted VPN.",
+          "voiceover": "Avoid banking on untrusted public Wi-Fi; use mobile data or a trusted VPN.",
           "caption": "No banking on open Wi-Fi",
           "clip": {
             "source": "pexels",
@@ -938,7 +938,7 @@
         {
           "time": "17-24",
           "role": "cta",
-          "voiceover": "GEM Enterprise can harden your network and devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -951,7 +951,7 @@
         }
       ],
       "post": {
-        "caption": "Open Wi-Fi exposes your accounts. Skip banking on public networks, or use a trusted VPN.",
+        "caption": "Use public Wi-Fi thoughtfully. Avoid banking or entering sensitive information on networks you don't trust; use mobile data or a trusted VPN.",
         "hashtags": [
           "#WiFiSecurity",
           "#CyberSecurity",
@@ -977,7 +977,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "That your-computer-is-infected pop-up is the scam.",
+          "voiceover": "The warning itself may be the scam.",
           "caption": "The pop-up IS the scam",
           "clip": {
             "source": "pexels",
@@ -991,7 +991,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "Fake warnings push you to call a number and give a stranger remote access.",
+          "voiceover": "Fake warnings may ask you to call or allow remote access.",
           "caption": "Don't call the number",
           "clip": {
             "source": "pexels",
@@ -1005,7 +1005,7 @@
         {
           "time": "9-15",
           "role": "solution",
-          "voiceover": "Real security alerts never demand a phone call or a gift-card payment.",
+          "voiceover": "Do not call the number or install its tools.",
           "caption": "No calls. No gift cards.",
           "clip": {
             "source": "pexels",
@@ -1019,7 +1019,7 @@
         {
           "time": "15-21",
           "role": "solution",
-          "voiceover": "Close the tab. If it will not close, restart the device.",
+          "voiceover": "Close the tab; restart the browser if needed.",
           "caption": "Close the tab",
           "clip": {
             "source": "pexels",
@@ -1033,7 +1033,7 @@
         {
           "time": "21-27",
           "role": "cta",
-          "voiceover": "GEM Enterprise can clean up and protect your devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "voiceover": "Need a scoped security review? Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
             "source": "pexels",
@@ -1046,7 +1046,7 @@
         }
       ],
       "post": {
-        "caption": "The 'your computer is infected' pop-up is the scam. Never call the number - close the tab or restart.",
+        "caption": "A pop-up claiming your device is infected may be a tech-support scam. Don't call the number, install its tools or grant remote access. Close the tab.",
         "hashtags": [
           "#TechSupportScam",
           "#ScamAwareness",
