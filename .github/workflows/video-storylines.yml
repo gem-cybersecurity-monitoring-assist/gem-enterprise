@@ -1,6 +1,7 @@
 name: Video Storylines
 
 # Daily render of one GEM storyline into platform-ready MP4s (9:16, 4:5, 16:9).
+# Pixabay is the default stock-video provider; Pexels remains an optional CLI provider.
 # Output is DRAFT: it is uploaded as a workflow artifact for review and then
 # enters Approvals. Nothing here publishes to any social platform.
 
@@ -49,24 +50,36 @@ jobs:
               sys.exit("non-Pexels clips found: " + ", ".join(bad))
           print("library OK:", sum(len(s["beats"]) for s in d["storylines"]), "beats")
           PY
+      - name: Test Pixabay provider and 24-hour response cache
+        run: python3 -I scripts/video-storylines/test_pixabay.py
+
       - name: Offline render
         run: python3 -I scripts/video-storylines/render.py --storyline gem-master-one-controlled-path --offline --out out
 
   render:
-    # Keep scheduled runs dormant until Pexels is configured and explicitly enabled.
+    # Keep scheduled runs dormant until Pixabay is configured and explicitly enabled.
     if: github.event_name != 'pull_request' && vars.GEM_STORYLINES_RENDER_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      STOCK_VIDEO_PROVIDER: pixabay
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
-      - name: Require Pexels key
+      - name: Restore Pixabay API response cache
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: .cache/pixabay
+          key: pixabay-video-api-v1-${{ github.run_id }}
+          restore-keys: |
+            pixabay-video-api-v1-
+
+      - name: Require Pixabay key
         run: |
-          if [ -z "$PEXELS_API_KEY" ]; then
-            echo "::error::Add the PEXELS_API_KEY repository secret (free key from pexels.com/api) to enable rendering."
+          if [ -z "$PIXABAY_API_KEY" ]; then
+            echo "::error::Add the PIXABAY_API_KEY repository secret to enable stock-video rendering."
             exit 1
           fi
 
@@ -87,9 +100,9 @@ jobs:
             if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
               echo "::error::Invalid storyline id"; exit 1
             fi
-            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --synthetic-voice --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --stock-provider pixabay --synthetic-voice --out out
           else
-            .venv/bin/python -I scripts/video-storylines/render.py --rotate --synthetic-voice --out out
+            .venv/bin/python -I scripts/video-storylines/render.py --rotate --stock-provider pixabay --synthetic-voice --out out
           fi
 
       - name: Upload drafts
