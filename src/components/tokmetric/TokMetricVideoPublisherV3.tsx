@@ -800,7 +800,7 @@ export function TokMetricVideoPublisherV3() {
 
           <label className="flex gap-3 rounded-xl border border-white/10 p-3 text-sm text-white/60">
             <input type="checkbox" checked={effectiveIsAigc} disabled={manifestRequiresAigc} onChange={(event) => setIsAigc(event.target.checked)} className="mt-0.5" />
-            {manifestRequiresAigc ? "The approved render manifest declares AI-generated content; TikTok?s AI-generated label is required." : "This video contains AI-generated content and should receive TikTok?s AI-generated label."}
+            {manifestRequiresAigc ? "The approved render manifest declares AI-generated content; TikTok’s AI-generated label is required." : "This video contains AI-generated content and should receive TikTok’s AI-generated label."}
           </label>
 
           <div>
