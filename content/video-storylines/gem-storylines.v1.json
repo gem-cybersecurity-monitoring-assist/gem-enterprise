@@ -146,7 +146,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "Most breaches start with one click nobody saw.",
+          "voiceover": "One unseen click can start a breach.",
           "caption": "One click. Nobody saw it.",
           "clip": {
             "source": "pexels",
@@ -427,7 +427,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "If it isn't written down, it didn't happen.",
+          "voiceover": "No written record? No proof.",
           "caption": "Not written = didn't happen",
           "clip": {
             "source": "pexels",
@@ -521,7 +521,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "That parking QR code could be a trap.",
+          "voiceover": "That QR code may be a trap.",
           "caption": "Is that QR code real?",
           "clip": {
             "source": "pexels",
@@ -621,7 +621,7 @@
         {
           "time": "0-3",
           "role": "hook",
-          "voiceover": "One wrong click can hand over your whole inbox.",
+          "voiceover": "One click can expose your inbox.",
           "caption": "One click. Big loss.",
           "clip": {
             "source": "pexels",
@@ -736,7 +736,7 @@
         {
           "time": "3-9",
           "role": "problem",
-          "voiceover": "They ask for a small fee and your card to reschedule a parcel you never sent.",
+          "voiceover": "They ask for a small fee to reschedule a parcel you never sent.",
           "caption": "Small fee = big theft",
           "clip": {
             "source": "pexels",
