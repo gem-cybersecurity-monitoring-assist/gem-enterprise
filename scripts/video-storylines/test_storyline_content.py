@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = ROOT / "content" / "video-storylines" / "gem-storylines.v1.json"
-MAX_WORDS_PER_MINUTE = 180
+MAX_WORDS_PER_MINUTE = 150
 
 
 def main() -> int:
