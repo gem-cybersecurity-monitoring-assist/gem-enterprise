@@ -34,7 +34,7 @@ jobs:
     # generated footage; needs no secrets or network beyond apt.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -55,8 +55,26 @@ jobs:
       - name: Validate storyboard timing and narration pace
         run: python3 -I scripts/video-storylines/test_storyline_content.py
 
-      - name: Offline render
-        run: python3 -I scripts/video-storylines/render.py --storyline gem-master-one-controlled-path --offline --out out
+      - name: Render Week 2 offline QA previews
+        run: |
+          set -euo pipefail
+          for storyline in \
+            gem-cyber-qr-code-trap \
+            gem-cyber-phishing-red-flags \
+            gem-cyber-fake-delivery-text \
+            gem-cyber-password-2fa \
+            gem-cyber-public-wifi \
+            gem-cyber-tech-support-popup; do
+            python3 -I scripts/video-storylines/render.py --storyline "$storyline" --offline --out out
+          done
+
+      - name: Upload non-publishable offline QA previews
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gem-week-2-offline-qa-${{ github.run_id }}
+          path: out/
+          retention-days: 7
+          if-no-files-found: error
 
   render:
     # Keep scheduled runs dormant until Pixabay is configured and explicitly enabled.
