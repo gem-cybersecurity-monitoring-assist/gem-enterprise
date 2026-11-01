@@ -67,7 +67,7 @@ Synthetic narration is disclosed in `manifest.json`:
 - `disclosures.voiceType: "synthetic_kokoro"`
 - `disclosures.aiGeneratedContent: true`
 
-The TokMetric Direct Post path reads this disclosure from the approved version/media metadata and forces TikTok's AI-generated-content label on. Do not manually disable that label for a synthetic render.
+The TokMetric Direct Post path forces TikTok's AI-generated-content label when the approved content version or selected media asset metadata contains this disclosure. The standalone GitHub Actions Storylines artifact is not automatically ingested into TokMetric today: until Phase 2 ingestion is implemented and verified, do not assume an artifact's manifest has reached the approved content version or media asset. Preserve the manifest with the video and have an authorized operator attach the disclosure and footage credits to the exact content version/media asset before approval. Once present, the publisher forces the label on; do not manually disable it for a synthetic render.
 
 ## Outputs per storyline
 
@@ -110,6 +110,6 @@ python3 -I scripts/video-storylines/render.py \
 
 Offline mode uses generated footage and tone audio. Its manifest is marked `OFFLINE_TEST_NOT_PUBLISHABLE`.
 
-## Phase 2
+## Phase 2 — manifest-to-TokMetric ingestion (not yet implemented)
 
-Ingest approved renders into `Content` / `ApprovalRequest` through the trusted render-worker upload path (`VIDEO_RENDER_CALLBACK_SECRET`) once the canonical-lineage restore and its migrations are live.
+The current Actions workflow produces reviewable GitHub artifacts only. It does not call the TokMetric trusted render-worker upload/finalization API, create a `MediaAsset`, or attach the renderer's `manifest.json` to a `ContentVersion`. The separate ComfyUI trusted-worker finalizer does create TokMetric media assets, but it does not consume this Storylines manifest. Implement a dedicated authenticated ingestion path that binds the video checksum, exact content version, manifest disclosures, and per-clip credits; persist those fields in media-asset metadata and approved version settings; then add integration tests proving Kokoro manifests force `is_aigc: true` at TikTok initialization. Keep human approval, exact-version checks, and no-auto-publish behavior. Until that path and tests are deployed, this is a manual handoff, not an automatic integration.
