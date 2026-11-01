@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Render a GEM video storyline into platform-ready MP4s.
 
-Pipeline: storyline JSON -> Pexels clips (API) + recorded human voice tracks
-(one WAV file per beat) -> 9:16 master with burned captions and GEM branding ->
-4:5 and 16:9 variants -> ffprobe validation -> manifest.json.
+Pipeline: storyline JSON -> Pixabay portrait-video search (default, 24h cached)
+or optional Pexels clips -> human WAV or opt-in Kokoro narration -> 9:16 master
+with burned captions and GEM branding -> 4:5 and 16:9 variants -> validation
+and manifest.json.
 
 Usage:
   python3 -I scripts/video-storylines/render.py --storyline <id> --out <dir>
@@ -14,8 +15,9 @@ Usage:
 so the ffmpeg graph, captions, variants and validation can be exercised with
 no network or secrets. Offline output is never publishable (manifest marks it).
 
-Inputs: PEXELS_API_KEY (env); recorded voice files supplied with --voice-dir, or opt-in Kokoro narration with --synthetic-voice.
-Human recordings remain the production default.
+Inputs: PIXABAY_API_KEY (default) or PEXELS_API_KEY (optional) and either
+recorded voice files via --voice-dir or opt-in Kokoro narration via --synthetic-voice.
+Human recordings remain the renderer's default; the workflow explicitly opts in to Kokoro.
 """
 from __future__ import annotations
 
