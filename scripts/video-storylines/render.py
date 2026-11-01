@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render a GEM video storyline into platform-ready MP4s.
 
-Pipeline: storyline JSON -> Pexels clips (API) + recorded human voice tracks
+Pipeline: storyline JSON -> Pixabay clips (API) + recorded human voice tracks
 (one WAV file per beat) -> 9:16 master with burned captions and GEM branding ->
 4:5 and 16:9 variants -> ffprobe validation -> manifest.json.
 
@@ -10,11 +10,11 @@ Usage:
   python3 -I scripts/video-storylines/render.py --rotate --out <dir>
   python3 -I scripts/video-storylines/render.py --storyline <id> --offline --out <dir>
 
---offline replaces Pexels and TTS with generated test footage and tone audio,
+--offline replaces Pixabay and TTS with generated test footage and tone audio,
 so the ffmpeg graph, captions, variants and validation can be exercised with
 no network or secrets. Offline output is never publishable (manifest marks it).
 
-Inputs: PEXELS_API_KEY (env); recorded voice files supplied with --voice-dir, or opt-in Kokoro narration with --synthetic-voice.
+Inputs: PIXABAY_API_KEY (env); recorded voice files supplied with --voice-dir, or opt-in Kokoro narration with --synthetic-voice.
 Human recordings remain the production default.
 """
 from __future__ import annotations
@@ -30,6 +30,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
@@ -94,46 +95,70 @@ def span_seconds(span: str) -> float:
     return max(b - a, 1.0)
 
 
-# --------------------------------------------------------------------------- Pexels
+# --------------------------------------------------------------------------- Pixabay
 
-class Pexels:
-    BASE = "https://api.pexels.com"
+class Pixabay:
+    BASE = "https://pixabay.com"
+    CACHE_TTL_SECONDS = 24 * 60 * 60
 
-    def __init__(self, key: str) -> None:
+    def __init__(self, key: str, cache_dir: Path | None = None) -> None:
         self.key = key
+        self.cache_dir = cache_dir or Path(os.environ.get("PIXABAY_CACHE_DIR", str(ROOT / ".cache" / "pixabay")))
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def _get(self, path: str, params: dict | None = None) -> dict:
-        url = f"{self.BASE}{path}"
-        if params:
-            url += "?" + urllib.parse.urlencode(params)
-        req = urllib.request.Request(url, headers={"Authorization": self.key, "User-Agent": "gem-video-storylines/1"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode())
+    def _get(self, params: dict) -> dict:
+        # Pixabay requires API search responses to be cached for at least 24 hours.
+        cache_identity = json.dumps({"endpoint": "/api/videos/", "params": params}, sort_keys=True)
+        cache_path = self.cache_dir / (hashlib.sha256(cache_identity.encode()).hexdigest() + ".json")
+        if cache_path.is_file():
+            age = dt.datetime.now(dt.timezone.utc).timestamp() - cache_path.stat().st_mtime
+            if age < self.CACHE_TTL_SECONDS:
+                return json.loads(cache_path.read_text(encoding="utf-8"))
+            cache_path.unlink(missing_ok=True)
 
-    def video(self, video_id: int) -> dict:
-        return self._get(f"/videos/videos/{video_id}")
+        query = urllib.parse.urlencode({"key": self.key, **params})
+        req = urllib.request.Request(f"{self.BASE}/api/videos/?{query}", headers={"User-Agent": "gem-video-storylines/1"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            # Do not include the request URL: Pixabay API keys are query parameters.
+            raise RuntimeError(f"Pixabay video search failed with HTTP {exc.code}") from None
+        if not isinstance(data, dict) or not isinstance(data.get("hits", []), list):
+            raise RuntimeError("Pixabay returned an unexpected video-search response")
+        tmp = cache_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
+        tmp.replace(cache_path)
+        return data
 
-    def search_portrait(self, query: str, exclude: set[int], limit: int = 5) -> list[dict]:
-        data = self._get("/videos/search", {"query": query, "orientation": "portrait", "size": "medium", "per_page": 15})
-        return [v for v in data.get("videos", []) if v["id"] not in exclude][:limit]
+    def search_portrait(self, query: str, exclude: set[int], limit: int = 10) -> list[dict]:
+        clean_query = " ".join(query.split())[:100]
+        data = self._get({"q": clean_query, "per_page": 50, "safesearch": "true", "video_type": "film"})
+        hits = [v for v in data.get("hits", []) if isinstance(v.get("id"), int) and v["id"] not in exclude]
+        portrait = [v for v in hits if any(
+            isinstance(r, dict) and r.get("url") and int(r.get("height") or 0) > int(r.get("width") or 0)
+            for r in v.get("videos", {}).values()
+        )]
+        # Prefer portrait footage; landscape clips remain a safe crop fallback.
+        return (portrait or hits)[:limit]
 
     @staticmethod
     def best_file(video: dict) -> dict:
-        files = [f for f in video.get("video_files", []) if f.get("file_type") == "video/mp4" and f.get("width") and f.get("height")]
-        portrait = [f for f in files if f["height"] >= f["width"]] or files
-        # Prefer the smallest file that still covers 1080x1920; else the largest available.
-        covering = [f for f in portrait if f["width"] >= W and f["height"] >= H]
-        pool = covering or portrait
-        key = (lambda f: f["width"] * f["height"]) if covering else (lambda f: -f["width"] * f["height"])
-        return sorted(pool, key=key)[0]
+        files = [f for f in video.get("videos", {}).values() if isinstance(f, dict) and f.get("url") and f.get("width") and f.get("height")]
+        if not files:
+            raise RuntimeError(f"Pixabay video {video.get('id')} has no downloadable MP4 rendition")
+        portrait = [f for f in files if int(f["height"]) > int(f["width"])]
+        pool = portrait or files
+        covering = [f for f in pool if int(f["width"]) >= W and int(f["height"]) >= H]
+        if covering:
+            return sorted(covering, key=lambda f: int(f["width"]) * int(f["height"]))[0]
+        return sorted(pool, key=lambda f: int(f["width"]) * int(f["height"]), reverse=True)[0]
 
     @staticmethod
     def download(url: str, dest: Path) -> None:
         req = urllib.request.Request(url, headers={"User-Agent": "gem-video-storylines/1"})
         with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as fh:
             shutil.copyfileobj(resp, fh)
-
-
 # --------------------------------------------------------------------------- Voice
 
 class Voice:
@@ -252,36 +277,47 @@ def offline_clip(dest: Path, seconds: float, index: int) -> None:
          "-vf", f"hue=h={hue}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(dest)])
 
 
-def fetch_clips(beats: list[Beat], work: Path, pexels: Pexels | None, theme: str) -> None:
-    used: set[int] = {b.clip["id"] for b in beats}
+def fetch_clips(beats: list[Beat], work: Path, pixabay: Pixabay | None, theme: str) -> None:
+    used: set[int] = set()
     for b in beats:
         need = b.seconds
         primary = work / f"beat{b.index:02d}_a.mp4"
-        if pexels is None:
+        if pixabay is None:
             offline_clip(primary, need, b.index)
             b.segments.append(primary)
-            b.credits.append({"source": "offline-test", "id": b.clip["id"], "url": b.clip["url"]})
+            b.credits.append({"source": "offline-test", "id": None, "url": None})
             continue
-        video = pexels.video(b.clip["id"])
-        Pexels.download(Pexels.best_file(video)["link"], primary)
+
+        query = b.clip.get("searchQuery") or f"{theme} {b.caption}"
+        candidates = pixabay.search_portrait(query, used)
+        if not candidates:
+            candidates = pixabay.search_portrait(theme, used)
+        if not candidates:
+            raise RuntimeError(f"beat {b.index}: Pixabay returned no unused footage for '{query}'")
+
+        video = candidates[0]
+        used.add(video["id"])
+        Pixabay.download(Pixabay.best_file(video)["url"], primary)
         b.segments.append(primary)
-        b.credits.append({"source": "pexels", "id": video["id"], "url": video["url"], "creator": video.get("user", {}).get("name")})
+        b.credits.append({"source": "pixabay", "id": video["id"], "url": video.get("pageURL"),
+                          "creator": video.get("user"), "license": "Pixabay Content License"})
         have = duration_of(primary)
-        # Rule: never loop or slow footage. Extend with a second on-theme clip.
+
+        # Never loop or slow footage. Extend only with another unique result.
         while have + 0.05 < need:
-            candidates = pexels.search_portrait(f"{theme} {b.role}".strip(), used)
-            if not candidates:
-                candidates = pexels.search_portrait(theme, used)
-            if not candidates:
-                raise RuntimeError(f"beat {b.index}: no extension clip found for '{theme}'")
-            extra = candidates[0]
+            extra_candidates = pixabay.search_portrait(query, used)
+            if not extra_candidates:
+                extra_candidates = pixabay.search_portrait(theme, used)
+            if not extra_candidates:
+                raise RuntimeError(f"beat {b.index}: no unique extension clip found for '{query}'")
+            extra = extra_candidates[0]
             used.add(extra["id"])
             path = work / f"beat{b.index:02d}_{len(b.segments)}.mp4"
-            Pexels.download(Pexels.best_file(extra)["link"], path)
+            Pixabay.download(Pixabay.best_file(extra)["url"], path)
             b.segments.append(path)
-            b.credits.append({"source": "pexels", "id": extra["id"], "url": extra["url"], "creator": extra.get("user", {}).get("name")})
+            b.credits.append({"source": "pixabay", "id": extra["id"], "url": extra.get("pageURL"),
+                              "creator": extra.get("user"), "license": "Pixabay Content License"})
             have += duration_of(path)
-
 
 def render_beat_video(b: Beat, work: Path) -> Path:
     out = work / f"beat{b.index:02d}.mp4"
@@ -424,13 +460,13 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     log(f"storyline {story['id']} ({len(story['beats'])} beats, offline={args.offline})")
 
-    pexels = None
+    pixabay = None
     if not args.offline:
-        key = os.environ.get("PEXELS_API_KEY", "").strip()
+        key = os.environ.get("PIXABAY_API_KEY", "").strip()
         if not key:
-            log("PEXELS_API_KEY is not set; refusing to render publishable output")
+            log("PIXABAY_API_KEY is not set; refusing to render publishable output")
             return 2
-        pexels = Pexels(key)
+        pixabay = Pixabay(key)
 
     voice_dir = Path(args.voice_dir).expanduser() if args.voice_dir else None
     if not args.offline and not args.synthetic_voice and voice_dir is None:
@@ -473,7 +509,7 @@ def main() -> int:
             log(f"timeline {total:.1f}s exceeds {MAX_DURATION_SEC}s")
             return 3
 
-        fetch_clips(beats, work, pexels, THEMES.get(story["vertical"], story["vertical"]))
+        fetch_clips(beats, work, pixabay, THEMES.get(story["vertical"], story["vertical"]))
         cta = next((b for b in story["beats"] if b["role"] == "cta"), story["beats"][-1])
         ass = work / "captions.ass"
         ass.write_text(build_ass(beats, total, cta["caption"].rstrip(" â†’"), "gemcybersecurityassist.com"), encoding="utf-8")
@@ -504,7 +540,7 @@ def main() -> int:
             "disclosures": {"syntheticVoice": bool(synthetic_voice),
                             "voiceType": "offline_test_tone" if args.offline else ("synthetic_kokoro" if synthetic_voice else "recorded_human_voice"),
                             "aiGeneratedContent": bool(synthetic_voice),
-                            "stockFootage": "Pexels License", "peopleAreStockTalent": True},
+                            "stockFootage": "Pixabay License", "peopleAreStockTalent": True},
             "credits": credits,
             "timeline": [{"beat": b.index, "role": b.role, "start": round(b.start, 2), "end": round(b.end, 2)} for b in beats],
         }
