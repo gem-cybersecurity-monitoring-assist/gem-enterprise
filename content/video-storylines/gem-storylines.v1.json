@@ -14,8 +14,8 @@
     "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pexels clip from the same beat theme; it never loops or slows footage."
   },
   "contentRules": [
-    "All clips are Pexels License: free commercial and social use, modification allowed, no attribution required (credit appreciated). Mixkit excluded because part of its catalogue is personal-use only.",
-    "People shown are not GEM clients, staff or endorsers. Never caption them as such (Pexels prohibits implied endorsement).",
+    "Legacy Pexels clip records in this library are search hints only. The default renderer downloads selected footage from Pixabay under the Pixabay Content License; the manifest records the actual video ID, source page and creator. If the optional Pexels provider is selected, its licence applies to the selected footage.",
+    "People shown are stock talent, not GEM clients, staff or endorsers. Do not imply endorsement; review any applicable model, property, trademark, privacy and publicity rights.",
     "No identifiable person may be shown in a negative light; threat beats use masked or faceless footage only.",
     "No SLAs, certifications, response times or guarantees in voiceover or captions (public-claims control).",
     "Each video stays DRAFT until approved in Approvals; exact-version approval required before publishing."
