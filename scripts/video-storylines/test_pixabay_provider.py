@@ -50,11 +50,10 @@ class PixabayProviderTests(unittest.TestCase):
             import hashlib
             cache_file = Path(tmp) / (hashlib.sha256(identity.encode()).hexdigest() + ".json")
             cache_file.write_text(json.dumps({"hits": [{"id": 1}]}), encoding="utf-8")
+            # Set the cache timestamp outside the 24-hour freshness window.
+            import os
+            os.utime(cache_file, (1, 1))
             with patch.object(render.urllib.request, "urlopen", return_value=FakeResponse(payload)) as urlopen:
-                with patch.object(Path, "stat", wraps=Path.stat) as _stat:
-                    # Set the cache timestamp outside the 24-hour freshness window.
-                    import os
-                    os.utime(cache_file, (1, 1))
                 self.assertEqual(provider._get(params), payload)
                 self.assertEqual(urlopen.call_count, 1)
 
