@@ -67,6 +67,12 @@ def main() -> int:
             url = str(clip.get("url", ""))
             if not url.startswith("https://"):
                 errors.append(f"{label}: clip reference must use HTTPS")
+            if story_id.startswith("gem-cyber-"):
+                query = str(clip.get("searchQuery", "")).strip()
+                if not query:
+                    errors.append(f"{label}: scene-specific Pixabay searchQuery is missing")
+                elif len(query) > 100:
+                    errors.append(f"{label}: Pixabay searchQuery exceeds 100 characters")
 
         if expected_start != story.get("durationSec"):
             errors.append(
