@@ -11,11 +11,11 @@
     ],
     "style": "cut on beat boundaries; word-level burned captions; GEM logo only on the 2s end card; no watermark over footage",
     "landscapeClips": "none: all clips are vertical 9:16 sources; feed and 16:9 variants are reframed from the vertical master",
-    "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pexels clip from the same beat theme; it never loops or slows footage."
+    "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pixabay clip from the same beat theme; it never loops or slows footage."
   },
   "contentRules": [
-    "All clips are Pexels License: free commercial and social use, modification allowed, no attribution required (credit appreciated). Mixkit excluded because part of its catalogue is personal-use only.",
-    "People shown are not GEM clients, staff or endorsers. Never caption them as such (Pexels prohibits implied endorsement).",
+    "All clips are Pixabay Content License: free commercial and social use, modification allowed, no attribution required (credit appreciated). Mixkit excluded because part of its catalogue is personal-use only.",
+    "People shown are not GEM clients, staff or endorsers. Never caption them as such (Pixabay prohibits implied endorsement).",
     "No identifiable person may be shown in a negative light; threat beats use masked or faceless footage only.",
     "No SLAs, certifications, response times or guarantees in voiceover or captions (public-claims control).",
     "Each video stays DRAFT until approved in Approvals; exact-version approval required before publishing."
@@ -41,12 +41,11 @@
           "voiceover": "Four risks. Security, money, property, contracts.",
           "caption": "4 risks. 1 front door.",
           "clip": {
-            "source": "pexels",
-            "id": 5377516,
+            "source": "pixabay",
             "title": "A woman sitting on a gaming chair while looking at the computer",
-            "url": "https://www.pexels.com/video/a-woman-sitting-on-a-gaming-chair-while-looking-at-the-computer-5377516/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A woman sitting on a gaming chair while looking at the computer brand"
           }
         },
         {
@@ -55,12 +54,11 @@
           "voiceover": "GEM Enterprise coordinates cybersecurity reviews, scoped before work starts.",
           "caption": "Cybersecurity Â· scoped first",
           "clip": {
-            "source": "pexels",
-            "id": 6331006,
+            "source": "pixabay",
             "title": "Man working with cyber security",
-            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security brand"
           }
         },
         {
@@ -69,12 +67,11 @@
           "voiceover": "Financial-security coordination through verified access.",
           "caption": "Finance Â· verified access",
           "clip": {
-            "source": "pexels",
-            "id": 8348901,
+            "source": "pixabay",
             "title": "Bank financiers having stocks discussion",
-            "url": "https://www.pexels.com/video/bank-financiers-having-stocks-discussion-8348901/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Bank financiers having stocks discussion brand"
           }
         },
         {
@@ -83,12 +80,11 @@
           "voiceover": "Property-risk checks before you sign.",
           "caption": "Real estate Â· risk before signature",
           "clip": {
-            "source": "pexels",
-            "id": 7647325,
+            "source": "pixabay",
             "title": "A realtor showing contract to a couple",
-            "url": "https://www.pexels.com/video/a-realtor-showing-contract-to-a-couple-7647325/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A realtor showing contract to a couple brand"
           }
         },
         {
@@ -97,12 +93,11 @@
           "voiceover": "Compliance readiness, documented in writing.",
           "caption": "Legal Â· documented scope",
           "clip": {
-            "source": "pexels",
-            "id": 5637285,
+            "source": "pixabay",
             "title": "A female lawyer discussing with client",
-            "url": "https://www.pexels.com/video/a-female-lawyer-discussing-with-client-5637285/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A female lawyer discussing with client brand"
           }
         },
         {
@@ -111,12 +106,11 @@
           "voiceover": "Start with one controlled path. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Check eligibility â†’",
           "clip": {
-            "source": "pexels",
-            "id": 7643473,
+            "source": "pixabay",
             "title": "Handshake to start a business meeting",
-            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting brand"
           }
         }
       ],
@@ -149,12 +143,11 @@
           "voiceover": "Most breaches start with one click nobody saw.",
           "caption": "One click. Nobody saw it.",
           "clip": {
-            "source": "pexels",
-            "id": 5377694,
+            "source": "pixabay",
             "title": "A hacker wearing a mask",
-            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
           }
         },
         {
@@ -163,12 +156,11 @@
           "voiceover": "Alerts pile up, and nobody owns the response.",
           "caption": "Alerts â‰  response",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -177,12 +169,11 @@
           "voiceover": "GEM scopes monitoring, escalation and incident response before coverage begins.",
           "caption": "Scoped before coverage starts",
           "clip": {
-            "source": "pexels",
-            "id": 8721658,
+            "source": "pixabay",
             "title": "Woman typing on keyboards",
-            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
           }
         },
         {
@@ -191,12 +182,11 @@
           "voiceover": "Every action is logged. Every engagement is agreed in writing.",
           "caption": "Logged Â· agreed in writing",
           "clip": {
-            "source": "pexels",
-            "id": 8348315,
+            "source": "pixabay",
             "title": "Man writing on clipboard while looking at screen",
-            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
           }
         },
         {
@@ -205,12 +195,11 @@
           "voiceover": "Request a Business Security and Operations Review.",
           "caption": "Request a security review â†’",
           "clip": {
-            "source": "pexels",
-            "id": 6931109,
+            "source": "pixabay",
             "title": "Handshake of business partners",
-            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
           }
         }
       ],
@@ -241,12 +230,11 @@
           "voiceover": "Who can actually move your money?",
           "caption": "Who can move your money?",
           "clip": {
-            "source": "pexels",
-            "id": 5743030,
+            "source": "pixabay",
             "title": "Faceless person analyzing charts shaking a pencil",
-            "url": "https://www.pexels.com/video/faceless-person-analyzing-charts-shaking-a-pencil-5743030/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Faceless person analyzing charts shaking a pencil finance"
           }
         },
         {
@@ -255,12 +243,11 @@
           "voiceover": "Shared logins. Unreviewed access. Silent risk.",
           "caption": "Shared logins = silent risk",
           "clip": {
-            "source": "pexels",
-            "id": 7822027,
+            "source": "pixabay",
             "title": "A man talking while typing on laptop",
-            "url": "https://www.pexels.com/video/a-man-talking-while-typing-on-laptop-7822027/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A man talking while typing on laptop finance"
           }
         },
         {
@@ -269,12 +256,11 @@
           "voiceover": "Nexus Financial pairs verified identity with reviewed access to financial workflows.",
           "caption": "Verified identity Â· reviewed access",
           "clip": {
-            "source": "pexels",
-            "id": 36950732,
+            "source": "pixabay",
             "title": "Financial analyst typing and writing in modern workspace",
-            "url": "https://www.pexels.com/video/financial-analyst-typing-and-writing-in-modern-workspace-36950732/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Financial analyst typing and writing in modern workspace finance"
           }
         },
         {
@@ -283,12 +269,11 @@
           "voiceover": "Advisors work inside an approved scope, on the record.",
           "caption": "Approved scope Â· on record",
           "clip": {
-            "source": "pexels",
-            "id": 8731251,
+            "source": "pixabay",
             "title": "Associates having a conversation while doing paperwork",
-            "url": "https://www.pexels.com/video/associates-having-a-conversation-while-doing-paperwork-8731251/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Associates having a conversation while doing paperwork finance"
           }
         },
         {
@@ -297,12 +282,11 @@
           "voiceover": "Check eligibility for the financial-security track.",
           "caption": "Check eligibility â†’",
           "clip": {
-            "source": "pexels",
-            "id": 8061760,
+            "source": "pixabay",
             "title": "Business woman shaking her customer hand",
-            "url": "https://www.pexels.com/video/business-woman-shaking-her-customer-hand-8061760/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Business woman shaking her customer hand finance"
           }
         }
       ],
@@ -333,12 +317,11 @@
           "voiceover": "The riskiest moment in property? The signature.",
           "caption": "The riskiest moment: the signature",
           "clip": {
-            "source": "pexels",
-            "id": 7647323,
+            "source": "pixabay",
             "title": "A woman signing a contract",
-            "url": "https://www.pexels.com/video/a-woman-signing-a-contract-7647323/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A woman signing a contract real-estate"
           }
         },
         {
@@ -347,12 +330,11 @@
           "voiceover": "Unverified sellers. Altered documents. Payment fraud at closing.",
           "caption": "Unverified Â· altered Â· redirected",
           "clip": {
-            "source": "pexels",
-            "id": 7578476,
+            "source": "pixabay",
             "title": "Man holding a paper",
-            "url": "https://www.pexels.com/video/man-holding-a-paper-7578476/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man holding a paper real-estate"
           }
         },
         {
@@ -361,12 +343,11 @@
           "voiceover": "Alliance Trust Realty coordinates property-risk checks before funds move.",
           "caption": "Checks before funds move",
           "clip": {
-            "source": "pexels",
-            "id": 7646763,
+            "source": "pixabay",
             "title": "Realtor showing a house to a couple",
-            "url": "https://www.pexels.com/video/realtor-showing-a-house-to-a-couple-7646763/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Realtor showing a house to a couple real-estate"
           }
         },
         {
@@ -375,12 +356,11 @@
           "voiceover": "Keys handed over with the paper trail intact.",
           "caption": "Paper trail intact",
           "clip": {
-            "source": "pexels",
-            "id": 7817149,
+            "source": "pixabay",
             "title": "A realtor smiling while holding a key",
-            "url": "https://www.pexels.com/video/a-realtor-smiling-while-holding-a-key-7817149/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A realtor smiling while holding a key real-estate"
           }
         },
         {
@@ -389,12 +369,11 @@
           "voiceover": "Start an Asset and Property Risk Coordination review.",
           "caption": "Start a property-risk review â†’",
           "clip": {
-            "source": "pexels",
-            "id": 8293013,
+            "source": "pixabay",
             "title": "Real estate agent sold a property",
-            "url": "https://www.pexels.com/video/real-estate-agent-sold-a-property-8293013/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Real estate agent sold a property real-estate"
           }
         }
       ],
@@ -425,12 +404,11 @@
           "voiceover": "If it isn't written down, it didn't happen.",
           "caption": "Not written = didn't happen",
           "clip": {
-            "source": "pexels",
-            "id": 7735908,
+            "source": "pixabay",
             "title": "Person signing a contract",
-            "url": "https://www.pexels.com/video/person-signing-a-contract-7735908/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person signing a contract legal"
           }
         },
         {
@@ -439,12 +417,11 @@
           "voiceover": "Policies in inboxes. Evidence nowhere.",
           "caption": "Policies in inboxes",
           "clip": {
-            "source": "pexels",
-            "id": 8682969,
+            "source": "pixabay",
             "title": "Woman handing over paper works to her colleague",
-            "url": "https://www.pexels.com/video/woman-handing-over-paper-works-to-her-colleague-8682969/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman handing over paper works to her colleague legal"
           }
         },
         {
@@ -453,12 +430,11 @@
           "voiceover": "GEM maps controls, evidence and readiness under an approved scope.",
           "caption": "Controls Â· evidence Â· readiness",
           "clip": {
-            "source": "pexels",
-            "id": 7580287,
+            "source": "pixabay",
             "title": "Man using laptop",
-            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop legal"
           }
         },
         {
@@ -467,12 +443,11 @@
           "voiceover": "Reviewed in writing, before anything is claimed.",
           "caption": "Reviewed before claimed",
           "clip": {
-            "source": "pexels",
-            "id": 7735907,
+            "source": "pixabay",
             "title": "Reading the written contract",
-            "url": "https://www.pexels.com/video/reading-the-written-contract-7735907/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Reading the written contract legal"
           }
         },
         {
@@ -481,12 +456,11 @@
           "voiceover": "Request Compliance Readiness Support.",
           "caption": "Request readiness support â†’",
           "clip": {
-            "source": "pexels",
-            "id": 8814522,
+            "source": "pixabay",
             "title": "People making a deal",
-            "url": "https://www.pexels.com/video/people-making-a-deal-8814522/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "People making a deal legal"
           }
         }
       ],
@@ -519,12 +493,11 @@
           "voiceover": "That parking QR code could be a trap.",
           "caption": "Is that QR code real?",
           "clip": {
-            "source": "pexels",
-            "id": 5377694,
+            "source": "pixabay",
             "title": "A hacker wearing a mask",
-            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
           }
         },
         {
@@ -533,12 +506,11 @@
           "voiceover": "Scammers stick fake codes over the real ones to capture your card details.",
           "caption": "Fake code over real",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -547,12 +519,11 @@
           "voiceover": "Before you scan, check the sticker for tampering and preview the link it opens.",
           "caption": "Preview the link first",
           "clip": {
-            "source": "pexels",
-            "id": 8348315,
+            "source": "pixabay",
             "title": "Man writing on clipboard while looking at screen",
-            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
           }
         },
         {
@@ -561,12 +532,11 @@
           "voiceover": "Pay through the operator's official app or site, never a code you cannot verify.",
           "caption": "Verify before you pay",
           "clip": {
-            "source": "pexels",
-            "id": 7580287,
+            "source": "pixabay",
             "title": "Man using laptop",
-            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
           }
         },
         {
@@ -575,12 +545,11 @@
           "voiceover": "GEM Enterprise runs scam-awareness and security reviews, scoped before work starts. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 6931109,
+            "source": "pixabay",
             "title": "Handshake of business partners",
-            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
           }
         }
       ],
@@ -614,12 +583,11 @@
           "voiceover": "One wrong click can hand over your whole inbox.",
           "caption": "One click. Big loss.",
           "clip": {
-            "source": "pexels",
-            "id": 7822027,
+            "source": "pixabay",
             "title": "A man talking while typing on laptop",
-            "url": "https://www.pexels.com/video/a-man-talking-while-typing-on-laptop-7822027/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A man talking while typing on laptop cybersecurity"
           }
         },
         {
@@ -628,12 +596,11 @@
           "voiceover": "Phishing emails fake urgency, a name you know, and a link that is almost right.",
           "caption": "Urgency + fake sender",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -642,12 +609,11 @@
           "voiceover": "Hover the link, read the real domain, and never type a password from an email.",
           "caption": "Check the real domain",
           "clip": {
-            "source": "pexels",
-            "id": 8721658,
+            "source": "pixabay",
             "title": "Woman typing on keyboards",
-            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
           }
         },
         {
@@ -656,12 +622,11 @@
           "voiceover": "If a message rushes you, slow down and verify through the official site.",
           "caption": "Slow down. Verify.",
           "clip": {
-            "source": "pexels",
-            "id": 8348315,
+            "source": "pixabay",
             "title": "Man writing on clipboard while looking at screen",
-            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
           }
         },
         {
@@ -670,12 +635,11 @@
           "voiceover": "GEM Enterprise coordinates phishing tests and security reviews, scoped first. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 7643473,
+            "source": "pixabay",
             "title": "Handshake to start a business meeting",
-            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
           }
         }
       ],
@@ -709,12 +673,11 @@
           "voiceover": "A missed-delivery text is one of the most common scams running.",
           "caption": "That text is a scam",
           "clip": {
-            "source": "pexels",
-            "id": 5377694,
+            "source": "pixabay",
             "title": "A hacker wearing a mask",
-            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
           }
         },
         {
@@ -723,12 +686,11 @@
           "voiceover": "They ask for a small fee and your card to reschedule a parcel you never sent.",
           "caption": "Small fee = big theft",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -737,12 +699,11 @@
           "voiceover": "Real couriers do not text for card details. Open their app, not the link.",
           "caption": "Use the app, not the link",
           "clip": {
-            "source": "pexels",
-            "id": 7580287,
+            "source": "pixabay",
             "title": "Man using laptop",
-            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
           }
         },
         {
@@ -751,12 +712,11 @@
           "voiceover": "Report the message and delete it. Never reply to a scam text.",
           "caption": "Report, don't reply",
           "clip": {
-            "source": "pexels",
-            "id": 8721658,
+            "source": "pixabay",
             "title": "Woman typing on keyboards",
-            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
           }
         },
         {
@@ -765,12 +725,11 @@
           "voiceover": "GEM Enterprise helps you set up alerts and safer habits, scoped first. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 6931109,
+            "source": "pixabay",
             "title": "Handshake of business partners",
-            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
           }
         }
       ],
@@ -804,12 +763,11 @@
           "voiceover": "If one password unlocks everything, one breach unlocks everything.",
           "caption": "One leak, every account",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -818,12 +776,11 @@
           "voiceover": "Reused passwords let a single leaked site open your email, bank, and cloud.",
           "caption": "Reuse = exposure",
           "clip": {
-            "source": "pexels",
-            "id": 6331006,
+            "source": "pixabay",
             "title": "Man working with cyber security",
-            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security cybersecurity"
           }
         },
         {
@@ -832,12 +789,11 @@
           "voiceover": "Use a password manager and a different password for every account.",
           "caption": "Unique passwords",
           "clip": {
-            "source": "pexels",
-            "id": 8721658,
+            "source": "pixabay",
             "title": "Woman typing on keyboards",
-            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
           }
         },
         {
@@ -846,12 +802,11 @@
           "voiceover": "Turn on two-factor authentication on your email and bank first.",
           "caption": "2FA on everything",
           "clip": {
-            "source": "pexels",
-            "id": 7580287,
+            "source": "pixabay",
             "title": "Man using laptop",
-            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
           }
         },
         {
@@ -860,12 +815,11 @@
           "voiceover": "GEM Enterprise can set up password and 2FA protection, scoped first. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 7643473,
+            "source": "pixabay",
             "title": "Handshake to start a business meeting",
-            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
           }
         }
       ],
@@ -899,12 +853,11 @@
           "voiceover": "Free Wi-Fi can cost you your accounts.",
           "caption": "Free Wi-Fi isn't free",
           "clip": {
-            "source": "pexels",
-            "id": 5377694,
+            "source": "pixabay",
             "title": "A hacker wearing a mask",
-            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
           }
         },
         {
@@ -913,12 +866,11 @@
           "voiceover": "On open networks, attackers can sit between you and the sites you use.",
           "caption": "Open = exposed",
           "clip": {
-            "source": "pexels",
-            "id": 6331006,
+            "source": "pixabay",
             "title": "Man working with cyber security",
-            "url": "https://www.pexels.com/video/man-working-with-cyber-security-6331006/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security cybersecurity"
           }
         },
         {
@@ -927,12 +879,11 @@
           "voiceover": "Avoid banking on public Wi-Fi, or connect through a trusted VPN.",
           "caption": "No banking on open Wi-Fi",
           "clip": {
-            "source": "pexels",
-            "id": 8721658,
+            "source": "pixabay",
             "title": "Woman typing on keyboards",
-            "url": "https://www.pexels.com/video/woman-typing-on-keyboards-8721658/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
           }
         },
         {
@@ -941,12 +892,11 @@
           "voiceover": "GEM Enterprise can harden your network and devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 6931109,
+            "source": "pixabay",
             "title": "Handshake of business partners",
-            "url": "https://www.pexels.com/video/handshake-of-business-partners-6931109/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
           }
         }
       ],
@@ -980,12 +930,11 @@
           "voiceover": "That your-computer-is-infected pop-up is the scam.",
           "caption": "The pop-up IS the scam",
           "clip": {
-            "source": "pexels",
-            "id": 5377694,
+            "source": "pixabay",
             "title": "A hacker wearing a mask",
-            "url": "https://www.pexels.com/video/a-hacker-wearing-a-mask-5377694/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
           }
         },
         {
@@ -994,12 +943,11 @@
           "voiceover": "Fake warnings push you to call a number and give a stranger remote access.",
           "caption": "Don't call the number",
           "clip": {
-            "source": "pexels",
-            "id": 5378125,
+            "source": "pixabay",
             "title": "Person woman sitting computer",
-            "url": "https://www.pexels.com/video/person-woman-sitting-computer-5378125/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
           }
         },
         {
@@ -1008,12 +956,11 @@
           "voiceover": "Real security alerts never demand a phone call or a gift-card payment.",
           "caption": "No calls. No gift cards.",
           "clip": {
-            "source": "pexels",
-            "id": 8348315,
+            "source": "pixabay",
             "title": "Man writing on clipboard while looking at screen",
-            "url": "https://www.pexels.com/video/man-writing-on-clipboard-while-looking-at-screen-8348315/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
           }
         },
         {
@@ -1022,12 +969,11 @@
           "voiceover": "Close the tab. If it will not close, restart the device.",
           "caption": "Close the tab",
           "clip": {
-            "source": "pexels",
-            "id": 7580287,
+            "source": "pixabay",
             "title": "Man using laptop",
-            "url": "https://www.pexels.com/video/man-using-laptop-7580287/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
           }
         },
         {
@@ -1036,12 +982,11 @@
           "voiceover": "GEM Enterprise can clean up and protect your devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
           "caption": "Get a review →",
           "clip": {
-            "source": "pexels",
-            "id": 7643473,
+            "source": "pixabay",
             "title": "Handshake to start a business meeting",
-            "url": "https://www.pexels.com/video/handshake-to-start-a-business-meeting-7643473/",
             "orientation": "portrait",
-            "license": "pexels"
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
           }
         }
       ],
