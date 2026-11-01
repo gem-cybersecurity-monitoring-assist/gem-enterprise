@@ -39,6 +39,7 @@ type WorkspaceContext = {
     caption: string | null;
     script: string | null;
     hashtags: string[];
+    aiGeneratedContent?: boolean;
     mediaAssets: TikTokApprovedVideoAsset[];
   }>;
 };
@@ -252,6 +253,8 @@ export function TokMetricVideoPublisherV3() {
     () => content?.mediaAssets.find((item) => item.id === mediaAssetId) ?? null,
     [content, mediaAssetId],
   );
+  const manifestRequiresAigc = Boolean(content?.aiGeneratedContent || mediaAsset?.aiGeneratedContent);
+  const effectiveIsAigc = isAigc || manifestRequiresAigc;
 
   const loadContext = useCallback(async () => {
     setLoading(true);
@@ -529,7 +532,7 @@ export function TokMetricVideoPublisherV3() {
           disableStitch: creator.stitchDisabled || !allowStitch,
           brandContentToggle: commercialContent && brandContentToggle,
           brandOrganicToggle: commercialContent && brandOrganicToggle,
-          isAigc,
+          isAigc: effectiveIsAigc,
           source,
           file: file ? { name: file.name, mimeType: file.type, size: file.size, checksumSha256: fileChecksum, durationSec } : undefined,
           videoUrl: source === "PULL_FROM_URL" ? mediaAsset?.storageRef : undefined,
@@ -796,8 +799,8 @@ export function TokMetricVideoPublisherV3() {
           </div>
 
           <label className="flex gap-3 rounded-xl border border-white/10 p-3 text-sm text-white/60">
-            <input type="checkbox" checked={isAigc} onChange={(event) => setIsAigc(event.target.checked)} className="mt-0.5" />
-            This video contains AI-generated content and should receive TikTok’s AI-generated label.
+            <input type="checkbox" checked={effectiveIsAigc} disabled={manifestRequiresAigc} onChange={(event) => setIsAigc(event.target.checked)} className="mt-0.5" />
+            {manifestRequiresAigc ? "The approved render manifest declares AI-generated content; TikTok?s AI-generated label is required." : "This video contains AI-generated content and should receive TikTok?s AI-generated label."}
           </label>
 
           <div>

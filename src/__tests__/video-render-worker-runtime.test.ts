@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildComfyOutputUrl,
@@ -87,7 +88,7 @@ describe("trusted video render worker runtime", () => {
       comfyBaseUrl: "https://comfy.example.com",
       storageBaseUrl: "https://project.supabase.co",
       storageBucket: "gem-video-renders",
-      stateDirectory: "/var/lib/gem-video-render-worker",
+      stateDirectory: resolve("/var/lib/gem-video-render-worker"),
       batchSize: 10,
       dispatchLeaseMs: 180_000,
       pollIntervalMs: 5000,

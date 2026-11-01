@@ -1,0 +1,1005 @@
+{
+  "version": "gem-video-storylines-v1",
+  "status": "DRAFT",
+  "createdAt": "2026-10-19",
+  "render": {
+    "master": "9:16 1080x1920 H.264/AAC 30fps",
+    "variants": [
+      "9:16 1080x1920 (TikTok, Reels, Shorts, Telegram)",
+      "4:5 1080x1350 (Instagram/Facebook feed)",
+      "16:9 1920x1080 (X, LinkedIn, YouTube)"
+    ],
+    "style": "cut on beat boundaries; word-level burned captions; GEM logo only on the 2s end card; no watermark over footage",
+    "landscapeClips": "Portrait clips are preferred; landscape clips may be used only as a crop fallback. Feed and 16:9 variants are reframed from the vertical master.",
+    "shortClips": "Some clips run 4-8s. When a clip is shorter than its beat, the renderer adds a second Pixabay clip from the same beat theme; it never loops or slows footage."
+  },
+  "contentRules": [
+    "All clips are selected through the Pixabay video API under the Pixabay Content License. Commercial use and modification are allowed subject to prohibited-use restrictions; attribution is appreciated but not required. Review third-party rights before advertising use.",
+    "People shown are stock talent, not GEM clients, staff or endorsers. Never imply a person or brand endorses GEM.",
+    "No identifiable person may be shown in a negative light; threat beats use masked or faceless footage only.",
+    "No SLAs, certifications, response times or guarantees in voiceover or captions (public-claims control).",
+    "Each video stays DRAFT until approved in Approvals; exact-version approval required before publishing."
+  ],
+  "storylines": [
+    {
+      "id": "gem-master-one-controlled-path",
+      "title": "One Controlled Path",
+      "vertical": "brand",
+      "tags": [
+        "brand",
+        "cybersecurity",
+        "finance",
+        "real-estate",
+        "legal"
+      ],
+      "durationSec": 32,
+      "summary": "Brand overview: four risk lanes behind one access-controlled front door.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Four risks. Security, money, property, contracts.",
+          "caption": "4 risks. 1 front door.",
+          "clip": {
+            "source": "pixabay",
+            "title": "A woman sitting on a gaming chair while looking at the computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A woman sitting on a gaming chair while looking at the computer brand"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "cybersecurity",
+          "voiceover": "GEM Enterprise coordinates cybersecurity reviews, scoped before work starts.",
+          "caption": "Cybersecurity Â· scoped first",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man working with cyber security",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security brand"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "finance",
+          "voiceover": "Financial-security coordination through verified access.",
+          "caption": "Finance Â· verified access",
+          "clip": {
+            "source": "pixabay",
+            "title": "Bank financiers having stocks discussion",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Bank financiers having stocks discussion brand"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "real-estate",
+          "voiceover": "Property-risk checks before you sign.",
+          "caption": "Real estate Â· risk before signature",
+          "clip": {
+            "source": "pixabay",
+            "title": "A realtor showing contract to a couple",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A realtor showing contract to a couple brand"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "legal",
+          "voiceover": "Compliance readiness, documented in writing.",
+          "caption": "Legal Â· documented scope",
+          "clip": {
+            "source": "pixabay",
+            "title": "A female lawyer discussing with client",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A female lawyer discussing with client brand"
+          }
+        },
+        {
+          "time": "27-32",
+          "role": "cta",
+          "voiceover": "Start with one controlled path. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Check eligibility â†’",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake to start a business meeting",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting brand"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Security, finance, property and legal risk, coordinated through one verified entry point. Check eligibility at gemcybersecurityassist.com",
+        "hashtags": [
+          "#GEMEnterprise",
+          "#Cybersecurity",
+          "#RiskManagement",
+          "#Compliance",
+          "#RealEstate",
+          "#Fintech"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-seen-before-it-spreads",
+      "title": "Seen Before It Spreads",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "openguardians"
+      ],
+      "durationSec": 30,
+      "summary": "Cybersecurity lane: unowned alerts vs. a scoped, logged response model.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Most breaches start with one click nobody saw.",
+          "caption": "One click. Nobody saw it.",
+          "clip": {
+            "source": "pixabay",
+            "title": "A hacker wearing a mask",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Alerts pile up, and nobody owns the response.",
+          "caption": "Alerts â‰  response",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "GEM scopes monitoring, escalation and incident response before coverage begins.",
+          "caption": "Scoped before coverage starts",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman typing on keyboards",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Every action is logged. Every engagement is agreed in writing.",
+          "caption": "Logged Â· agreed in writing",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man writing on clipboard while looking at screen",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Request a Business Security and Operations Review.",
+          "caption": "Request a security review â†’",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake of business partners",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Alerts are not a response plan. Scope monitoring, escalation and incident response before you need them.",
+        "hashtags": [
+          "#Cybersecurity",
+          "#IncidentResponse",
+          "#SOC",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-finance-who-can-move-your-money",
+      "title": "Who Can Move Your Money?",
+      "vertical": "finance",
+      "tags": [
+        "finance",
+        "nexus-financial"
+      ],
+      "durationSec": 30,
+      "summary": "Finance lane (Nexus Financial): access control over financial workflows.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Who can actually move your money?",
+          "caption": "Who can move your money?",
+          "clip": {
+            "source": "pixabay",
+            "title": "Faceless person analyzing charts shaking a pencil",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Faceless person analyzing charts shaking a pencil finance"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Shared logins. Unreviewed access. Silent risk.",
+          "caption": "Shared logins = silent risk",
+          "clip": {
+            "source": "pixabay",
+            "title": "A man talking while typing on laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A man talking while typing on laptop finance"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Nexus Financial pairs verified identity with reviewed access to financial workflows.",
+          "caption": "Verified identity Â· reviewed access",
+          "clip": {
+            "source": "pixabay",
+            "title": "Financial analyst typing and writing in modern workspace",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Financial analyst typing and writing in modern workspace finance"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Advisors work inside an approved scope, on the record.",
+          "caption": "Approved scope Â· on record",
+          "clip": {
+            "source": "pixabay",
+            "title": "Associates having a conversation while doing paperwork",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Associates having a conversation while doing paperwork finance"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Check eligibility for the financial-security track.",
+          "caption": "Check eligibility â†’",
+          "clip": {
+            "source": "pixabay",
+            "title": "Business woman shaking her customer hand",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Business woman shaking her customer hand finance"
+          }
+        }
+      ],
+      "post": {
+        "caption": "If you can't name everyone who can move your money, start there. Verified access for financial workflows.",
+        "hashtags": [
+          "#Fintech",
+          "#FinancialSecurity",
+          "#AccessControl",
+          "#NexusFinancial"
+        ]
+      }
+    },
+    {
+      "id": "gem-realestate-risk-lives-in-the-paperwork",
+      "title": "Risk Lives in the Paperwork",
+      "vertical": "real-estate",
+      "tags": [
+        "real-estate",
+        "alliance-trust-realty"
+      ],
+      "durationSec": 30,
+      "summary": "Real estate lane (Alliance Trust Realty): property-risk checks before funds move.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "The riskiest moment in property? The signature.",
+          "caption": "The riskiest moment: the signature",
+          "clip": {
+            "source": "pixabay",
+            "title": "A woman signing a contract",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A woman signing a contract real-estate"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Unverified sellers. Altered documents. Payment fraud at closing.",
+          "caption": "Unverified Â· altered Â· redirected",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man holding a paper",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man holding a paper real-estate"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Alliance Trust Realty coordinates property-risk checks before funds move.",
+          "caption": "Checks before funds move",
+          "clip": {
+            "source": "pixabay",
+            "title": "Realtor showing a house to a couple",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Realtor showing a house to a couple real-estate"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "outcome",
+          "voiceover": "Keys handed over with the paper trail intact.",
+          "caption": "Paper trail intact",
+          "clip": {
+            "source": "pixabay",
+            "title": "A realtor smiling while holding a key",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A realtor smiling while holding a key real-estate"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Start an Asset and Property Risk Coordination review.",
+          "caption": "Start a property-risk review â†’",
+          "clip": {
+            "source": "pixabay",
+            "title": "Real estate agent sold a property",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Real estate agent sold a property real-estate"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Property fraud happens in the paperwork. Coordinate risk checks before funds move.",
+        "hashtags": [
+          "#RealEstate",
+          "#PropertyFraud",
+          "#DueDiligence",
+          "#AllianceTrustRealty"
+        ]
+      }
+    },
+    {
+      "id": "gem-legal-compliance-is-a-record",
+      "title": "Compliance Is a Record",
+      "vertical": "legal",
+      "tags": [
+        "legal",
+        "compliance"
+      ],
+      "durationSec": 30,
+      "summary": "Legal and compliance lane: controls and evidence mapped under an approved scope.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "If it isn't written down, it didn't happen.",
+          "caption": "Not written = didn't happen",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person signing a contract",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person signing a contract legal"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Policies in inboxes. Evidence nowhere.",
+          "caption": "Policies in inboxes",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman handing over paper works to her colleague",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman handing over paper works to her colleague legal"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "GEM maps controls, evidence and readiness under an approved scope.",
+          "caption": "Controls Â· evidence Â· readiness",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man using laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop legal"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "proof",
+          "voiceover": "Reviewed in writing, before anything is claimed.",
+          "caption": "Reviewed before claimed",
+          "clip": {
+            "source": "pixabay",
+            "title": "Reading the written contract",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Reading the written contract legal"
+          }
+        },
+        {
+          "time": "24-30",
+          "role": "cta",
+          "voiceover": "Request Compliance Readiness Support.",
+          "caption": "Request readiness support â†’",
+          "clip": {
+            "source": "pixabay",
+            "title": "People making a deal",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "People making a deal legal"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Compliance is a record, not a feeling. Map controls and evidence before an audit asks.",
+        "hashtags": [
+          "#Compliance",
+          "#Legal",
+          "#GRC",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-qr-code-trap",
+      "title": "The QR Code Trap",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "qr-code",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake QR codes stuck over real ones steal card details. How to check before you scan.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "That parking QR code could be a trap.",
+          "caption": "Is that QR code real?",
+          "clip": {
+            "source": "pixabay",
+            "title": "A hacker wearing a mask",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Scammers stick fake codes over the real ones to capture your card details.",
+          "caption": "Fake code over real",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Before you scan, check the sticker for tampering and preview the link it opens.",
+          "caption": "Preview the link first",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man writing on clipboard while looking at screen",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Pay through the operator's official app or site, never a code you cannot verify.",
+          "caption": "Verify before you pay",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man using laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise runs scam-awareness and security reviews, scoped before work starts. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake of business partners",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Fake QR codes are everywhere. Check the sticker, preview the link, and pay only through the official app.",
+        "hashtags": [
+          "#ScamAwareness",
+          "#QRCode",
+          "#CyberSecurity",
+          "#FraudPrevention",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-phishing-red-flags",
+      "title": "Spot the Phish",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "phishing",
+        "email"
+      ],
+      "durationSec": 27,
+      "summary": "The three red flags in a phishing email and how to check a link safely.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "One wrong click can hand over your whole inbox.",
+          "caption": "One click. Big loss.",
+          "clip": {
+            "source": "pixabay",
+            "title": "A man talking while typing on laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A man talking while typing on laptop cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Phishing emails fake urgency, a name you know, and a link that is almost right.",
+          "caption": "Urgency + fake sender",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Hover the link, read the real domain, and never type a password from an email.",
+          "caption": "Check the real domain",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman typing on keyboards",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "If a message rushes you, slow down and verify through the official site.",
+          "caption": "Slow down. Verify.",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man writing on clipboard while looking at screen",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise coordinates phishing tests and security reviews, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake to start a business meeting",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Phishing works by rushing you. Slow down, check the real domain, and never enter a password from an email.",
+        "hashtags": [
+          "#Phishing",
+          "#CyberSecurity",
+          "#ScamAwareness",
+          "#OnlineSafety",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-fake-delivery-text",
+      "title": "The Missed-Delivery Text",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "smishing",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake delivery and bank texts (smishing) and the one rule that stops them.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "A missed-delivery text is one of the most common scams running.",
+          "caption": "That text is a scam",
+          "clip": {
+            "source": "pixabay",
+            "title": "A hacker wearing a mask",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "They ask for a small fee and your card to reschedule a parcel you never sent.",
+          "caption": "Small fee = big theft",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Real couriers do not text for card details. Open their app, not the link.",
+          "caption": "Use the app, not the link",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man using laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Report the message and delete it. Never reply to a scam text.",
+          "caption": "Report, don't reply",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman typing on keyboards",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise helps you set up alerts and safer habits, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake of business partners",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "That 'missed delivery' text is a scam. Real couriers never text for card details - use their app, not the link.",
+        "hashtags": [
+          "#Smishing",
+          "#ScamAwareness",
+          "#TextScam",
+          "#CyberSecurity",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-password-2fa",
+      "title": "One Password, One Breach",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "passwords",
+        "2fa"
+      ],
+      "durationSec": 27,
+      "summary": "Why reused passwords are dangerous and the two habits that fix it.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "If one password unlocks everything, one breach unlocks everything.",
+          "caption": "One leak, every account",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Reused passwords let a single leaked site open your email, bank, and cloud.",
+          "caption": "Reuse = exposure",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man working with cyber security",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security cybersecurity"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Use a password manager and a different password for every account.",
+          "caption": "Unique passwords",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman typing on keyboards",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Turn on two-factor authentication on your email and bank first.",
+          "caption": "2FA on everything",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man using laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can set up password and 2FA protection, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake to start a business meeting",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Reusing passwords means one leak opens everything. Use a password manager and turn on two-factor.",
+        "hashtags": [
+          "#PasswordSecurity",
+          "#2FA",
+          "#CyberSecurity",
+          "#OnlineSafety",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-public-wifi",
+      "title": "Free Wi-Fi Isn't Free",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "wifi",
+        "privacy"
+      ],
+      "durationSec": 24,
+      "summary": "The risk of banking on open Wi-Fi and the safer way to connect.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "Free Wi-Fi can cost you your accounts.",
+          "caption": "Free Wi-Fi isn't free",
+          "clip": {
+            "source": "pixabay",
+            "title": "A hacker wearing a mask",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "On open networks, attackers can sit between you and the sites you use.",
+          "caption": "Open = exposed",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man working with cyber security",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man working with cyber security cybersecurity"
+          }
+        },
+        {
+          "time": "9-17",
+          "role": "solution",
+          "voiceover": "Avoid banking on public Wi-Fi, or connect through a trusted VPN.",
+          "caption": "No banking on open Wi-Fi",
+          "clip": {
+            "source": "pixabay",
+            "title": "Woman typing on keyboards",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Woman typing on keyboards cybersecurity"
+          }
+        },
+        {
+          "time": "17-24",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can harden your network and devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake of business partners",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake of business partners cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "Open Wi-Fi exposes your accounts. Skip banking on public networks, or use a trusted VPN.",
+        "hashtags": [
+          "#WiFiSecurity",
+          "#CyberSecurity",
+          "#Privacy",
+          "#ScamAwareness",
+          "#GEMEnterprise"
+        ]
+      }
+    },
+    {
+      "id": "gem-cyber-tech-support-popup",
+      "title": "The Fake Virus Pop-Up",
+      "vertical": "cybersecurity",
+      "tags": [
+        "cybersecurity",
+        "scam-awareness",
+        "tech-support-scam",
+        "fraud"
+      ],
+      "durationSec": 27,
+      "summary": "Fake 'your computer is infected' pop-ups and how to shut them down safely.",
+      "beats": [
+        {
+          "time": "0-3",
+          "role": "hook",
+          "voiceover": "That your-computer-is-infected pop-up is the scam.",
+          "caption": "The pop-up IS the scam",
+          "clip": {
+            "source": "pixabay",
+            "title": "A hacker wearing a mask",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "A hacker wearing a mask cybersecurity"
+          }
+        },
+        {
+          "time": "3-9",
+          "role": "problem",
+          "voiceover": "Fake warnings push you to call a number and give a stranger remote access.",
+          "caption": "Don't call the number",
+          "clip": {
+            "source": "pixabay",
+            "title": "Person woman sitting computer",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Person woman sitting computer cybersecurity"
+          }
+        },
+        {
+          "time": "9-15",
+          "role": "solution",
+          "voiceover": "Real security alerts never demand a phone call or a gift-card payment.",
+          "caption": "No calls. No gift cards.",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man writing on clipboard while looking at screen",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man writing on clipboard while looking at screen cybersecurity"
+          }
+        },
+        {
+          "time": "15-21",
+          "role": "solution",
+          "voiceover": "Close the tab. If it will not close, restart the device.",
+          "caption": "Close the tab",
+          "clip": {
+            "source": "pixabay",
+            "title": "Man using laptop",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Man using laptop cybersecurity"
+          }
+        },
+        {
+          "time": "21-27",
+          "role": "cta",
+          "voiceover": "GEM Enterprise can clean up and protect your devices, scoped first. Check eligibility at gemcybersecurityassist.com.",
+          "caption": "Get a review →",
+          "clip": {
+            "source": "pixabay",
+            "title": "Handshake to start a business meeting",
+            "orientation": "portrait",
+            "license": "pixabay-content-license",
+            "searchQuery": "Handshake to start a business meeting cybersecurity"
+          }
+        }
+      ],
+      "post": {
+        "caption": "The 'your computer is infected' pop-up is the scam. Never call the number - close the tab or restart.",
+        "hashtags": [
+          "#TechSupportScam",
+          "#ScamAwareness",
+          "#CyberSecurity",
+          "#FraudPrevention",
+          "#GEMEnterprise"
+        ]
+      }
+    }
+  ]
+}
