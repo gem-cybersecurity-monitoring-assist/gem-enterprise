@@ -3,11 +3,12 @@ import Link from "next/link";
 import { ArrowLeft, Film, ShieldCheck } from "lucide-react";
 import { ContentOrchestratorPanel } from "@/components/social-media/ContentOrchestratorPanel";
 import { GovernedVideoPreviewPanel } from "@/components/social-media/GovernedVideoPreviewPanel";
+import { GemStorylineLibraryPanel } from "@/components/social-media/GemStorylineLibraryPanel";
 
 export const metadata: Metadata = {
   title: "Content Studio | GEM Enterprise Command Center",
   description:
-    "Governed daily content generation, local video rendering, media registration, compliance review, exact-version approval, and private video preview.",
+    "GEM storyline library, organic launch planning, channel-ready content, local video drafts, and human approval.",
 };
 
 export default function SocialMediaContentStudioPage() {
@@ -46,6 +47,7 @@ export default function SocialMediaContentStudioPage() {
         </div>
       </section>
 
+      <GemStorylineLibraryPanel />
       <ContentOrchestratorPanel />
       <GovernedVideoPreviewPanel />
     </div>
