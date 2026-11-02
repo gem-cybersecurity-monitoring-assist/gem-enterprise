@@ -677,6 +677,17 @@ def main() -> int:
                             "stockFootage": "Pixabay Content License" if stock_provider == "pixabay" else ("Pexels License" if stock_provider == "pexels" else "Generated offline test footage"),
                             "peopleAreStockTalent": True},
             "credits": credits,
+            "narration": [
+                {
+                    "beat": b.index,
+                    "role": b.role,
+                    "voiceover": b.voiceover,
+                    "caption": b.caption,
+                    "start": round(b.start, 2),
+                    "end": round(b.end, 2),
+                }
+                for b in beats
+            ],
             "timeline": [{"beat": b.index, "role": b.role, "start": round(b.start, 2), "end": round(b.end, 2)} for b in beats],
         }
         (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
