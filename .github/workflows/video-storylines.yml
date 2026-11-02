@@ -143,7 +143,7 @@ jobs:
         env:
           STORYLINE: ${{ inputs.storyline }}
           WORKSPACE_ID: ${{ inputs.workspace_id }}
-          GEM_BASE_URL: ${{ vars.GEM_STORYLINES_GEM_BASE_URL || 'https://www.gemcybersecurityassist.com' }}
+          GEM_BASE_URL: ${{ vars.GEM_STORYLINES_GEM_BASE_URL || 'https://gemcybersecurityassist.com' }}
           VIDEO_RENDER_STORAGE_URL: ${{ secrets.VIDEO_RENDER_STORAGE_URL }}
           VIDEO_RENDER_STORAGE_KEY: ${{ secrets.VIDEO_RENDER_STORAGE_KEY }}
           VIDEO_RENDER_STORAGE_BUCKET: ${{ vars.VIDEO_RENDER_STORAGE_BUCKET || 'gem-video-renders' }}
@@ -186,7 +186,30 @@ jobs:
           }
           print(json.dumps(payload, separators=(',', ':')))
           PY
-          curl --fail-with-body --silent --show-error -X POST "${GEM_BASE_URL%/}/api/video/storylines/ingest" \
+          set +e
+          HTTP_STATUS=$(curl --silent --show-error --output storyline-ingest-response.json --write-out "%{http_code}" -X POST "${GEM_BASE_URL%/}/api/video/storylines/ingest" \
             -H "Authorization: Bearer $VIDEO_RENDER_CALLBACK_SECRET" \
             -H "Content-Type: application/json" \
-            --data-binary @storyline-ingest.json
+            --data-binary @storyline-ingest.json)
+          CURL_STATUS=$?
+          set -e
+          if [ "$CURL_STATUS" -ne 0 ] || { [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "201" ]; }; then
+            echo "::error::TokMetric Storylines ingestion failed with HTTP $HTTP_STATUS."
+            cat storyline-ingest-response.json
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          with open("storyline-ingest-response.json", encoding="utf-8") as source:
+              response = json.load(source)
+          if response.get("ok") is not True:
+              raise SystemExit("TokMetric did not confirm successful Storylines ingestion.")
+          data = response.get("data") or {}
+          print(json.dumps({
+              "contentId": data.get("contentId"),
+              "contentVersionId": data.get("contentVersionId"),
+              "approvalRequestId": data.get("approvalRequestId"),
+              "state": data.get("state"),
+              "externalPublicationTaken": data.get("externalPublicationTaken", False),
+          }))
+          PY
