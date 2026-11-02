@@ -118,7 +118,7 @@ For a manually dispatched storyline, the workflow can upload only the validated 
 
 ### Activation requirements
 
-1. Apply/confirm the existing `20260725035000_video_render_jobs` migration in the database used by the deployed GEM Enterprise project. The feature fails closed if the durable render-job/upload tables are absent.
+1. Apply/confirm both existing migrations in the database used by the deployed GEM Enterprise project: `20260725035000_video_render_jobs` and `20260726062000_video_worker_dispatch`. The first creates the durable render-job/upload records; the second adds the trusted-worker dispatch, claim, and retry fields. The feature fails closed if these tables/columns are absent.
 2. Configure the following **same values** in GitHub Actions repository secrets and the matching Vercel project environment:
    - `VIDEO_RENDER_STORAGE_URL`
    - `VIDEO_RENDER_STORAGE_KEY` (private-storage service credential; never a browser/public key)
