@@ -13,6 +13,7 @@ import { verifyTrustedWorkerUpload } from "@/lib/video/worker-upload-verificatio
 import { finalizeTrustedWorkerContentRender } from "@/lib/video/worker-finalization";
 import { validateGemStorylineManifest } from "@/lib/video/storyline-ingestion";
 import {
+  contentHash,
   correlationId,
   parseJson,
   TokMetricError,
@@ -20,7 +21,7 @@ import {
 } from "@/lib/tokmetric/security";
 
 const requestSchema = z.object({
-  workspaceId: z.string().trim().min(1).max(128),
+  workspaceId: z.string().regex(/^ws_[a-f0-9]{32}$/),
   storylineId: z.string().regex(/^gem-cyber-[a-z0-9-]{1,64}$/),
   storageRef: z.string().url().max(2000),
   fileName: z.string().trim().min(1).max(255),
@@ -56,6 +57,10 @@ function validatePrivateStorageReference(input: IngestPayload) {
   }
   if (
     base.protocol !== "https:" ||
+    base.username ||
+    base.password ||
+    base.search ||
+    base.hash ||
     reference.origin !== base.origin ||
     reference.username ||
     reference.password ||
@@ -150,7 +155,8 @@ export async function POST(request: NextRequest) {
       throw new TokMetricError(404, "WORKSPACE_NOT_FOUND", "The TokMetric workspace was not found.");
     }
 
-    const ingestionKey = `gem-storylines:${input.storylineId}:${validated.primary.checksumSha256}`;
+    const manifestDigest = contentHash(input.manifest);
+    const ingestionKey = `gem-storylines:${input.storylineId}:${validated.primary.checksumSha256}:${manifestDigest}`;
     const existingJob = await getVideoRenderJobByIdempotencyKey({
       workspaceId: input.workspaceId,
       idempotencyKey: ingestionKey,
@@ -278,7 +284,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const promptId = `gem-storylines:${input.workspaceId}:${input.storylineId}:${validated.primary.checksumSha256}`;
+    const promptId = `gem-storylines:${input.workspaceId}:${input.storylineId}:${validated.primary.checksumSha256}:${manifestDigest}`;
     let current = durable.record;
     if (current.externalPromptId && current.externalPromptId !== promptId) {
       throw new TokMetricError(409, "STORYLINE_RENDER_PROMPT_CONFLICT", "The storyline render is already bound to a different output.");
