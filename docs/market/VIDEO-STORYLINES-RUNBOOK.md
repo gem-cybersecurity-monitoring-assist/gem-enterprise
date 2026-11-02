@@ -110,6 +110,21 @@ python3 -I scripts/video-storylines/render.py \
 
 Offline mode uses generated footage and tone audio. Its manifest is marked `OFFLINE_TEST_NOT_PUBLISHABLE`.
 
-## Phase 2 — manifest-to-TokMetric ingestion (not yet implemented)
+## Phase 2 — manifest-to-TokMetric ingestion (implemented, gated)
 
-The current Actions workflow produces reviewable GitHub artifacts only. It does not call the TokMetric trusted render-worker upload/finalization API, create a `MediaAsset`, or attach the renderer's `manifest.json` to a `ContentVersion`. The separate ComfyUI trusted-worker finalizer does create TokMetric media assets, but it does not consume this Storylines manifest. Implement a dedicated authenticated ingestion path that binds the video checksum, exact content version, manifest disclosures, and per-clip credits; persist those fields in media-asset metadata and approved version settings; then add integration tests proving Kokoro manifests force `is_aigc: true` at TikTok initialization. Keep human approval, exact-version checks, and no-auto-publish behavior. Until that path and tests are deployed, this is a manual handoff, not an automatic integration.
+A dedicated `POST /api/video/storylines/ingest` route now accepts authenticated GitHub Actions callbacks. It rejects offline tone renders, unsupported storyline IDs, non-cybersecurity content, failed validation, missing Kokoro/AIGC disclosures, a mismatched output filename/checksum/size, and storage references outside the configured private bucket path.
+
+For a manually dispatched storyline, the workflow can upload only the validated 9:16 MP4 to the private `gem-video-renders` bucket and call the ingestion route. The route creates or resumes an idempotent TokMetric content draft, runs the existing compliance review, records the completed render against the exact content version, verifies the object with the trusted-worker storage verifier, then uses the existing finalizer to create the `MediaAsset`, next `ContentVersion`, compliance evidence, and fresh human approval request. The original Storylines manifest, including source footage credits and `disclosures.aiGeneratedContent`, is preserved in media-asset metadata so the TikTok publisher can apply its AI-generated-content label. No action in this flow publishes to a social platform.
+
+### Activation requirements
+
+1. Apply/confirm the existing `20260725035000_video_render_jobs` migration in the database used by the deployed GEM Enterprise project. The feature fails closed if the durable render-job/upload tables are absent.
+2. Configure the following **same values** in GitHub Actions repository secrets and the matching Vercel project environment:
+   - `VIDEO_RENDER_STORAGE_URL`
+   - `VIDEO_RENDER_STORAGE_KEY` (private-storage service credential; never a browser/public key)
+   - `VIDEO_RENDER_CALLBACK_SECRET` (independent long random bearer secret)
+3. Add a newly rotated `PIXABAY_API_KEY` as a GitHub Actions repository secret. Do not reuse the key previously pasted into chat.
+4. Set GitHub Actions repository variables `GEM_STORYLINES_RENDER_ENABLED=true` and `GEM_STORYLINES_INGEST_ENABLED=true` only after the code is deployed and all credentials/database prerequisites are verified. Set `VIDEO_RENDER_STORAGE_BUCKET=gem-video-renders` in both systems, or rely on the default. `GEM_STORYLINES_GEM_BASE_URL` may be set to `https://www.gemcybersecurityassist.com`.
+5. Use **Actions → Video Storylines → Run workflow**, choose one of the six `gem-cyber-*` storyline IDs, and keep the workspace input set to the authorized TokMetric workspace. Scheduled runs do not invoke the ingestion step.
+
+The GitHub artifact remains available for audit/review. The TokMetric record is created only after private-storage verification succeeds. Finalization opens a new approval request; a separate authorized approver must approve the exact generated version before any publishing flow can use it. This integration remains draft-only and does not enable automatic publishing.
