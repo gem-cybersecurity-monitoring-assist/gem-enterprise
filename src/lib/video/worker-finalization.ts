@@ -111,6 +111,11 @@ export async function finalizeTrustedWorkerContentRender(input: {
       "Only a verified completed render can be finalized.",
     );
   }
+  const renderDescriptor = object(current.outputManifest);
+  const renderProvider =
+    typeof renderDescriptor.renderProvider === "string"
+      ? renderDescriptor.renderProvider
+      : "comfyui-local";
 
   const upload = await getVerifiedVideoUpload(current.id);
   if (!upload) {
@@ -177,7 +182,7 @@ export async function finalizeTrustedWorkerContentRender(input: {
   const nextSettings = {
     ...settings,
     render: {
-      provider: "comfyui-local",
+      provider: renderProvider,
       promptId: current.externalPromptId,
       renderJobId: current.id,
       mediaAssetId: upload.id,
@@ -281,7 +286,9 @@ export async function finalizeTrustedWorkerContentRender(input: {
               renderJobId: current.id,
               sourceContentId: content.id,
               sourceContentVersionId: version.id,
+              renderProvider,
               outputDescriptors: current.outputManifest,
+              manifest: object(renderDescriptor.manifest),
               uploadId: upload.id,
               uploadVerifiedAt: upload.verifiedAt,
               humanApprovalRequired: true,
