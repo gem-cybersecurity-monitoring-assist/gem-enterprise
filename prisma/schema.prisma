@@ -181,6 +181,7 @@ model User {
   requests                  ServiceRequest[]
   apiKeys                   ApiKey[]
   meetingRequests           MeetingRequest[]            @relation("MeetingRequests")
+  meetingInvitations        MeetingInvitee[]
   WorkspaceMember           WorkspaceMember[]
   Campaign                  Campaign[]
   CampaignVersion           CampaignVersion[]
@@ -630,11 +631,37 @@ model MeetingRequest {
   proposedAt  DateTime
   duration    Int           @default(30)
   status      MeetingStatus @default(REQUESTED)
-  meetingUrl  String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  meetingUrl      String?
+  zoomMeetingId   String?
+  zoomJoinUrl     String?
+  zoomStartUrl    String?
+  invitees        MeetingInvitee[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
+  @@index([requesterId, proposedAt])
+  @@index([hostId, proposedAt])
   @@map("meeting_requests")
+}
+
+model MeetingInvitee {
+  id                 String   @id @default(cuid())
+  meetingRequestId   String
+  userId             String
+  email              String
+  status             String   @default("INVITED")
+  zoomParticipantId  String?
+  joinedAt           DateTime?
+  leftAt             DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  meeting MeetingRequest @relation(fields: [meetingRequestId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingRequestId, userId])
+  @@index([userId, status])
+  @@map("meeting_invitees")
 }
 
 // ─── TokMetric Production Foundation Models ─────────────────────────────────
