@@ -1,6 +1,8 @@
 "use client"
 
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -83,6 +85,23 @@ export default function FinancialProductPage() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-slate-900/50 border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-cyan-400" />
+            Credit Readiness Connections
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-4">
+          <p className="max-w-2xl text-sm text-slate-400">
+            Authorize an approved Experian API product and verify read access without storing credit-report payloads.
+          </p>
+          <Button asChild className="bg-cyan-400 text-slate-950 hover:bg-cyan-300">
+            <Link href="/app/products/financial/credit-readiness">Manage Experian connection</Link>
+          </Button>
         </CardContent>
       </Card>
 
