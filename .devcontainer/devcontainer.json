@@ -1,0 +1,27 @@
+{
+  "name": "GEM Enterprise",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-24-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright"
+      ]
+    }
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.28.0 --activate && pnpm install --frozen-lockfile",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "GEM Enterprise development",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "remoteUser": "node"
+}
