@@ -9,7 +9,7 @@ The platform is in a **controlled production launch**. Provider-dependent, regul
 | Item | Canonical value |
 |---|---|
 | Public domain | `https://www.gemcybersecurityassist.com` |
-| Repository | `support371/gem-enterprise` |
+| Repository | `gem-cybersecurity-monitoring-assist/gem-enterprise` |
 | Production branch | `main` |
 | Vercel project | `support371-gem-enterprise` |
 | Package manager | `pnpm@10.28.0` |
@@ -61,7 +61,7 @@ Static, sample, mock, seeded, imported, or manually entered information must not
 
 ```bash
 corepack enable
-git clone https://github.com/support371/gem-enterprise.git
+git clone https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise.git
 cd gem-enterprise
 pnpm install --frozen-lockfile
 cp .env.example .env.local
