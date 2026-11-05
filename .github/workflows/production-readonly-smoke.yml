@@ -22,7 +22,7 @@ concurrency:
 jobs:
   verify:
     name: Check public website and gateway health only
-    if: github.repository == 'support371/gem-enterprise'
+    if: github.repository == 'gem-cybersecurity-monitoring-assist/gem-enterprise'
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
