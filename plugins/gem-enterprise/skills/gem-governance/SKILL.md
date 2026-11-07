@@ -1,6 +1,6 @@
 ---
 name: gem-governance
-description: Operating rules for work on the GEM Enterprise platform (support371/gem-enterprise, www.gemcybersecurityassist.com). Use before changing GEM code, data, deployments, marketing content, social publishing, sales outreach, or Base44 apps, and when asked what an agent may or may not do on GEM.
+description: Operating rules for work on the GEM Enterprise platform (gem-cybersecurity-monitoring-assist/gem-enterprise, www.gemcybersecurityassist.com). Use before changing GEM code, data, deployments, marketing content, social publishing, sales outreach, or Base44 apps, and when asked what an agent may or may not do on GEM.
 ---
 
 # GEM Enterprise governance
@@ -12,7 +12,7 @@ GEM Enterprise is a controlled-production cybersecurity and operations platform.
 | Item | Value |
 |---|---|
 | Public site | `https://www.gemcybersecurityassist.com` |
-| Repository | `support371/gem-enterprise`, production branch `main` |
+| Repository | `gem-cybersecurity-monitoring-assist/gem-enterprise`, production branch `main` |
 | Hosting | Vercel project `support371-gem-enterprise`, deployed by the Vercel Git integration on merge to `main` |
 | System of record | PostgreSQL through Prisma (`prisma/schema.prisma`) |
 | Authentication | Signed JWT session in the HTTP-only `gem_session` cookie |

@@ -1,6 +1,6 @@
 # GEM Enterprise Agent Map
 
-- Repository: `support371/gem-enterprise`
+- Repository: `gem-cybersecurity-monitoring-assist/gem-enterprise` (the old `support371/gem-enterprise` name is now an unrelated placeholder; never use it)
 - Default branch: `main`
 - Runtime: Node.js 24.x
 - Package manager: `pnpm@10.28.0` only
@@ -27,6 +27,34 @@ pnpm run verify
 Use focused checks when the task contract separates configuration-independent
 tests from configuration-dependent tests. Never claim a skipped or unstarted
 check passed.
+
+## Build first, activate later
+
+Every owner-approved request can be built, including features for providers,
+products or business lines that are planned, unpaid or not live yet. "Not real
+yet" is never a reason to refuse or shrink a build: build it completely, gate it
+behind an environment flag that defaults to off, show its real state with
+`src/lib/capabilityReadiness.ts`, mock the provider in tests, and list the owner
+activation steps in the pull request. Activation (production credentials, paid
+plans, provider approval, live publishing or payments, production database
+changes, public claims) stays with the owner.
+
+## Agent skills
+
+Procedures live in `.claude/skills/`; Claude Code loads them automatically, and
+other agents should read the matching file before starting:
+
+| Skill | Use for |
+|---|---|
+| [gem-build-feature](.claude/skills/gem-build-feature/SKILL.md) | Any new feature, page, API or business line |
+| [gem-provider-integration](.claude/skills/gem-provider-integration/SKILL.md) | OAuth, API keys, webhooks, external services |
+| [gem-database-change](.claude/skills/gem-database-change/SKILL.md) | Prisma schema, migrations, RLS |
+| [gem-verify-and-ship](.claude/skills/gem-verify-and-ship/SKILL.md) | Environment setup, checks, pull requests |
+| [gem-ecosystem](.claude/skills/gem-ecosystem/SKILL.md) | Requests touching the owner's other repositories |
+
+`scripts/agent-session-start.sh` prepares a cloud session (dependencies, Prisma
+client and CI placeholder values). It runs when `CLAUDE_CODE_REMOTE=true` or
+`GEM_AGENT_SETUP=true` and does nothing on local machines.
 
 ## Mutation rules
 
