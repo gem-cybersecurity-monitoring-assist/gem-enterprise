@@ -19,7 +19,7 @@ The plugin is kept separate from the website source so the plugin directory vali
 
 | Field | Value |
 |---|---|
-| Repository | `https://github.com/support371/gem-enterprise` |
+| Repository | `https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise` |
 | Plugin path | `plugins/gem-enterprise` |
 | Branch or tag | `main` (or leave empty) |
 
