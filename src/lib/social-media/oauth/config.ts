@@ -231,3 +231,38 @@ export function parseSocialOAuthProvider(input: string): SocialOAuthProvider {
   }
   return provider as SocialOAuthProvider;
 }
+
+/**
+ * Bot-token providers (no OAuth flow). Telegram authenticates with a bot
+ * token stored as an encrypted connector credential; it has no OAuth
+ * client, redirect URI, or grant to revoke. Keep this list separate from
+ * `socialOAuthProviders`: adding a bot-token provider to the OAuth union
+ * would make the OAuth config lookups return undefined and crash.
+ */
+export const socialBotTokenProviders = ["TELEGRAM"] as const;
+export type SocialBotTokenProvider = (typeof socialBotTokenProviders)[number];
+
+/** Any provider a stored connector can carry: OAuth or bot-token. */
+export type SocialConnectorProvider = SocialOAuthProvider | SocialBotTokenProvider;
+
+export function isSocialBotTokenProvider(provider: string): provider is SocialBotTokenProvider {
+  return (socialBotTokenProviders as readonly string[]).includes(provider.toUpperCase());
+}
+
+/**
+ * Parse a stored connector provider value. Accepts the OAuth providers and
+ * the bot-token providers; anything else is still rejected with
+ * UNSUPPORTED_SOCIAL_PROVIDER. Use this (not parseSocialOAuthProvider)
+ * when reading a provider back from storage, where a bot-token connector
+ * is a legitimate value. OAuth flows keep the strict parse.
+ */
+export function parseSocialConnectorProvider(input: string): SocialConnectorProvider {
+  const provider = input.toUpperCase();
+  if (socialOAuthProviders.includes(provider as SocialOAuthProvider)) {
+    return provider as SocialOAuthProvider;
+  }
+  if (socialBotTokenProviders.includes(provider as SocialBotTokenProvider)) {
+    return provider as SocialBotTokenProvider;
+  }
+  throw new TokMetricError(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Social OAuth provider is not supported.");
+}
