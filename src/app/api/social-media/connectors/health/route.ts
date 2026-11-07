@@ -13,6 +13,7 @@ import {
 } from "@/lib/tokmetric/security";
 import {
   getSocialOAuthProviderConfig,
+  isSocialBotTokenProvider,
   validateSocialOAuthProviderConfig,
 } from "@/lib/social-media/oauth/config";
 import { refreshSocialAccessToken } from "@/lib/social-media/oauth/client";
@@ -89,6 +90,13 @@ export async function POST(request: NextRequest) {
 
     const stored = await loadSocialConnectorCredential({ workspaceId, connectorId });
     provider = stored.connector.provider;
+    if (isSocialBotTokenProvider(stored.connector.provider)) {
+      throw new TokMetricError(
+        400,
+        "SOCIAL_PROVIDER_NOT_OAUTH",
+        "This connector authenticates with a bot token, not OAuth. OAuth credential health, refresh, and probe checks do not apply.",
+      );
+    }
     const { config, missing, ok } = validateSocialOAuthProviderConfig(stored.connector.provider);
     if (!ok) {
       throw new TokMetricError(
