@@ -1,5 +1,6 @@
 import type { SharedSocialPublishingProvider } from "./types";
 import type { SocialEnvSource } from "@/lib/social-media/autopilot/policy";
+import { TELEGRAM_METADATA_KEYS } from "@/lib/social-media/providers/telegram/config";
 
 const providerLiveGate: Record<SharedSocialPublishingProvider, string> = {
   FACEBOOK_PAGE: "META_SOCIAL_PUBLISHING_ENABLED",
@@ -68,6 +69,15 @@ export function accountTypeMatches(
   if (provider === "NEXTDOOR") {
     return accountType === "NEXTDOOR_ENTITY_PROFILE";
   }
+  if (provider === "TELEGRAM") {
+    // Bot-token providers have no OAuth account type. The destination is
+    // the configured Telegram chat id in connector metadata (see
+    // resolveTelegramDestination in the Telegram provider config); without
+    // it the adapter cannot resolve a destination, so the job stays
+    // blocked instead of auto-selecting a destination.
+    const chatId = metadata[TELEGRAM_METADATA_KEYS.chatId];
+    return typeof chatId === "string" && chatId.trim() !== "";
+  }
   return false;
 }
 
@@ -92,6 +102,9 @@ export function missingPublishingScopes(
         const configured = process.env.NEXTDOOR_PUBLISH_SCOPE?.trim();
         return configured ? [configured] : ["NEXTDOOR_PUBLISH_SCOPE_NOT_CONFIGURED"];
       }
+      case "TELEGRAM":
+        // Bot-token providers have no OAuth scopes to grant.
+        return [];
     }
   })();
   return required.filter((scope) => !granted.has(scope));
