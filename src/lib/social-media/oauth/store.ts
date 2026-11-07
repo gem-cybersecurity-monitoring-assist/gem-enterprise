@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { enforceEmergencyLocks, TokMetricError } from "@/lib/tokmetric/security";
 import { decryptSocialCredential, encryptSocialCredential } from "./crypto";
-import type { SocialOAuthProvider } from "./config";
+import type { SocialConnectorProvider, SocialOAuthProvider } from "./config";
 import type { SocialOAuthStatePayload } from "./state";
 
 const ATTEMPT_TTL_MS = 10 * 60 * 1000;
@@ -24,7 +24,7 @@ export interface SocialOAuthAttemptRecord {
 }
 
 export interface StoredSocialCredential {
-  provider: SocialOAuthProvider;
+  provider: SocialConnectorProvider;
   accessToken: string;
   refreshToken?: string;
   tokenType?: string;
@@ -37,7 +37,7 @@ export interface StoredSocialCredential {
 export interface SocialConnectorRecord {
   id: string;
   workspaceId: string;
-  provider: SocialOAuthProvider;
+  provider: SocialConnectorProvider;
   state: string;
   displayName: string;
   externalAccountId: string | null;
