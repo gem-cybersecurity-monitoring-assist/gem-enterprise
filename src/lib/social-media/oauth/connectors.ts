@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { TokMetricError } from "@/lib/tokmetric/security";
 import { getSocialOAuthProviderConfig } from "./config";
+import { isSocialBotTokenProvider } from "./config";
 import { revokeSocialProviderGrant, type SocialRevocationResult } from "./revocation";
 import { loadSocialConnectorCredential } from "./lifecycle-store";
 import { listSocialConnectors } from "./store";
@@ -45,7 +46,13 @@ export async function disconnectSocialConnector(input: {
     | undefined;
   try {
     const loaded = await loadSocialConnectorCredential(input);
-    revocationInput = { provider: loaded.connector.provider, credential: loaded.credential };
+    // Bot-token providers have no OAuth grant to revoke: the token is
+    // deleted with the local credential. Skipping provider-side
+    // revocation keeps the disconnect working for them (there is no
+    // OAuth config to look up).
+    if (!isSocialBotTokenProvider(loaded.connector.provider)) {
+      revocationInput = { provider: loaded.connector.provider, credential: loaded.credential };
+    }
   } catch (error) {
     if (
       !(error instanceof TokMetricError) ||
