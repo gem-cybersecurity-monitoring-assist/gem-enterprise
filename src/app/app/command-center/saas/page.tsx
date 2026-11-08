@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SaaSOperationalSnapshot } from "@/components/command-center/SaaSOperationalSnapshot";
 import { SaaSManagementWorkspace } from "@/components/command-center/SaaSManagementWorkspace";
+import { SaaSAssignedWorkspaces } from "@/components/command-center/SaaSAssignedWorkspaces";
 
 export const metadata: Metadata = {
   title: "GEM SaaS Management | GEM Enterprise",
@@ -30,6 +31,7 @@ export default function SaaSControlPlanePage() {
         </div>
       </header>
       <SaaSOperationalSnapshot />
+      <SaaSAssignedWorkspaces />
       <SaaSManagementWorkspace />
       <section className="rounded-xl border border-amber-500/30 bg-slate-950 p-5" aria-labelledby="activation-policy">
         <h2 id="activation-policy" className="text-lg font-semibold text-amber-100">Controlled activation policy</h2>
