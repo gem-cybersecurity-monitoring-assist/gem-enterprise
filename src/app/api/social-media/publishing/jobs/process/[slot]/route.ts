@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
-import { processSocialPublishingBatch } from "@/lib/social-media/publishing/worker";
-import { parseSlotHour } from "@/lib/social-media/publishing/slots";
+import { runSocialMetricsSync } from "@/lib/social-media/analytics/sync";
 
 function authorized(request: NextRequest) {
   const configured = process.env.CRON_SECRET?.trim();
@@ -17,23 +16,14 @@ function authorized(request: NextRequest) {
   );
 }
 
-/**
- * Slot worker tick: /api/social-media/publishing/jobs/process/{HH}.
- *
- * The slot parameter is the UTC hour window this tick owns. The worker claims
- * jobs that are due and unscheduled, or scheduled before the end of the slot
- * window (overdue scheduled jobs are recovered by later ticks). Per-provider
- * batch caps and minimum publish spacing are enforced inside the claim as
- * backpressure. CRON_SECRET bearer auth, same as the unslotted route.
- */
-async function run(request: NextRequest, slot: string) {
+async function run(request: NextRequest) {
   if (!process.env.CRON_SECRET?.trim()) {
     return NextResponse.json(
       {
         ok: false,
         error: {
           code: "CRON_AUTH_NOT_CONFIGURED",
-          message: "Publishing worker authentication is not configured.",
+          message: "Metrics worker authentication is not configured.",
         },
       },
       { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } },
@@ -45,42 +35,28 @@ async function run(request: NextRequest, slot: string) {
         ok: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Publishing worker authentication failed.",
+          message: "Metrics worker authentication failed.",
         },
       },
       { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 
-  const slotHour = parseSlotHour(slot);
-  if (slotHour === null) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          code: "INVALID_SLOT",
-          message:
-            "The slot parameter must be an hour of day between 00 and 23 (e.g. /process/07).",
-        },
-      },
-      { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } },
-    );
-  }
-
-  const gatewayBlock = socialCronGatewayBlock();
+  const gatewayBlock = await socialCronGatewayBlock("social-analytics");
   if (gatewayBlock) return gatewayBlock;
 
+  const limitParam = request.nextUrl.searchParams.get("limit");
+  const limit = limitParam ? Math.min(Math.max(Number(limitParam) || 50, 1), 200) : 50;
+
   try {
-    const result = await processSocialPublishingBatch(10, { slotHour });
+    const result = await runSocialMetricsSync(limit);
     return NextResponse.json(
       {
         ok: true,
-        slot: slotHour,
-        processed: result.claimed,
-        published: result.published,
-        retrying: result.retrying,
-        blocked: result.blocked,
-        failed: result.failed,
+        jobsConsidered: result.jobsConsidered,
+        snapshotsCollected: result.snapshotsCollected,
+        accountMetricsCollected: result.accountMetricsCollected,
+        runs: result.runs,
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
     );
@@ -89,9 +65,8 @@ async function run(request: NextRequest, slot: string) {
       {
         ok: false,
         error: {
-          code: "SOCIAL_PUBLISHING_WORKER_FAILED",
-          message:
-            "The governed publishing worker could not complete this slot batch.",
+          code: "SOCIAL_METRICS_WORKER_FAILED",
+          message: "The governed metrics worker could not complete this batch.",
         },
       },
       { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } },
@@ -99,18 +74,10 @@ async function run(request: NextRequest, slot: string) {
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slot: string }> },
-) {
-  const { slot } = await params;
-  return run(request, slot);
+export async function GET(request: NextRequest) {
+  return run(request);
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ slot: string }> },
-) {
-  const { slot } = await params;
-  return run(request, slot);
+export async function POST(request: NextRequest) {
+  return run(request);
 }
