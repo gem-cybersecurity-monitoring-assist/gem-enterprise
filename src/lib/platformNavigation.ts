@@ -167,12 +167,6 @@ export const clientPortalNavGroups: PlatformNavGroup[] = [
         description: "Repositories, APIs, releases, deployments, and delivery readiness.",
       },
       {
-        href: "/app/command-center/saas",
-        icon: "Building2",
-        label: "SaaS Control Plane",
-        description: "Private pre-launch capability inventory, activation gates and real platform aggregates.",
-      },
-      {
         href: "/app/command-center/tokmetric",
         icon: "BarChart3",
         label: "TikTok Operations",
@@ -303,6 +297,12 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
   {
     label: "Organizations & access",
     items: [
+      {
+        href: "/app/command-center/saas",
+        icon: "Building2",
+        label: "SaaS Control Plane",
+        description: "Private pre-launch capability inventory, activation gates and real platform aggregates.",
+      },
       {
         href: "/app/admin",
         icon: "Shield",
