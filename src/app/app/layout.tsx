@@ -89,6 +89,7 @@ function navigationForRole(role: string | null): PlatformNavGroup[] {
         label: "Operations",
         items: items([
           "/app/command-center",
+          "/app/command-center/saas",
           "/app/command-center/monitoring",
           "/app/command-center/agents",
           "/app/command-center/integrations",
