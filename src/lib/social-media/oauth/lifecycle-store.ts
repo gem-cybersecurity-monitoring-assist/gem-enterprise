@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import {
+  GatewayRequestError,
+  shouldUseSupabaseGateway,
+} from "@/lib/supabase-gateway";
+import { socialPublishingGateway } from "@/lib/social-media/publishing/gateway-client";
 import { TokMetricError } from "@/lib/tokmetric/security";
 import { decryptSocialCredential, encryptSocialCredential } from "./crypto";
 import { parseSocialConnectorProvider } from "./config";
@@ -36,7 +41,103 @@ function storeUnavailable(error: unknown): never {
   throw error;
 }
 
+// Gateway errors keep the edge function's status + stable code (so a 404
+// SOCIAL_CONNECTOR_CREDENTIAL_NOT_FOUND from the RPC survives the hop
+// instead of becoming a generic 500).
+function gatewayError(error: unknown): never {
+  if (error instanceof GatewayRequestError) {
+    throw new TokMetricError(error.statusCode, error.code, error.message);
+  }
+  throw error;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function toDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+// Row shape the gem_social_load_connector_credential RPC returns (JSON:
+// camelCase keys, ISO timestamp strings). Mirrors ConnectorCredentialRow
+// above so the gateway branch can run the same decrypt + consistency
+// check the Prisma branch runs.
+interface GatewayCredentialRow {
+  id: string;
+  workspaceId: string;
+  provider: string;
+  state: string;
+  displayName: string;
+  externalAccountId: string | null;
+  grantedScopes: string[];
+  safeMetadata: Record<string, unknown>;
+  lastHealthAt: Date | null;
+  disabledAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  secretRef: string;
+  credentialExpiresAt: Date | null;
+  credentialRefreshExpiresAt: Date | null;
+  credentialRotatedAt: Date | null;
+}
+
+function reviveCredentialRow(
+  raw: Record<string, unknown>,
+): GatewayCredentialRow {
+  const createdAt = toDate(raw.createdAt);
+  const updatedAt = toDate(raw.updatedAt);
+  if (!createdAt || !updatedAt) {
+    throw new TokMetricError(
+      500,
+      "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
+      "The social publishing gateway returned an unexpected response.",
+    );
+  }
+  return {
+    id: String(raw.id ?? ""),
+    workspaceId: String(raw.workspaceId ?? ""),
+    provider: String(raw.provider ?? ""),
+    state: String(raw.state ?? ""),
+    displayName: String(raw.displayName ?? ""),
+    externalAccountId: toNullableString(raw.externalAccountId),
+    grantedScopes: Array.isArray(raw.grantedScopes)
+      ? (raw.grantedScopes.filter(
+          (entry): entry is string => typeof entry === "string",
+        ) as string[])
+      : [],
+    safeMetadata:
+      isRecord(raw.safeMetadata) && !Array.isArray(raw.safeMetadata)
+        ? raw.safeMetadata
+        : {},
+    lastHealthAt: toDate(raw.lastHealthAt),
+    disabledAt: toDate(raw.disabledAt),
+    createdAt,
+    updatedAt,
+    secretRef: String(raw.secretRef ?? ""),
+    credentialExpiresAt: toDate(raw.credentialExpiresAt),
+    credentialRefreshExpiresAt: toDate(raw.credentialRefreshExpiresAt),
+    credentialRotatedAt: toDate(raw.credentialRotatedAt),
+  };
+}
+
 export async function loadSocialConnectorCredential(input: {
+  workspaceId: string;
+  connectorId: string;
+}) {
+  if (shouldUseSupabaseGateway()) {
+    return loadSocialConnectorCredentialViaGateway(input);
+  }
+  return loadSocialConnectorCredentialPrisma(input);
+}
+
+async function loadSocialConnectorCredentialPrisma(input: {
   workspaceId: string;
   connectorId: string;
 }) {
@@ -110,6 +211,72 @@ export async function loadSocialConnectorCredential(input: {
   } catch (error) {
     if (error instanceof TokMetricError) throw error;
     return storeUnavailable(error);
+  }
+}
+
+/**
+ * Gateway branch of loadSocialConnectorCredential. The RPC returns the raw
+ * row INCLUDING the secretRef ciphertext, and the existing decrypt +
+ * consistency check runs here in Node — the encryption key never leaves
+ * Vercel. The TELEGRAM / BOT_TOKEN provider parse is the merged #468 fix
+ * (parseSocialConnectorProvider); this branch builds on it.
+ */
+async function loadSocialConnectorCredentialViaGateway(input: {
+  workspaceId: string;
+  connectorId: string;
+}) {
+  try {
+    const body = await socialPublishingGateway<Record<string, unknown>>(
+      "load_credential",
+      { workspaceId: input.workspaceId, connectorId: input.connectorId },
+    );
+    if (!isRecord(body.row)) {
+      throw new TokMetricError(
+        500,
+        "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
+        "The social publishing gateway returned an unexpected response.",
+      );
+    }
+    const row = reviveCredentialRow(body.row);
+    // Stored connector providers include bot-token providers (Telegram) as
+    // well as OAuth providers, so parse with the connector union (#468).
+    const provider = parseSocialConnectorProvider(row.provider);
+    const credential = decryptSocialCredential<StoredSocialCredential>(
+      row.secretRef,
+    );
+    if (
+      credential.provider !== provider ||
+      credential.externalAccountId !== row.externalAccountId
+    ) {
+      throw new TokMetricError(
+        409,
+        "SOCIAL_CONNECTOR_CREDENTIAL_MISMATCH",
+        "Stored connector authorization does not match the selected provider account.",
+      );
+    }
+    return {
+      connector: {
+        id: row.id,
+        workspaceId: row.workspaceId,
+        provider,
+        state: row.state,
+        displayName: row.displayName,
+        externalAccountId: row.externalAccountId,
+        grantedScopes: row.grantedScopes,
+        safeMetadata: row.safeMetadata,
+        lastHealthAt: row.lastHealthAt,
+        disabledAt: row.disabledAt,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      } satisfies SocialConnectorRecord,
+      credential,
+      credentialRotatedAt: row.credentialRotatedAt
+        ? row.credentialRotatedAt.toISOString()
+        : null,
+    };
+  } catch (error) {
+    if (error instanceof TokMetricError) throw error;
+    return gatewayError(error);
   }
 }
 
