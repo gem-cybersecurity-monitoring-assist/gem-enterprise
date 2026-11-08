@@ -1,5 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import {
+  GatewayRequestError,
+  shouldUseSupabaseGateway,
+} from "@/lib/supabase-gateway";
+import { socialPublishingGateway } from "@/lib/social-media/publishing/gateway-client";
 import { TokMetricError } from "@/lib/tokmetric/security";
 import { socialOAuthProviders } from "./config";
 
@@ -81,6 +86,16 @@ export async function isSocialProviderPaused(
   workspaceId: string,
   provider: SocialPauseProvider,
 ): Promise<boolean> {
+  if (shouldUseSupabaseGateway()) {
+    return isSocialProviderPausedViaGateway(workspaceId, provider);
+  }
+  return isSocialProviderPausedPrisma(workspaceId, provider);
+}
+
+async function isSocialProviderPausedPrisma(
+  workspaceId: string,
+  provider: SocialPauseProvider,
+): Promise<boolean> {
   try {
     const rows = await db.$queryRaw<Array<{ one: number }>>(Prisma.sql`
       SELECT 1 AS one
@@ -92,6 +107,30 @@ export async function isSocialProviderPaused(
     return rows.length > 0;
   } catch (error) {
     return storeUnavailable(error);
+  }
+}
+
+/**
+ * Gateway branch of isSocialProviderPaused. The gem_social_pause_state RPC
+ * is the same single existence check the Prisma branch runs; a missing or
+ * unreachable pause store fails closed through the gateway error mapping,
+ * never by returning "not paused".
+ */
+async function isSocialProviderPausedViaGateway(
+  workspaceId: string,
+  provider: SocialPauseProvider,
+): Promise<boolean> {
+  try {
+    const body = await socialPublishingGateway<Record<string, unknown>>(
+      "pause_state",
+      { workspaceId, provider },
+    );
+    return body.paused === true;
+  } catch (error) {
+    if (error instanceof GatewayRequestError) {
+      throw new TokMetricError(error.statusCode, error.code, error.message);
+    }
+    throw error;
   }
 }
 
