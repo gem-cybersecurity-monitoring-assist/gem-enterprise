@@ -75,6 +75,21 @@ export function SaaSOperationalSnapshot() {
               </div>
             ))}
           </dl>
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/70 p-4">
+            <h3 className="text-sm font-semibold">SaaS operating-layer readiness</h3>
+            {state.snapshot.operatingLayer.source === "database" && (
+              <p className="mt-2 text-sm text-slate-300">Operating-layer aggregate tables were found. This does not certify the activation of billing, security coverage, AI tools or external integrations.</p>
+            )}
+            {state.snapshot.operatingLayer.source === "migration_required" && (
+              <p className="mt-2 text-sm text-amber-200">
+                Schema promotion is required for {state.snapshot.operatingLayer.missingTables?.length ?? "unknown"} operating tables.
+                No production database migration has been initiated from this dashboard.
+              </p>
+            )}
+            {state.snapshot.operatingLayer.source === "unavailable" && (
+              <p className="mt-2 text-sm text-amber-200">Operating-layer readiness could not be verified.</p>
+            )}
+          </div>
           <p className="mt-3 text-xs text-slate-400">Database snapshot generated: {Number.isNaN(Date.parse(state.snapshot.generatedAt)) ? "Timestamp unavailable" : new Date(state.snapshot.generatedAt).toLocaleString()}. This view does not attest to external provider connectivity.</p>
         </>
       )}
