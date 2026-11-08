@@ -2,6 +2,11 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import {
+  GatewayRequestError,
+  shouldUseSupabaseGateway,
+} from "@/lib/supabase-gateway";
+import { socialPublishingGateway } from "@/lib/social-media/publishing/gateway-client";
 import { getSessionFromRequest, type SessionPayload } from "@/lib/auth";
 
 const SECRET_KEY_NAMES = new Set([
@@ -138,7 +143,24 @@ export function requirePermission(membership: Awaited<ReturnType<typeof requireW
   if (!allowed) throw new TokMetricError(403, "PERMISSION_DENIED", "The requested TokMetric permission is not granted.");
 }
 
+// Gateway errors keep the edge function's status + stable code (so a 423
+// TOKMETRIC_LOCKED from the workspace-locks RPC survives the hop instead
+// of becoming a generic 500).
+function gatewayError(error: unknown): never {
+  if (error instanceof GatewayRequestError) {
+    throw new TokMetricError(error.statusCode, error.code, error.message);
+  }
+  throw error;
+}
+
 export async function enforceEmergencyLocks(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector") {
+  if (shouldUseSupabaseGateway()) {
+    return enforceEmergencyLocksViaGateway(workspaceId, action);
+  }
+  return enforceEmergencyLocksPrisma(workspaceId, action);
+}
+
+async function enforceEmergencyLocksPrisma(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector") {
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!workspace) throw new TokMetricError(404, "WORKSPACE_NOT_FOUND", "Workspace was not found.");
   const blocked = workspace.globalEmergencyLock ||
@@ -149,8 +171,58 @@ export async function enforceEmergencyLocks(workspaceId: string, action: "publis
   if (blocked) throw new TokMetricError(423, "TOKMETRIC_LOCKED", "TokMetric emergency controls block this action.");
 }
 
+/**
+ * Gateway branch of enforceEmergencyLocks. The gem_social_workspace_locks
+ * RPC reads the same workspace lock flags from the same table and returns
+ * the same codes (404 WORKSPACE_NOT_FOUND, 423 TOKMETRIC_LOCKED), so the
+ * observable behaviour matches the Prisma branch exactly.
+ */
+async function enforceEmergencyLocksViaGateway(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector") {
+  try {
+    await socialPublishingGateway<Record<string, unknown>>(
+      "workspace_locks",
+      { workspaceId, action },
+    );
+  } catch (error) {
+    return gatewayError(error);
+  }
+}
+
 export async function emitTokMetricAudit(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }) {
+  if (shouldUseSupabaseGateway()) {
+    return emitTokMetricAuditViaGateway(input);
+  }
+  return emitTokMetricAuditPrisma(input);
+}
+
+async function emitTokMetricAuditPrisma(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }) {
   await db.auditEvent.create({ data: { workspaceId: input.workspaceId, actorId: input.actorId, action: input.action, entityType: input.entityType, entityId: input.entityId, correlationId: input.correlationId, outcome: input.outcome, sourceChannel: input.sourceChannel, safeMetadata: redactSecrets(input.metadata ?? {}) as object } });
+}
+
+/**
+ * Gateway branch of emitTokMetricAudit. The gem_social_audit_event RPC
+ * inserts into the same audit table with the same columns; secrets are
+ * redacted here in Node before the payload leaves Vercel, exactly as on
+ * the Prisma path. Best-effort at the call site is unchanged: callers that
+ * swallow audit failures (the publishing worker's audit() helper) keep
+ * swallowing them.
+ */
+async function emitTokMetricAuditViaGateway(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }) {
+  try {
+    await socialPublishingGateway<Record<string, unknown>>("audit_event", {
+      workspaceId: input.workspaceId ?? null,
+      actorId: input.actorId ?? null,
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId ?? null,
+      correlationId: input.correlationId,
+      outcome: input.outcome,
+      sourceChannel: input.sourceChannel,
+      safeMetadata: redactSecrets(input.metadata ?? {}),
+    });
+  } catch (error) {
+    return gatewayError(error);
+  }
 }
 
 export async function emitDomainEvent(input: { workspaceId: string; aggregateType: string; aggregateId: string; eventType: string; correlationId: string; metadata?: unknown }) {
