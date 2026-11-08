@@ -14,6 +14,7 @@ supabase/functions/*
 !supabase/functions/gem-news-gateway/
 !supabase/functions/gem-workspace-owner-invitations/
 !supabase/functions/gem-intake-gateway/
+!supabase/functions/gem-social-publishing-gateway/
 
 supabase/functions/gem-auth-gateway/*
 !supabase/functions/gem-auth-gateway/index.ts
@@ -44,10 +45,14 @@ supabase/functions/gem-workspace-owner-invitations/*
 supabase/functions/gem-intake-gateway/*
 !supabase/functions/gem-intake-gateway/index.ts
 
+supabase/functions/gem-social-publishing-gateway/*
+!supabase/functions/gem-social-publishing-gateway/index.ts
+
 supabase/migrations/*
 !supabase/migrations/20260716140000_create_tokmetric_gpt_credentials.sql
 !supabase/migrations/20260813123000_organization_workspace_operating_system.sql
 !supabase/migrations/20260829120000_news_refresh_cadence.sql
+!supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql
 
 # Documentation is excluded from deployment bundles
 *.md
