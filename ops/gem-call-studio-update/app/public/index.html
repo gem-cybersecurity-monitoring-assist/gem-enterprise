@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GEM Call Studio — Trusted Transformation</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/simple-flow.css?v=1">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <span class="eyebrow">GEM ENTERPRISE</span>
+    <h1>GEM Call Studio</h1>
+    <p>Choose your team member, background and voice.</p>
+  </div>
+  <div class="header-status">
+    <span class="version">Your live studio</span>
+    <div id="serviceBadge" class="badge neutral">Starting</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="studio">Your studio</button>
+  <button data-tab="output">Call setup</button>
+  <button data-tab="system">Troubleshooting</button>
+</nav>
+
+<main>
+  <section id="tab-studio" class="tab active">
+    <p class="simple-status">Photorealistic full-body calls are not ready. You can try a free 2D motion demo with an authorized uploaded character.</p>
+<div class="simple-choices">
+    <article class="panel">
+<h2>1. Team member</h2>
+
+<label>Saved team member<select id="teamProfile"></select></label>
+<details><summary>Add a team member</summary><label>New team member name<input id="teamName" maxlength="80" placeholder="Customer support representative"></label>
+<label>Full-body reference images (1–8)<input id="teamImages" type="file" multiple accept="image/png,image/jpeg,image/webp"></label>
+<label>Optional profile background — scene library below<input id="teamBackground" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>Optional voice reference — use a live voice app below<input id="teamVoice" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/webm,audio/flac"></label>
+<label class="checkbox"><input id="teamFullBody" type="checkbox"> At least one reference shows the full body.</label>
+<label class="checkbox"><input id="teamAuthorized" type="checkbox"> I am authorized to use these images and voice as a disclosed virtual team member.</label>
+<div class="actions"><button id="saveTeam">Save new team member</button><button id="deleteTeam">Delete selected member</button></div>
+</details><div id="teamPreview"></div><p id="teamStatus" role="status"></p>
+
+</article>
+<article class="panel">
+<h2>2. Background</h2>
+<details><summary>Notion images</summary><label>Notion reference page<input id="notionSource" type="url" placeholder="https://www.notion.so/..."></label>
+<a id="notionPageLink" target="_blank" rel="noopener noreferrer">Open Notion profile gallery</a>
+<p id="notionStatus" role="status"></p></details>
+<label>Scene category<select id="backgroundCategory"><option value="home">Home</option><option value="office">Office</option><option value="bedroom">Bedroom</option><option value="pool">Swimming pool</option><option value="custom">Other space</option></select></label>
+<details><summary>Add backgrounds</summary><label>Upload images or moving backgrounds<input id="uploadBackgrounds" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"></label>
+</details><label>Choose background<select id="backgroundChoice"></select></label>
+<details><summary>Manage backgrounds</summary><button id="deleteBackground">Delete selected background</button></details>
+<div id="backgroundPreview"></div>
+<p id="sceneStatus" role="status"></p>
+</article>
+<article class="panel">
+<h2>3. Voice</h2>
+<p>Choose a style and test how you sound.</p>
+<label>Voice style<select id="localVoicePreset"></select></label>
+<details><summary>Customize voice</summary><label>Pitch <output id="voice-pitch-value"></output><input id="voice-pitch" type="range" min="-7" max="7" step="1" value="0"></label>
+<label>Bass <output id="voice-bass-value"></output><input id="voice-bass" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Brightness <output id="voice-treble-value"></output><input id="voice-treble" type="range" min="-8" max="8" step="1" value="0"></label>
+<label>Gain <output id="voice-gain-value"></output><input id="voice-gain" type="range" min="0.2" max="1.5" step="0.05" value="1"></label>
+<button id="saveLocalVoice">Save voice settings</button></details>
+<details><summary>Microphone settings</summary><label>Microphone<select id="localVoiceMic"><option value="">System microphone</option></select></label>
+<button id="scanLocalMics">Detect microphones</button></details>
+<label class="checkbox"><input id="listenLocalVoice" type="checkbox"> Listen live through headphones</label>
+<div class="actions"><button id="startLocalVoice">Start voice</button><button id="stopLocalVoice">Stop voice</button></div>
+<label>Processed audio level <meter id="localVoiceMeter" min="0" max="100" value="0"></meter></label>
+<p id="localVoiceStatus" role="status">Choose your voice style, then start voice.</p>
+<label class="checkbox"><input id="routeVoiceToCalls" type="checkbox" checked> Send selected voice to calls</label>
+<p id="voiceRouteStatus" role="status" data-state="idle">Uses the VB-CABLE virtual microphone. Your calling app must select CABLE Output (VB-Audio Virtual Cable).</p>
+<details><summary>Use another voice application</summary><label>Live voice application<select id="voiceProvider"><option value="voicemod">Voicemod</option><option value="voicemeeter">VoiceMeeter routing</option><option value="other">Other voice application</option></select></label>
+<p>Select the voice or preset inside your voice app. Studio selects its audio device; it does not control that app's preset library.</p>
+<label>Converted voice input<select id="voiceDevice"><option value="">Scan for the voice app virtual microphone</option></select></label>
+<button id="scanVoiceDevices">Detect voice devices</button>
+<button data-launch="voicemod">Open Voicemod</button>
+<button data-launch="voicemeeter">Open VoiceMeeter</button>
+<p id="voiceStatus" role="status">Voice conversion has not been verified.</p>
+</details>
+</article>
+</div>
+<details class="advanced-settings"><summary>Advanced camera settings</summary><div class="two-col">
+      <article class="panel">
+        <h2>1. Trusted engine and authorized character</h2>
+        <label>Transformation engine
+          <select id="engineMode">
+            <option value="fullbody" selected>Virtual Team · Full-body live performance</option>
+<option value="puppet">Experimental · free 2D full-body motion demo</option>
+<option value="auto">Legacy demonstration · Automatic</option>
+            <option value="local">Legacy demonstration · Decorated camera</option>
+            <option value="avatar">Legacy demonstration · Face portrait overlay</option>
+            <option value="lucy">Lucy experiment · Explicit cloud use</option>
+          </select>
+        </label>
+        <label class="checkbox"><input id="allowLocalFallback" type="checkbox"> If Lucy or Local Avatar cannot start, fail over to a fresh verified local processed stream.</label>
+        <div class="notice">Full-body mode requires a verified motion renderer and custom voice. Legacy demonstration modes do not fulfill the virtual team call requirement.</div>
+        <label>Reference portrait <span class="muted">(required for Local Avatar or Lucy)</span>
+          <input id="referenceImage" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+        <div id="imagePreviewWrap" class="image-preview hidden">
+          <img id="imagePreview" alt="Selected authorized reference portrait">
+        </div>
+        <label>Transformation instruction
+          <textarea id="prompt" rows="4">Transform me into the person shown in the authorized reference portrait. Preserve the reference identity, facial features, hair, clothing style and overall appearance while following my live head movement, expression and speech naturally.</textarea>
+        </label>
+        <label class="checkbox"><input id="enhance" type="checkbox" checked> Enable Decart prompt enhancement when Lucy is selected</label>
+        <label class="checkbox consent"><input id="consent" type="checkbox"> I confirm that I am authorized to use this camera, image, and voice.</label>
+      </article>
+
+      <article class="panel">
+        <h2>2. Camera and connection</h2>
+        <label>Camera<select id="cameraDevice"></select></label>
+        <label>Microphone<select id="audioDevice"></select></label>
+        <label class="checkbox"><input id="sendAudio" type="checkbox"> Include microphone audio in the selected trusted output</label>
+        <label>Maximum test duration
+          <select id="maxDuration">
+            <option value="60">60 seconds</option>
+            <option value="180">3 minutes</option>
+            <option value="300">5 minutes</option>
+            <option value="0">No automatic stop</option>
+          </select>
+        </label>
+        <div class="actions">
+          <button id="refreshDevices">Refresh devices</button>
+          <button id="networkTest">Run network preflight</button>
+        </div>
+        <div class="status-grid">
+          <div><span>Network</span><strong id="networkQuality">Not tested</strong></div>
+          <div><span>Transport</span><strong id="networkTransport">—</strong></div>
+          <div><span>RTT</span><strong id="networkRtt">—</strong></div>
+          <div><span>Model capture</span><strong id="modelCapture">1280×720</strong></div>
+        </div>
+        <div id="networkNotice" class="notice">Free engines run on-device. Local Avatar uses the self-hosted MediaPipe face tracker; Lucy network preflight is enabled only when Lucy is explicitly selected.</div>
+      </article>
+    </div>
+
+</details>
+    <article class="panel control-panel">
+      <div>
+        <h2>Your call preview</h2>
+        <p id="sessionMessage">Choose your team member above. Live body animation is not connected yet.</p>
+      </div>
+      <div class="actions">
+        <button id="connect" class="primary">Start call preview</button>
+        <button id="tryPuppet">Try free 2D body demo</button>
+        <button id="apply" disabled>Apply portrait/prompt update</button>
+        <button id="disconnect" disabled>Stop</button>
+      </div>
+    </article>
+
+    <article class="panel stage">
+      <div class="stage-grid">
+        <div class="video-card">
+          <div class="video-label">Your camera <span class="mini-badge neutral">LOCAL</span></div>
+          <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+        <div class="video-card output-card">
+          <div class="video-label">What the caller sees <span id="outputBadge" class="mini-badge neutral">WAITING</span></div>
+          <video id="remoteVideo" autoplay muted playsinline></video>
+          <div id="outputPlaceholder" class="placeholder">Your presenter will appear here when live animation is connected.</div>
+        </div>
+      </div>
+      <details><summary>Session details</summary><div class="status-grid wide">
+        <div><span>Session</span><strong id="sessionState">Idle</strong></div>
+        <div><span>Engine</span><strong id="engineState">Standby</strong></div>
+        <div><span>SDK state</span><strong id="sdkState">Disconnected</strong></div>
+        <div><span>Frame validation</span><strong id="frameValidation">Waiting</strong></div>
+        <div><span>Output bridge</span><strong id="bridgeState">Stopped</strong></div>
+        <div><span>Latency</span><strong id="latencyMetric">—</strong></div>
+        <div><span>Timer</span><strong id="sessionTimer">00:00:00</strong></div>
+      </div>
+</details>    </article>
+  </section>
+
+  <section id="tab-output" class="tab">
+    <div class="two-col">
+      <article class="panel">
+        <h2>OBS Studio and Virtual Camera</h2>
+        <div id="obsDiagnostics" class="status-list">Checking OBS…</div>
+        <div class="actions">
+          <button id="prepareObs">Prepare OBS output</button>
+          <button data-launch="obs">Open OBS</button>
+          <button id="repairVirtualCamera">Repair Virtual Camera</button>
+          <button data-launch="obsDownload">Official OBS download</button>
+        </div>
+        <div class="notice">OBS receives only a verified engine stream: Trusted Local, Local Avatar, or Lucy. Local Avatar must have active face tracking before it can be bridged. Raw physical camera is never substituted.</div>
+      </article>
+      <article class="panel">
+        <h2>OBS control state</h2>
+        <div class="status-grid">
+          <div><span>WebSocket</span><strong id="obsConnectionState">Disconnected</strong></div>
+          <div><span>Scene</span><strong id="obsSceneState">Not prepared</strong></div>
+          <div><span>Virtual Camera</span><strong id="obsCameraState">Unknown</strong></div>
+          <div><span>Browser bridge</span><strong id="obsBridgeState">Waiting</strong></div>
+        </div>
+        <label>WebSocket address<input id="obsAddress" value="ws://127.0.0.1:4455"></label>
+        <label>WebSocket password<input id="obsPassword" type="password" autocomplete="off"></label>
+      </article>
+    </div>
+    <article class="panel">
+      <h2>Call application selection</h2>
+      <dl>
+        <dt>Camera</dt><dd>OBS Virtual Camera</dd>
+        <dt>Microphone</dt><dd>Select the verified custom-voice virtual microphone in the calling app. A physical microphone exposes your original voice.</dd>
+        <dt>Speakers</dt><dd>Physical headphones</dd>
+      </dl>
+      <div class="actions"><button data-launch="whatsapp">Open WhatsApp Web</button><button data-launch="zoom">Open Zoom</button></div>
+    </article>
+  </section>
+
+  <section id="tab-system" class="tab">
+    <div class="two-col">
+      <article class="panel">
+        <h2>Acceptance gates</h2>
+        <div id="gateList" class="gate-list"></div>
+        <div class="notice">Broadcast-ready requires a healthy backend, a selected trusted engine, advancing processed frames, separation from raw camera, frame-difference validation, and a live OBS bridge. Local Avatar additionally requires active face tracking; Lucy requires its protected credential and network preflight.</div>
+      </article>
+      <article class="panel">
+        <h2>Session event log</h2>
+        <div id="eventLog" class="event-log"></div>
+        <div class="actions"><button id="downloadLog">Download diagnostics</button><button id="clearLog">Clear log</button></div>
+      </article>
+    </div>
+    <article class="panel">
+      <h2>Local infrastructure</h2>
+      <div id="orchestratorStatus" class="notice">Checking supervisor…</div>
+      <div id="toolGrid" class="tool-grid"></div>
+      <button id="refreshSystem">Refresh system status</button>
+    </article>
+  </section>
+</main>
+
+<div id="toast"></div>
+<script type="module" src="/assets/studio.js?v=pose-motion-demo-20261012"></script>
+<script type="module" src="/voice-select.js?v=voice-routing-2"></script>
+</body>
+</html>
