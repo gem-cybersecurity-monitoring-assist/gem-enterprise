@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 import { processSocialPublishingBatch } from "@/lib/social-media/publishing/worker";
-import { parseSlotHour } from "@/lib/social-media/publishing/slots";
+import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
 
 function authorized(request: NextRequest) {
   const configured = process.env.CRON_SECRET?.trim();
@@ -17,16 +16,7 @@ function authorized(request: NextRequest) {
   );
 }
 
-/**
- * Slot worker tick: /api/social-media/publishing/jobs/process/{HH}.
- *
- * The slot parameter is the UTC hour window this tick owns. The worker claims
- * jobs that are due and unscheduled, or scheduled before the end of the slot
- * window (overdue scheduled jobs are recovered by later ticks). Per-provider
- * batch caps and minimum publish spacing are enforced inside the claim as
- * backpressure. CRON_SECRET bearer auth, same as the unslotted route.
- */
-async function run(request: NextRequest, slot: string) {
+async function run(request: NextRequest) {
   if (!process.env.CRON_SECRET?.trim()) {
     return NextResponse.json(
       {
@@ -52,30 +42,14 @@ async function run(request: NextRequest, slot: string) {
     );
   }
 
-  const slotHour = parseSlotHour(slot);
-  if (slotHour === null) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          code: "INVALID_SLOT",
-          message:
-            "The slot parameter must be an hour of day between 00 and 23 (e.g. /process/07).",
-        },
-      },
-      { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } },
-    );
-  }
-
   const gatewayBlock = await socialCronGatewayBlock("social-publishing");
   if (gatewayBlock) return gatewayBlock;
 
   try {
-    const result = await processSocialPublishingBatch(10, { slotHour });
+    const result = await processSocialPublishingBatch(10);
     return NextResponse.json(
       {
         ok: true,
-        slot: slotHour,
         processed: result.claimed,
         published: result.published,
         retrying: result.retrying,
@@ -90,8 +64,7 @@ async function run(request: NextRequest, slot: string) {
         ok: false,
         error: {
           code: "SOCIAL_PUBLISHING_WORKER_FAILED",
-          message:
-            "The governed publishing worker could not complete this slot batch.",
+          message: "The governed publishing worker could not complete this batch.",
         },
       },
       { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } },
@@ -99,18 +72,11 @@ async function run(request: NextRequest, slot: string) {
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slot: string }> },
-) {
-  const { slot } = await params;
-  return run(request, slot);
+
+export async function GET(request: NextRequest) {
+  return run(request);
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ slot: string }> },
-) {
-  const { slot } = await params;
-  return run(request, slot);
+export async function POST(request: NextRequest) {
+  return run(request);
 }
