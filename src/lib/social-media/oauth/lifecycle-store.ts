@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { TokMetricError } from "@/lib/tokmetric/security";
 import { decryptSocialCredential, encryptSocialCredential } from "./crypto";
-import { parseSocialOAuthProvider } from "./config";
+import { parseSocialConnectorProvider } from "./config";
 import type { SocialCredentialLifecycleResult } from "./lifecycle";
 import type { SocialConnectorRecord, StoredSocialCredential } from "./store";
 
@@ -76,7 +76,11 @@ export async function loadSocialConnectorCredential(input: {
         "Active social connector authorization was not found.",
       );
     }
-    const provider = parseSocialOAuthProvider(row.provider);
+        // Stored connector providers include bot-token providers (Telegram)
+    // as well as OAuth providers, so parse with the connector union, not
+    // the OAuth-only union. The decrypt + consistency check below still
+    // runs unchanged for every provider.
+    const provider = parseSocialConnectorProvider(row.provider);
     const credential = decryptSocialCredential<StoredSocialCredential>(row.secretRef);
     if (credential.provider !== provider || credential.externalAccountId !== row.externalAccountId) {
       throw new TokMetricError(
