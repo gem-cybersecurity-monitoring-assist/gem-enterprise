@@ -143,6 +143,7 @@ const NAV_SECTIONS_DATA: NavSection[] = [
       { label: "Executive Board", path: "/company#board", description: "Board of directors" },
       { label: "Teams", path: "/company#teams", description: "Expert teams and divisions" },
       { label: "Personnel Board", path: "/personnel", description: "GEM & ATR personnel directory with AI Overseer" },
+      { label: "GlobalGateway Logistics", path: "/business-lines/globalgateway", description: "Separate logistics and international forwarding business line; readiness-gated access" },
     ],
   },
 ];
