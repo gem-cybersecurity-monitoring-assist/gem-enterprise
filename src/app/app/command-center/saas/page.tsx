@@ -34,9 +34,14 @@ export default function SaaSControlPlanePage() {
           Pre-market architecture and feature inventory. Route existence never confirms live operations, connected providers,
           client entitlements or production authorization. No purchases, publications, enrollment or service activation occur here.
         </p>
-        <Link className="inline-flex text-sm font-semibold text-cyan-300 underline underline-offset-4" href="/app/command-center">
-          Return to existing command center
-        </Link>
+        <div className="flex flex-wrap gap-5">
+          <Link className="inline-flex text-sm font-semibold text-cyan-300 underline underline-offset-4" href="/app/command-center">
+            Return to existing command center
+          </Link>
+          <Link className="inline-flex text-sm font-semibold text-cyan-300 underline underline-offset-4" href="/app/command-center/saas/market-preview">
+            Review private market-facing preview
+          </Link>
+        </div>
       </header>
       <SaaSOperationalSnapshot />
       {areas.map((area) => (
