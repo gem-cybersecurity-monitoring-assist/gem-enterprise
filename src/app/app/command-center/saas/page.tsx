@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SaaSOperationalSnapshot } from "@/components/command-center/SaaSOperationalSnapshot";
 import { listSaaSCapabilities, type SaaSArea, type SaaSReadiness } from "@/lib/saasCapabilityCatalog";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function SaaSControlPlanePage() {
           Return to existing command center
         </Link>
       </header>
+      <SaaSOperationalSnapshot />
       {areas.map((area) => (
         <section key={area.id} aria-labelledby={area.id} className="space-y-4">
           <div>
