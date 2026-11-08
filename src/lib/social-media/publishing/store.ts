@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
 import {
   redactSecrets,
   TokMetricError,
@@ -16,42 +17,18 @@ import {
   providerSlotCapCaseSql,
   providerSpacingIntervalSql,
 } from "./slots";
+import {
+  claimSocialPublishingJobsViaGateway,
+  createSocialPublishingJobViaGateway,
+  listSocialPublishingJobsViaGateway,
+  markSocialConnectorForReauthorizationViaGateway,
+  markSocialPublishingJobBlockedViaGateway,
+  markSocialPublishingJobFailedViaGateway,
+  markSocialPublishingJobPublishedViaGateway,
+} from "./gateway-store";
+import { job, type SocialPublishingJobRow } from "./job-row";
 
 const CLAIM_TTL_MS = 2 * 60 * 1000;
-
-interface SocialPublishingJobRow {
-  id: string;
-  workspaceId: string;
-  provider: SharedSocialPublishingProvider;
-  connectorId: string;
-  contentType: SocialContentType;
-  contentVersionHash: string;
-  approvedVersionHash: string;
-  approvalId: string;
-  complianceReviewId: string;
-  compliancePassed: boolean;
-  idempotencyKey: string;
-  payload: unknown;
-  localContext: string | null;
-  state: SocialPublishingJobState;
-  attemptCount: number;
-  maxAttempts: number;
-  nextAttemptAt: Date;
-  claimId: string | null;
-  claimExpiresAt: Date | null;
-  externalPostId: string | null;
-  externalPostUrl: string | null;
-  safeProviderMetadata: unknown;
-  lastErrorCode: string | null;
-  lastErrorMessage: string | null;
-  requestedById: string | null;
-  scheduledFor: Date | null;
-  claimedAt: Date | null;
-  submittedAt: Date | null;
-  completedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 const jobSelection = Prisma.sql`
   id,
@@ -86,20 +63,6 @@ const jobSelection = Prisma.sql`
   created_at AS "createdAt",
   updated_at AS "updatedAt"
 `;
-
-function object(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function job(row: SocialPublishingJobRow): SocialPublishingJobRecord {
-  return {
-    ...row,
-    payload: object(row.payload) as SocialPublishingPayload,
-    safeProviderMetadata: object(row.safeProviderMetadata),
-  };
-}
 
 function isMissingStore(error: unknown) {
   if (!(error instanceof Error)) return false;
@@ -146,7 +109,7 @@ export function isSamePublishingRequest(
   );
 }
 
-export async function createSocialPublishingJob(input: {
+async function createSocialPublishingJobPrisma(input: {
   workspaceId: string;
   provider: SharedSocialPublishingProvider;
   connectorId: string;
@@ -265,7 +228,7 @@ export async function createSocialPublishingJob(input: {
   }
 }
 
-export async function listSocialPublishingJobs(input: {
+async function listSocialPublishingJobsPrisma(input: {
   workspaceId: string;
   limit?: number;
 }) {
@@ -284,6 +247,12 @@ export async function listSocialPublishingJobs(input: {
   }
 }
 
+/**
+ * Phase 2 (autopilot) operations. The autopilot service has its own direct
+ * Prisma surface and stays gateway-blocked until its own adapter phase, so
+ * these three deliberately have no gateway implementation in phase 1 and
+ * always run against Prisma, even when the gateway is selected.
+ */
 export async function countSocialPublishingJobsForWindow(input: {
   workspaceId: string;
   provider: SharedSocialPublishingProvider;
@@ -374,7 +343,7 @@ export async function cancelPendingSocialAutopilotJobs(input: {
  * - per-provider minimum spacing: a job is not claimed when the same
  *   connector already published for that provider inside the spacing window.
  */
-export async function claimSocialPublishingJobs(
+async function claimSocialPublishingJobsPrisma(
   limit = 10,
   options: { slotEnd?: Date | null } = {},
 ) {
@@ -500,7 +469,7 @@ async function recordAttempt(input: {
   `);
 }
 
-export async function markSocialPublishingJobPublished(input: {
+async function markSocialPublishingJobPublishedPrisma(input: {
   job: SocialPublishingJobRecord;
   externalPostId: string;
   externalPostUrl?: string;
@@ -551,7 +520,7 @@ export async function markSocialPublishingJobPublished(input: {
   }
 }
 
-export async function markSocialPublishingJobBlocked(input: {
+async function markSocialPublishingJobBlockedPrisma(input: {
   job: SocialPublishingJobRecord;
   errorCode: string;
   errorMessage: string;
@@ -599,7 +568,7 @@ export async function markSocialPublishingJobBlocked(input: {
   }
 }
 
-export async function markSocialPublishingJobFailed(input: {
+async function markSocialPublishingJobFailedPrisma(input: {
   job: SocialPublishingJobRecord;
   errorCode: string;
   errorMessage: string;
@@ -662,7 +631,7 @@ export async function markSocialPublishingJobFailed(input: {
   }
 }
 
-export async function markSocialConnectorForReauthorization(input: {
+async function markSocialConnectorForReauthorizationPrisma(input: {
   workspaceId: string;
   connectorId: string;
   reasonCode: string;
@@ -687,4 +656,74 @@ export async function markSocialConnectorForReauthorization(input: {
   } catch (error) {
     return storeUnavailable(error);
   }
+}
+
+/**
+ * Factory: the worker and the routes import the names below from this
+ * module and get the Prisma implementation on a direct database, or the
+ * gateway-backed implementation (gateway-store.ts) when the Supabase
+ * gateway is selected. No logic lives here — each implementation is a
+ * separate module, and the Prisma bodies above are unchanged.
+ */
+export async function createSocialPublishingJob(
+  ...args: Parameters<typeof createSocialPublishingJobPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return createSocialPublishingJobViaGateway(...args);
+  }
+  return createSocialPublishingJobPrisma(...args);
+}
+
+export async function listSocialPublishingJobs(
+  ...args: Parameters<typeof listSocialPublishingJobsPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return listSocialPublishingJobsViaGateway(...args);
+  }
+  return listSocialPublishingJobsPrisma(...args);
+}
+
+export async function claimSocialPublishingJobs(
+  ...args: Parameters<typeof claimSocialPublishingJobsPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return claimSocialPublishingJobsViaGateway(...args);
+  }
+  return claimSocialPublishingJobsPrisma(...args);
+}
+
+export async function markSocialPublishingJobPublished(
+  ...args: Parameters<typeof markSocialPublishingJobPublishedPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return markSocialPublishingJobPublishedViaGateway(...args);
+  }
+  return markSocialPublishingJobPublishedPrisma(...args);
+}
+
+export async function markSocialPublishingJobBlocked(
+  ...args: Parameters<typeof markSocialPublishingJobBlockedPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return markSocialPublishingJobBlockedViaGateway(...args);
+  }
+  return markSocialPublishingJobBlockedPrisma(...args);
+}
+
+export async function markSocialPublishingJobFailed(
+  ...args: Parameters<typeof markSocialPublishingJobFailedPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return markSocialPublishingJobFailedViaGateway(...args);
+  }
+  return markSocialPublishingJobFailedPrisma(...args);
+}
+
+export async function markSocialConnectorForReauthorization(
+  ...args: Parameters<typeof markSocialConnectorForReauthorizationPrisma>
+) {
+  if (shouldUseSupabaseGateway()) {
+    return markSocialConnectorForReauthorizationViaGateway(...args);
+  }
+  return markSocialConnectorForReauthorizationPrisma(...args);
 }
