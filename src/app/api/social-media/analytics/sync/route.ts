@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { processSocialPublishingBatch } from "@/lib/social-media/publishing/worker";
 import { socialCronGatewayBlock } from "@/lib/social-media/cron-backend-gate";
+import { runSocialMetricsSync } from "@/lib/social-media/analytics/sync";
 
 function authorized(request: NextRequest) {
   const configured = process.env.CRON_SECRET?.trim();
@@ -23,7 +23,7 @@ async function run(request: NextRequest) {
         ok: false,
         error: {
           code: "CRON_AUTH_NOT_CONFIGURED",
-          message: "Publishing worker authentication is not configured.",
+          message: "Metrics worker authentication is not configured.",
         },
       },
       { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } },
@@ -35,26 +35,28 @@ async function run(request: NextRequest) {
         ok: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Publishing worker authentication failed.",
+          message: "Metrics worker authentication failed.",
         },
       },
       { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 
-  const gatewayBlock = await socialCronGatewayBlock("social-publishing");
+  const gatewayBlock = await socialCronGatewayBlock("social-analytics");
   if (gatewayBlock) return gatewayBlock;
 
+  const limitParam = request.nextUrl.searchParams.get("limit");
+  const limit = limitParam ? Math.min(Math.max(Number(limitParam) || 50, 1), 200) : 50;
+
   try {
-    const result = await processSocialPublishingBatch(10);
+    const result = await runSocialMetricsSync(limit);
     return NextResponse.json(
       {
         ok: true,
-        processed: result.claimed,
-        published: result.published,
-        retrying: result.retrying,
-        blocked: result.blocked,
-        failed: result.failed,
+        jobsConsidered: result.jobsConsidered,
+        snapshotsCollected: result.snapshotsCollected,
+        accountMetricsCollected: result.accountMetricsCollected,
+        runs: result.runs,
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
     );
@@ -63,15 +65,14 @@ async function run(request: NextRequest) {
       {
         ok: false,
         error: {
-          code: "SOCIAL_PUBLISHING_WORKER_FAILED",
-          message: "The governed publishing worker could not complete this batch.",
+          code: "SOCIAL_METRICS_WORKER_FAILED",
+          message: "The governed metrics worker could not complete this batch.",
         },
       },
       { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 }
-
 
 export async function GET(request: NextRequest) {
   return run(request);
