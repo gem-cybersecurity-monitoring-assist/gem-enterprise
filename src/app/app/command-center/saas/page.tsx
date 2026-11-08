@@ -1,72 +1,45 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SaaSOperationalSnapshot } from "@/components/command-center/SaaSOperationalSnapshot";
-import { listSaaSCapabilities, type SaaSArea, type SaaSReadiness } from "@/lib/saasCapabilityCatalog";
+import { SaaSManagementWorkspace } from "@/components/command-center/SaaSManagementWorkspace";
 
 export const metadata: Metadata = {
-  title: "SaaS Control Plane | GEM Enterprise",
-  description: "Pre-launch register of GEM Enterprise platform capabilities and their activation requirements.",
-  robots: { index: false, follow: false },
-};
-
-const areas: readonly { id: SaaSArea; label: string; description: string }[] = [
-  { id: "owner", label: "Owner governance", description: "Company-wide control, approvals and decisions." },
-  { id: "operations", label: "Internal operations", description: "Tenant administration, services and governed automation." },
-  { id: "client", label: "Client experience", description: "Authenticated client tools and private service workflows." },
-  { id: "community", label: "Community", description: "Member network preparation and moderation." },
-  { id: "market", label: "Marketplace and commercial", description: "Request-only services and future SaaS commerce." },
-];
-
-const statusLabels: Record<SaaSReadiness, string> = {
-  "existing-surface": "Existing surface — operation unverified",
-  "preview-only": "Preview only",
-  "request-only": "Request only",
-  planned: "Planned — not enabled",
+  title: "GEM SaaS Management | GEM Enterprise",
+  description: "Private enterprise SaaS control plane for GEM Enterprise management.",
+  robots: { index: false, follow: false, nocache: true },
 };
 
 export default function SaaSControlPlanePage() {
   return (
-    <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 text-slate-100 sm:px-6">
-      <header className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">GEM Enterprise · Private product control plane</p>
-        <h1 className="text-3xl font-bold tracking-tight">Unified SaaS capability register</h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-slate-300">
-          Pre-market architecture and feature inventory. Route existence never confirms live operations, connected providers,
-          client entitlements or production authorization. No purchases, publications, enrollment or service activation occur here.
+    <main className="mx-auto max-w-7xl space-y-9 px-4 py-8 text-slate-100 sm:px-6">
+      <header className="space-y-4 rounded-2xl border border-cyan-500/20 bg-slate-950 px-5 py-7 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">GEM Enterprise · Owner operations</p>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">SaaS Management Center</h1>
+        <p className="max-w-3xl text-sm leading-7 text-slate-300">
+          One protected command center for your existing enterprise website: organizations, users,
+          customers, services, approvals, content, integrations, community preparation and commercial readiness.
+          This is an authenticated premarket management surface, not a second platform or payment system.
         </p>
-        <div className="flex flex-wrap gap-5">
-          <Link className="inline-flex text-sm font-semibold text-cyan-300 underline underline-offset-4" href="/app/command-center">
+        <div className="flex flex-wrap gap-4">
+          <Link href="/app/command-center" className="inline-flex rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-slate-800">
             Return to existing command center
           </Link>
-          <Link className="inline-flex text-sm font-semibold text-cyan-300 underline underline-offset-4" href="/app/command-center/saas/market-preview">
-            Review private market-facing preview
+          <Link href="/app/command-center/saas/market-preview" className="inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20">
+            View market-facing SaaS preview
           </Link>
         </div>
       </header>
       <SaaSOperationalSnapshot />
-      {areas.map((area) => (
-        <section key={area.id} aria-labelledby={area.id} className="space-y-4">
-          <div>
-            <h2 id={area.id} className="text-xl font-semibold">{area.label}</h2>
-            <p className="text-sm text-slate-400">{area.description}</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {listSaaSCapabilities(area.id).map((item) => (
-              <article key={item.id} className="space-y-3 rounded-xl border border-slate-700 bg-slate-900/80 p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-amber-300">{statusLabels[item.readiness]}</p>
-                <h3 className="text-lg font-semibold">{item.title}</h3>
-                <p className="text-sm text-slate-300">{item.description}</p>
-                <p className="text-xs text-slate-400"><span className="font-semibold text-slate-200">Activation gate:</span> {item.activationGate}</p>
-                {item.href ? (
-                  <Link href={item.href} className="inline-block text-sm text-cyan-300 underline underline-offset-4">Open existing surface</Link>
-                ) : (
-                  <span className="text-xs text-slate-400">No activated destination</span>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      ))}
+      <SaaSManagementWorkspace />
+      <section className="rounded-xl border border-amber-500/30 bg-slate-950 p-5" aria-labelledby="activation-policy">
+        <h2 id="activation-policy" className="text-lg font-semibold text-amber-100">Controlled activation policy</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-300">
+          The website can open existing workspaces, but this control plane cannot grant roles, publish content,
+          collect payments, activate marketplace orders, approve identity checks or provision new tenants.
+          Those actions remain behind their existing authoritative backend and human approval controls.
+          Route availability does not certify integration health or contractual service availability.
+        </p>
+      </section>
     </main>
   );
 }
