@@ -3,44 +3,48 @@
  * database calls, with the same signatures as the Prisma implementations
  * they replace.
  *
- * Each helper is transport-aware: on a direct database it delegates to the
- * original module (identical behaviour); on the Supabase gateway it calls
- * the matching edge-function action. The worker only uses
- * loadSocialPublishingGovernanceEvidence today (the one worker edit the
- * design allows); the other four are built and tested here so the follow-up
- * that re-points the worker's remaining imports (credential load, emergency
- * locks, audit, pause) is a clean import swap with no new logic.
+ * The gateway branches now live in the original modules, which are
+ * transport-aware: lifecycle-store.ts (credential load),
+ * provider-pause.ts (pause state), and tokmetric/security.ts (emergency
+ * locks, audit) each branch on shouldUseSupabaseGateway() internally and
+ * run the Prisma path unchanged on a direct database. That direction
+ * matters: the originals cannot import these helpers (gateway-worker-deps
+ * imports the originals for the governance Prisma path), so the helpers
+ * here are thin re-exports of the transport-aware originals, kept so the
+ * worker-deps import surface the adapter established — and the adapter
+ * tests that assert the forwarding — keep working. The worker itself
+ * imports the originals directly and needs no change.
+ *
+ * The one helper with no original module is loadSocialPublishingGovernanceEvidence
+ * below: the governance reads belong to the worker, so both branches live here.
  *
  * Credential load: the gateway returns the raw row INCLUDING the secretRef
- * ciphertext, and the existing decrypt + consistency check runs here in
- * Node — the encryption key never leaves Vercel. The TELEGRAM / BOT_TOKEN
- * provider parse is the merged #468 fix (parseSocialConnectorProvider);
- * this module builds on it, it does not re-implement it.
+ * ciphertext, and the existing decrypt + consistency check runs in Node in
+ * lifecycle-store.ts — the encryption key never leaves Vercel. The
+ * TELEGRAM / BOT_TOKEN provider parse is the merged #468 fix
+ * (parseSocialConnectorProvider); this module builds on it, it does not
+ * re-implement it.
  *
  * Audit stays best-effort: the worker's audit() helper swallows failures,
  * exactly as on the Prisma path.
  */
 import { GatewayRequestError, shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
 import { db } from "@/lib/db";
-import {
-  emitTokMetricAudit as emitTokMetricAuditPrisma,
-  enforceEmergencyLocks as enforceEmergencyLocksPrisma,
-  redactSecrets,
-  TokMetricError,
-} from "@/lib/tokmetric/security";
-import { loadSocialConnectorCredential as loadSocialConnectorCredentialPrisma } from "@/lib/social-media/oauth/lifecycle-store";
-import {
-  isSocialProviderPaused as isSocialProviderPausedPrisma,
-  type SocialPauseProvider,
-} from "@/lib/social-media/oauth/provider-pause";
-import { decryptSocialCredential } from "@/lib/social-media/oauth/crypto";
-import { parseSocialConnectorProvider } from "@/lib/social-media/oauth/config";
-import type {
-  SocialConnectorRecord,
-  StoredSocialCredential,
-} from "@/lib/social-media/oauth/store";
+import { TokMetricError } from "@/lib/tokmetric/security";
 import { socialPublishingGateway } from "./gateway-client";
 import type { SocialPublishingJobRecord } from "./types";
+
+// The four worker calls whose gateway branches live in the original
+// modules (see the header comment): re-exported here so the worker-deps
+// import surface stays stable. Each original branches on
+// shouldUseSupabaseGateway() internally; on a direct database it runs the
+// exact Prisma implementation it always ran.
+export { loadSocialConnectorCredential } from "@/lib/social-media/oauth/lifecycle-store";
+export {
+  emitTokMetricAudit,
+  enforceEmergencyLocks,
+} from "@/lib/tokmetric/security";
+export { isSocialProviderPaused } from "@/lib/social-media/oauth/provider-pause";
 
 function gatewayError(error: unknown): never {
   if (error instanceof GatewayRequestError) {
@@ -303,206 +307,6 @@ export async function loadSocialPublishingGovernanceEvidence(
         body.complianceReview,
       ),
     };
-  } catch (error) {
-    return gatewayError(error);
-  }
-}
-
-// --- Connector credential -------------------------------------------------
-
-interface GatewayCredentialRow {
-  id: string;
-  workspaceId: string;
-  provider: string;
-  state: string;
-  displayName: string;
-  externalAccountId: string | null;
-  grantedScopes: string[];
-  safeMetadata: Record<string, unknown>;
-  lastHealthAt: Date | null;
-  disabledAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  secretRef: string;
-  credentialExpiresAt: Date | null;
-  credentialRefreshExpiresAt: Date | null;
-  credentialRotatedAt: Date | null;
-}
-
-function reviveCredentialRow(
-  raw: Record<string, unknown>,
-): GatewayCredentialRow {
-  const createdAt = toDate(raw.createdAt);
-  const updatedAt = toDate(raw.updatedAt);
-  if (!createdAt || !updatedAt) {
-    throw new TokMetricError(
-      500,
-      "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
-      "The social publishing gateway returned an unexpected response.",
-    );
-  }
-  return {
-    id: String(raw.id ?? ""),
-    workspaceId: String(raw.workspaceId ?? ""),
-    provider: String(raw.provider ?? ""),
-    state: String(raw.state ?? ""),
-    displayName: String(raw.displayName ?? ""),
-    externalAccountId: toNullableString(raw.externalAccountId),
-    grantedScopes: Array.isArray(raw.grantedScopes)
-      ? (raw.grantedScopes.filter(
-          (entry): entry is string => typeof entry === "string",
-        ) as string[])
-      : [],
-    safeMetadata:
-      isRecord(raw.safeMetadata) && !Array.isArray(raw.safeMetadata)
-        ? raw.safeMetadata
-        : {},
-    lastHealthAt: toDate(raw.lastHealthAt),
-    disabledAt: toDate(raw.disabledAt),
-    createdAt,
-    updatedAt,
-    secretRef: String(raw.secretRef ?? ""),
-    credentialExpiresAt: toDate(raw.credentialExpiresAt),
-    credentialRefreshExpiresAt: toDate(raw.credentialRefreshExpiresAt),
-    credentialRotatedAt: toDate(raw.credentialRotatedAt),
-  };
-}
-
-/**
- * Same signature and return shape as
- * loadSocialConnectorCredential in oauth/lifecycle-store.ts. On the gateway
- * the RPC returns the raw row including secretRef; decryption and the
- * provider/account consistency check run here in Node, unchanged.
- */
-export async function loadSocialConnectorCredential(input: {
-  workspaceId: string;
-  connectorId: string;
-}) {
-  if (!shouldUseSupabaseGateway()) {
-    return loadSocialConnectorCredentialPrisma(input);
-  }
-  try {
-    const body = await socialPublishingGateway<Record<string, unknown>>(
-      "load_credential",
-      { workspaceId: input.workspaceId, connectorId: input.connectorId },
-    );
-    if (!isRecord(body.row)) {
-      throw new TokMetricError(
-        500,
-        "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
-        "The social publishing gateway returned an unexpected response.",
-      );
-    }
-    const row = reviveCredentialRow(body.row);
-    // Stored connector providers include bot-token providers (Telegram) as
-    // well as OAuth providers, so parse with the connector union (#468).
-    const provider = parseSocialConnectorProvider(row.provider);
-    const credential = decryptSocialCredential<StoredSocialCredential>(
-      row.secretRef,
-    );
-    if (
-      credential.provider !== provider ||
-      credential.externalAccountId !== row.externalAccountId
-    ) {
-      throw new TokMetricError(
-        409,
-        "SOCIAL_CONNECTOR_CREDENTIAL_MISMATCH",
-        "Stored connector authorization does not match the selected provider account.",
-      );
-    }
-    return {
-      connector: {
-        id: row.id,
-        workspaceId: row.workspaceId,
-        provider,
-        state: row.state,
-        displayName: row.displayName,
-        externalAccountId: row.externalAccountId,
-        grantedScopes: row.grantedScopes,
-        safeMetadata: row.safeMetadata,
-        lastHealthAt: row.lastHealthAt,
-        disabledAt: row.disabledAt,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      } satisfies SocialConnectorRecord,
-      credential,
-      credentialRotatedAt: row.credentialRotatedAt
-        ? row.credentialRotatedAt.toISOString()
-        : null,
-    };
-  } catch (error) {
-    if (error instanceof TokMetricError) throw error;
-    return gatewayError(error);
-  }
-}
-
-// --- Emergency locks ------------------------------------------------------
-
-export async function enforceEmergencyLocks(
-  workspaceId: string,
-  action: "publish" | "advertise" | "shop_write" | "connector",
-) {
-  if (!shouldUseSupabaseGateway()) {
-    return enforceEmergencyLocksPrisma(workspaceId, action);
-  }
-  try {
-    await socialPublishingGateway<Record<string, unknown>>(
-      "workspace_locks",
-      { workspaceId, action },
-    );
-  } catch (error) {
-    return gatewayError(error);
-  }
-}
-
-// --- Audit ----------------------------------------------------------------
-
-export async function emitTokMetricAudit(input: {
-  workspaceId?: string;
-  actorId?: string;
-  action: string;
-  entityType: string;
-  entityId?: string;
-  correlationId: string;
-  outcome: string;
-  metadata?: unknown;
-  sourceChannel: string;
-}) {
-  if (!shouldUseSupabaseGateway()) {
-    return emitTokMetricAuditPrisma(input);
-  }
-  try {
-    await socialPublishingGateway<Record<string, unknown>>("audit_event", {
-      workspaceId: input.workspaceId ?? null,
-      actorId: input.actorId ?? null,
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId ?? null,
-      correlationId: input.correlationId,
-      outcome: input.outcome,
-      sourceChannel: input.sourceChannel,
-      safeMetadata: redactSecrets(input.metadata ?? {}),
-    });
-  } catch (error) {
-    return gatewayError(error);
-  }
-}
-
-// --- Persistent provider pause ---------------------------------------------
-
-export async function isSocialProviderPaused(
-  workspaceId: string,
-  provider: SocialPauseProvider,
-): Promise<boolean> {
-  if (!shouldUseSupabaseGateway()) {
-    return isSocialProviderPausedPrisma(workspaceId, provider);
-  }
-  try {
-    const body = await socialPublishingGateway<Record<string, unknown>>(
-      "pause_state",
-      { workspaceId, provider },
-    );
-    return body.paused === true;
   } catch (error) {
     return gatewayError(error);
   }
