@@ -106,7 +106,7 @@ async function run(request: NextRequest) {
     );
   }
 
-  const gatewayBlock = socialCronGatewayBlock();
+  const gatewayBlock = await socialCronGatewayBlock("social-autopilot");
   if (gatewayBlock) return gatewayBlock;
 
   // Global emergency stop (globalEmergencyLock / publishingDisabled): fail
