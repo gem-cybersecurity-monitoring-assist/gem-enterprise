@@ -1,1 +1,8 @@
 project_id = "zplnwkgxkovepqplhohx"
+# Social publishing gateway adapter. The function authenticates callers with
+# the SOCIAL_GATEWAY_ADAPTER_SECRET bearer token, not with a Supabase JWT,
+# so platform JWT verification must be off for this function alone — a
+# non-JWT bearer would otherwise be rejected before the function runs.
+# Every other function keeps the default (verify_jwt = true).
+[functions.gem-social-publishing-gateway]
+verify_jwt = false
