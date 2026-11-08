@@ -1,4 +1,3 @@
-import { db } from "@/lib/db";
 import { loadSocialConnectorCredential } from "@/lib/social-media/oauth/lifecycle-store";
 import { evaluateSocialPublishingAuthorization } from "@/lib/social-media/policy";
 import {
@@ -37,6 +36,7 @@ import {
   markSocialPublishingJobPublished,
 } from "./store";
 import { providerPauseState, persistentProviderPauseState } from "./pause";
+import { loadSocialPublishingGovernanceEvidence } from "./gateway-worker-deps";
 import { verifySocialPublication } from "./verification";
 import { slotWindowUtc } from "./slots";
 import type { SocialPublishingJobRecord } from "./types";
@@ -48,31 +48,11 @@ function object(value: unknown): Record<string, unknown> {
 }
 
 async function governanceEvidence(job: SocialPublishingJobRecord) {
-  const [approval, complianceReview] = await Promise.all([
-    db.approvalRequest.findFirst({
-      where: {
-        id: job.approvalId,
-        workspaceId: job.workspaceId,
-        objectHash: job.approvedVersionHash,
-        state: "APPROVED",
-      },
-      include: {
-        content: true,
-        contentVersion: true,
-        decisions: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    }),
-    db.complianceReview.findFirst({
-      where: {
-        id: job.complianceReviewId,
-        workspaceId: job.workspaceId,
-        result: { in: ["PASS", "PASS_WITH_DISCLOSURE"] },
-      },
-    }),
-  ]);
+  // The two governance reads come from the gateway-backed helper (Prisma on
+  // a direct database, the gem_social_governance_evidence RPC on the
+  // gateway). The derivation below is unchanged.
+  const { approval, complianceReview } =
+    await loadSocialPublishingGovernanceEvidence(job);
 
   const decision = approval?.decisions[0];
   const versionId = approval?.contentVersionId || null;

@@ -42,7 +42,7 @@ async function run(request: NextRequest) {
     );
   }
 
-  const gatewayBlock = socialCronGatewayBlock();
+  const gatewayBlock = await socialCronGatewayBlock("social-publishing");
   if (gatewayBlock) return gatewayBlock;
 
   try {

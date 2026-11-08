@@ -67,7 +67,7 @@ async function run(request: NextRequest, slot: string) {
     );
   }
 
-  const gatewayBlock = socialCronGatewayBlock();
+  const gatewayBlock = await socialCronGatewayBlock("social-publishing");
   if (gatewayBlock) return gatewayBlock;
 
   try {

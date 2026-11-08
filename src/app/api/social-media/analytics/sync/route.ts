@@ -42,7 +42,7 @@ async function run(request: NextRequest) {
     );
   }
 
-  const gatewayBlock = socialCronGatewayBlock();
+  const gatewayBlock = await socialCronGatewayBlock("social-analytics");
   if (gatewayBlock) return gatewayBlock;
 
   const limitParam = request.nextUrl.searchParams.get("limit");

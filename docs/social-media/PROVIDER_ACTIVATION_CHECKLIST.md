@@ -19,8 +19,23 @@ How to connect each social account to the enterprise site. Variable names come f
 | `SOCIAL_TOKEN_ENCRYPTION_KEY` | New random 32-byte key (`openssl rand -base64 32`) |
 | `SOCIAL_OAUTH_STATE_SECRET` | New random secret (`openssl rand -hex 32`) |
 | `TOKMETRIC_TOKEN_ENCRYPTION_KEY` | New random 32-byte key, different from the social key |
+| `SOCIAL_GATEWAY_ADAPTER_SECRET` | New random secret (`openssl rand -hex 32`), same value in Vercel and Supabase — the machine secret the Next.js runtime sends to the `gem-social-publishing-gateway` edge function |
+| `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED` | `false` until the adapter is verified live (see below), then `true` in Vercel production only |
 
 Losing an encryption key makes stored tokens unreadable, and every account must then be reconnected. Keep a copy in the company password manager.
+
+## Gateway publishing adapter (social publishing worker on Supabase)
+
+The publishing worker runs against the Supabase gateway only when the adapter is fully deployed and verified. The code ships flag-gated and off by default.
+
+| Step | Detail |
+|---|---|
+| Target project | Live gateway project `slzdjoqpzbkwzuaexlkj` (NOT the repo-linked project in `supabase/config.toml`). Deploy with `--project-ref slzdjoqpzbkwzuaexlkj`. |
+| Tables first | Confirm the `social_*` tables exist in that project (dashboard SQL editor). If any is missing, port the Prisma social migrations first — the RPC migration creates no tables. |
+| RPCs | Apply `supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql` (12 phase-1 RPCs + the health RPC), then confirm with `select routine_name from information_schema.routines where routine_name like 'gem_social_%'`. |
+| Edge function | `supabase functions deploy gem-social-publishing-gateway --project-ref slzdjoqpzbkwzuaexlkj`. |
+| Machine secret | Set `SOCIAL_GATEWAY_ADAPTER_SECRET` in Supabase (`supabase secrets set ... --project-ref slzdjoqpzbkwzuaexlkj`) and in Vercel (production, sensitive type) — same value. |
+| Flag | Set `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED=true` in Vercel production ONLY after the live verification (health probe passes, claim/mark/idempotency checks) — then redeploy. Until then the cron gate stays 503 and readiness stays `BLOCKED_GATEWAY_BACKEND`. |
 
 ## Per provider
 
