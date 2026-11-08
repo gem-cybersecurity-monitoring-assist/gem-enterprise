@@ -5,11 +5,12 @@
  * NOT mocked: the factory in publishing/store.ts selects the gateway-backed
  * implementation (shouldUseSupabaseGateway is mocked true) and the only
  * mocked transport is the gateway client. The governance reads also run
- * through the gateway (the worker's governanceEvidence helper), while the
- * credential load still comes from the mocked lifecycle store — re-pointing
- * that import to the gateway helper is the follow-up wiring, and the
- * gateway credential load itself is covered by the direct helper tests
- * below.
+ * through the gateway (the worker's governanceEvidence helper). The
+ * worker's credential load, emergency locks, audit, and pause check run
+ * through the transport-aware originals (lifecycle-store, security,
+ * provider-pause), whose gateway branches are covered by
+ * social-publishing-gateway-worker-wiring.test.ts; the worker-deps
+ * re-exports of those four are asserted by the delegate block below.
  *
  * A job whose claim expired is dropped by the batch after the mark returns
  * 409 SOCIAL_PUBLISHING_CLAIM_LOST (the worker's existing claim-loss
@@ -20,7 +21,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SocialPublishingJobRecord } from "@/lib/social-media/publishing/types";
-import { encryptSocialCredential } from "@/lib/social-media/oauth/crypto";
 
 const gatewayErrors = vi.hoisted(() => ({
   GatewayRequestError: class GatewayRequestError extends Error {
@@ -62,6 +62,9 @@ const autopilot = vi.hoisted(() => ({ isApprovalDecision: vi.fn() }));
 const securityMocks = vi.hoisted(() => ({
   audit: vi.fn(),
   locks: vi.fn(),
+}));
+const pauseMocks = vi.hoisted(() => ({
+  isPaused: vi.fn(),
 }));
 const dbMocks = vi.hoisted(() => ({
   approvalFindFirst: vi.fn(),
@@ -108,7 +111,7 @@ vi.mock("@/lib/social-media/oauth/lifecycle-store", () => ({
   loadSocialConnectorCredential: credential.load,
 }));
 vi.mock("@/lib/social-media/oauth/provider-pause", () => ({
-  isSocialProviderPaused: vi.fn(),
+  isSocialProviderPaused: pauseMocks.isPaused,
 }));
 vi.mock("@/lib/social-media/publishing/adapters", () => ({
   getSocialPublishingAdapter: () => ({ publish: adapter.publish }),
@@ -372,27 +375,6 @@ function telegramConnector(safeMetadata: Record<string, unknown>) {
   };
 }
 
-function credentialRow(secretRef: string, externalAccountId: string) {
-  return {
-    id: "connector-telegram-1",
-    workspaceId: "workspace-1",
-    provider: "TELEGRAM",
-    state: "CONNECTED",
-    displayName: "Telegram",
-    externalAccountId,
-    grantedScopes: [],
-    safeMetadata: { telegramChatId: "-1003368597629" },
-    lastHealthAt: null,
-    disabledAt: null,
-    createdAt: NOW,
-    updatedAt: NOW,
-    secretRef,
-    credentialExpiresAt: null,
-    credentialRefreshExpiresAt: null,
-    credentialRotatedAt: null,
-  };
-}
-
 describe("gateway-backed store", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -650,62 +632,44 @@ describe("Telegram job through processSocialPublishingBatch (gateway)", () => {
   });
 });
 
-describe("gateway worker deps", () => {
+/**
+ * Gateway worker deps: the four worker calls whose gateway branches live
+ * in the original modules (lifecycle-store, provider-pause, security) are
+ * re-exported from gateway-worker-deps, and the governance evidence helper
+ * is the one implementation that still lives here. The delegate tests
+ * below assert the re-exports forward to the originals; the real
+ * gateway-branch coverage (decrypt round trip, 409 mismatch, lock/audit/
+ * pause gateway calls, both paths) lives in
+ * social-publishing-gateway-worker-wiring.test.ts, which imports the
+ * originals directly.
+ */
+describe("gateway worker deps delegates", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     gatewaySelected.value = true;
     gatewayHandlers.clear();
-    // 32-byte test key (hex) for the credential encrypt/decrypt round trip.
-    vi.stubEnv("SOCIAL_TOKEN_ENCRYPTION_KEY", "11".repeat(32));
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it("loadSocialConnectorCredential decrypts the gateway row (Telegram bot-token)", async () => {
-    const secretRef = encryptSocialCredential({
-      provider: "TELEGRAM",
-      accessToken: "bot-token",
-      grantedScopes: [],
-      externalAccountId: "telegram-bot",
-    });
-    gatewayHandlers.set("load_credential", () => ({
-      row: credentialRow(secretRef, "telegram-bot"),
-    }));
+  it("loadSocialConnectorCredential forwards to the lifecycle store", async () => {
+    const loaded = {
+      ...telegramConnector({ telegramChatId: "-1003368597629" }),
+      credentialRotatedAt: null,
+    };
+    credential.load.mockResolvedValue(loaded);
 
-    const loaded = await loadCredentialViaGateway({
+    const result = await loadCredentialViaGateway({
       workspaceId: "workspace-1",
       connectorId: "connector-telegram-1",
     });
 
-    expect(loaded.connector.provider).toBe("TELEGRAM");
-    expect(loaded.credential.accessToken).toBe("bot-token");
-    expect(loaded.connector.safeMetadata).toMatchObject({
-      telegramChatId: "-1003368597629",
-    });
-    expect(loaded.credentialRotatedAt).toBeNull();
-  });
-
-  it("loadSocialConnectorCredential rejects a mismatched credential with 409", async () => {
-    const secretRef = encryptSocialCredential({
-      provider: "TELEGRAM",
-      accessToken: "bot-token",
-      grantedScopes: [],
-      externalAccountId: "telegram-bot",
-    });
-    gatewayHandlers.set("load_credential", () => ({
-      row: credentialRow(secretRef, "a-different-account"),
-    }));
-
-    await expect(
-      loadCredentialViaGateway({
-        workspaceId: "workspace-1",
-        connectorId: "connector-telegram-1",
-      }),
-    ).rejects.toMatchObject({
-      status: 409,
-      code: "SOCIAL_CONNECTOR_CREDENTIAL_MISMATCH",
+    expect(result).toEqual(loaded);
+    expect(credential.load).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      connectorId: "connector-telegram-1",
     });
   });
 
@@ -724,39 +688,40 @@ describe("gateway worker deps", () => {
     expect(evidence.complianceReview?.createdAt).toBeInstanceOf(Date);
   });
 
-  it("enforceEmergencyLocks passes through the gateway lock check", async () => {
-    gatewayHandlers.set("workspace_locks", () => ({ ok: true }));
+  it("enforceEmergencyLocks forwards to the security module", async () => {
+    securityMocks.locks.mockResolvedValue(undefined);
     await expect(
       enforceLocksViaGateway("workspace-1", "publish"),
     ).resolves.toBeUndefined();
+    expect(securityMocks.locks).toHaveBeenCalledWith(
+      "workspace-1",
+      "publish",
+    );
 
-    gatewayHandlers.set("workspace_locks", () => {
-      throw new gatewayErrors.GatewayRequestError(
-        423,
-        "TOKMETRIC_LOCKED",
-        "TokMetric emergency controls block this action.",
-      );
-    });
+    const locked = Object.assign(
+      new Error("TokMetric emergency controls block this action."),
+      { status: 423, code: "TOKMETRIC_LOCKED" },
+    );
+    securityMocks.locks.mockRejectedValue(locked);
     await expect(
       enforceLocksViaGateway("workspace-1", "publish"),
     ).rejects.toMatchObject({ status: 423, code: "TOKMETRIC_LOCKED" });
   });
 
-  it("isSocialProviderPaused reads the gateway pause state", async () => {
-    gatewayHandlers.set("pause_state", () => ({ paused: true }));
+  it("isSocialProviderPaused forwards to the provider-pause module", async () => {
+    pauseMocks.isPaused.mockResolvedValue(true);
     expect(await isPausedViaGateway("workspace-1", "TELEGRAM")).toBe(true);
-    gatewayHandlers.set("pause_state", () => ({ paused: false }));
+    pauseMocks.isPaused.mockResolvedValue(false);
     expect(await isPausedViaGateway("workspace-1", "TELEGRAM")).toBe(false);
+    expect(pauseMocks.isPaused).toHaveBeenCalledWith(
+      "workspace-1",
+      "TELEGRAM",
+    );
   });
 
-  it("emitTokMetricAudit writes through the gateway", async () => {
-    const seen: Array<Record<string, unknown>> = [];
-    gatewayHandlers.set("audit_event", (payload) => {
-      seen.push(payload);
-      return { ok: true, id: "audit-1" };
-    });
-
-    await emitAuditViaGateway({
+  it("emitTokMetricAudit forwards to the security module", async () => {
+    securityMocks.audit.mockResolvedValue(undefined);
+    const input = {
       workspaceId: "workspace-1",
       actorId: "requester-1",
       action: "SOCIAL_PUBLISH_COMPLETED",
@@ -766,14 +731,11 @@ describe("gateway worker deps", () => {
       outcome: "PUBLISHED",
       sourceChannel: "social-publishing-worker",
       metadata: { provider: "TELEGRAM" },
-    });
+    };
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0]).toMatchObject({
-      action: "SOCIAL_PUBLISH_COMPLETED",
-      entityType: "SOCIAL_PUBLISHING_JOB",
-      correlationId: "job-telegram-1",
-    });
+    await emitAuditViaGateway(input);
+
+    expect(securityMocks.audit).toHaveBeenCalledWith(input);
   });
 });
 
