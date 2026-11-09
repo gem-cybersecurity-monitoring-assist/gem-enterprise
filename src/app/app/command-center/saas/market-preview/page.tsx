@@ -49,7 +49,7 @@ const future = [
 export default function MarketPreviewPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-7xl space-y-14 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1820px] space-y-16 px-4 py-10 sm:px-8 lg:px-12 2xl:px-16">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-5">
           <Link href="/app/command-center/saas" className="text-sm font-bold tracking-wide text-cyan-300">
             GEM ENTERPRISE / SAAS
@@ -58,10 +58,10 @@ export default function MarketPreviewPage() {
             PRIVATE PRELAUNCH CONCEPT · NOT OPEN FOR SALES
           </span>
         </div>
-        <section className="grid items-center gap-8 py-8 lg:grid-cols-2 lg:py-14">
+        <section className="grid min-h-[500px] items-center gap-12 py-12 lg:grid-cols-2 lg:py-20">
           <div className="space-y-6">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">One platform · Multiple governed services</p>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Your enterprise services, workspaces and support in one place.</h1>
+            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight sm:text-6xl 2xl:text-7xl">Your enterprise services, workspaces and support in one place.</h1>
             <p className="max-w-2xl text-base leading-8 text-slate-300">
               GEM Enterprise brings service discovery, approved onboarding, case management and client coordination into a single controlled environment.
               Future community, marketplace and subscription capabilities will join this platform only when their operating requirements are met.
@@ -71,7 +71,7 @@ export default function MarketPreviewPage() {
               <Link href="/app/command-center/saas" className="rounded-lg border border-slate-600 px-5 py-3 text-sm font-semibold">View internal readiness</Link>
             </div>
           </div>
-          <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 via-slate-900 to-slate-950 p-6 sm:p-8">
+          <div className="rounded-[32px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 via-slate-900 to-slate-950 p-6 sm:p-8">
             <h2 className="text-xl font-semibold">Client operating journey</h2>
             <ol className="mt-6 space-y-5">
               {stages.map(([number, label, description]) => (
@@ -85,9 +85,9 @@ export default function MarketPreviewPage() {
         </section>
         <section className="space-y-5">
           <h2 className="text-2xl font-bold">Designed around each customer</h2>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {pathways.map((pathway) => (
-              <article key={pathway.title} className="rounded-xl border border-slate-700 bg-slate-900/70 p-6">
+              <article key={pathway.title} className="min-h-[300px] rounded-[28px] border border-slate-700 bg-slate-900/70 p-8">
                 <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">{pathway.eyebrow}</p>
                 <h3 className="mt-3 text-xl font-semibold">{pathway.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{pathway.description}</p>
@@ -99,9 +99,9 @@ export default function MarketPreviewPage() {
         <section className="space-y-5">
           <h2 className="text-2xl font-bold">Next-stage platform modules</h2>
           <p className="max-w-3xl text-sm text-slate-300">These are scoped features for future authorization, not presently active services or commercial offers.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2">
             {future.map(([title, description]) => (
-              <article key={title} className="rounded-xl border border-slate-700 p-5">
+              <article key={title} className="min-h-[230px] rounded-[28px] border border-slate-700 p-8">
                 <p className="text-xs font-medium uppercase tracking-widest text-amber-300">Not activated</p>
                 <h3 className="mt-2 text-lg font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-300">{description}</p>
