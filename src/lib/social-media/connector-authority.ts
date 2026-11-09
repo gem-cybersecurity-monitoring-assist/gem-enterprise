@@ -1,3 +1,22 @@
+/**
+ * Transactional authority for social connector OAuth (unified
+  * /api/social-media/oauth/* AND legacy /api/tokmetric/oauth/* start,
+   * callback and connected-account readback).
+    *
+     * A supabase_gateway session is admitted only when the direct database is
+      * explicitly bound to the same Supabase project as gateway sign-in
+       * (hasSocialTransactionalAuthority): the Prisma reads/writes below then run
+        * as transactions against that project, and the account + workspace
+         * membership are re-validated before any connector is stored. Without that
+          * binding the routes fail closed with SOCIAL_CONNECTOR_BACKEND_REQUIRED
+           * before any database read. Local sessions keep the previous
+            * requireActiveTokMetricSession / requireWorkspaceAccess behaviour.
+             *
+              * This does NOT lift the TokMetric persistence guard in
+               * src/lib/tokmetric/security.ts for any other operation: publishing, shop,
+                * agents, analytics and the remaining TokMetric routes still reject
+                 * supabase_gateway sessions with TOKMETRIC_GATEWAY_BACKEND_REQUIRED.
+                  */
 import type { NextRequest } from "next/server";
 import { getSessionFromRequest, type SessionPayload } from "@/lib/auth";
 import { reconcileSessionAuthority } from "@/lib/auth-authority";
