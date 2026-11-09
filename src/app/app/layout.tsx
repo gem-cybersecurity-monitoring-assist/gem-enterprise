@@ -183,7 +183,23 @@ function SidebarContent({
   pathname: string;
   viewerRole: string | null;
 }) {
-  const visibleGroups = navigationForRole(viewerRole);
+  const baseGroups = navigationForRole(viewerRole);
+  const visibleGroups = pathname.startsWith("/app/command-center/saas") && ADMIN_ROLES.has(viewerRole ?? "")
+    ? [
+        {
+          label: "SaaS architecture",
+          items: [
+            { href: "/app/command-center/saas", icon: "LayoutDashboard" as const, label: "SaaS overview", description: "Your expanded enterprise home." },
+            { href: "/app/command-center/saas/areas/owner", icon: "ShieldCheck" as const, label: "Governance", description: "Controls, access and decisions." },
+            { href: "/app/command-center/saas/areas/operations", icon: "Briefcase" as const, label: "Operations", description: "Service delivery and teams." },
+            { href: "/app/command-center/saas/areas/client", icon: "Users" as const, label: "Client experience", description: "Customers and care." },
+            { href: "/app/command-center/saas/areas/community", icon: "MessageSquare" as const, label: "Community", description: "Applications and previews." },
+            { href: "/app/command-center/saas/areas/market", icon: "Wallet" as const, label: "Marketplace", description: "Services and enquiries." },
+          ],
+        },
+        ...baseGroups,
+      ]
+    : baseGroups;
 
   return (
     <div className="flex h-full flex-col">
