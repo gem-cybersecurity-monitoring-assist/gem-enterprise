@@ -1,3 +1,4 @@
+import { socialAccountsHref, oauthByDestination } from "@/lib/social-media/channel-routes";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, KeyRound, Plug, ShieldCheck } from "lucide-react";
@@ -99,25 +100,13 @@ export default async function IntegrationsCommandCenterPage({
         YOUTUBE: "https://console.cloud.google.com/",
         TELEGRAM: "https://my.telegram.org/",
       } as Record<string, string>)[provider.id],
-      authorizationPath: provider.connectionMode === "OAUTH" && workspaceId ? `/api/social-media/oauth/${({
-        TIKTOK: "TIKTOK",
-        FACEBOOK_PAGE: "META",
-        INSTAGRAM_PROFESSIONAL: "META",
-        X: "X",
-        NEXTDOOR: "NEXTDOOR",
-        LINKEDIN_COMPANY: "LINKEDIN",
-        YOUTUBE: "YOUTUBE",
-      } as Record<string, string>)[provider.id]}/start?workspaceId=${encodeURIComponent(workspaceId)}&redirectAfter=%2Fapp%2Fsocial-media%2Faccounts` : undefined,
-      callbackPath: provider.connectionMode === "OAUTH" ? `/api/social-media/oauth/${({
-        TIKTOK: "TIKTOK",
-        FACEBOOK_PAGE: "META",
-        INSTAGRAM_PROFESSIONAL: "META",
-        X: "X",
-        NEXTDOOR: "NEXTDOOR",
-        LINKEDIN_COMPANY: "LINKEDIN",
-        YOUTUBE: "YOUTUBE",
-      } as Record<string, string>)[provider.id]}/callback` : undefined,
-      href: `/app/social-media/accounts?provider=${encodeURIComponent(provider.id)}`,
+      authorizationPath: provider.connectionMode === "OAUTH" && oauthByDestination[provider.id]
+        ? socialAccountsHref(provider.id, workspaceId)
+        : undefined,
+      callbackPath: oauthByDestination[provider.id]
+        ? `/api/social-media/oauth/${oauthByDestination[provider.id]?.toLowerCase()}/callback`
+        : undefined,
+      href: socialAccountsHref(provider.id, workspaceId),
       title: `${provider.label} connector`,
       description: `${provider.purpose} Supported content: ${provider.supportedContent.join(", ").toLowerCase()}.`,
       category: "Provider apps",

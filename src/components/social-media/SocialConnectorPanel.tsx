@@ -11,6 +11,8 @@ import {
   ShieldAlert,
   TriangleAlert,
 } from "lucide-react";
+import { matchesSocialDestination, socialAccountsHref } from "@/lib/social-media/channel-routes";
+import type { SocialMediaProviderId } from "@/lib/social-media/providers";
 import type { SafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
 
 type Connector = {
@@ -50,11 +52,13 @@ function lifecycleTone(lifecycle?: string) {
 
 export function SocialConnectorPanel({
   providers,
+  destination,
   workspaceId,
   workspaceLabel,
   allowManualWorkspaceInput = true,
 }: {
   providers: SafeSocialOAuthReadiness[];
+  destination?: SocialMediaProviderId;
   workspaceId?: string | null;
   workspaceLabel?: string | null;
   allowManualWorkspaceInput?: boolean;
@@ -107,7 +111,7 @@ export function SocialConnectorPanel({
     if (!canLoad || !provider.readyToAuthorize) return;
     const url = new URL(`/api/social-media/oauth/${provider.provider.toLowerCase()}/start`, window.location.origin);
     url.searchParams.set("workspaceId", effectiveWorkspaceId);
-    url.searchParams.set("redirectAfter", "/app/social-media/accounts");
+    url.searchParams.set("redirectAfter", socialAccountsHref(destination, effectiveWorkspaceId));
     window.location.assign(url.toString());
   }
 
@@ -161,13 +165,14 @@ export function SocialConnectorPanel({
   const connectorsByProvider = useMemo(() => {
     const grouped = new Map<string, Connector[]>();
     for (const connector of connectors) {
+      if (!matchesSocialDestination(connector.provider, connector.safeMetadata, destination)) continue;
       if (connector.disabledAt || connector.state === "DISCONNECTED") continue;
       const existing = grouped.get(connector.provider) || [];
       existing.push(connector);
       grouped.set(connector.provider, existing);
     }
     return grouped;
-  }, [connectors]);
+  }, [connectors, destination]);
 
   return (
     <section className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.04] p-5">
@@ -243,12 +248,12 @@ export function SocialConnectorPanel({
                     Requested scopes: {provider.requestedScopes.length > 0 ? provider.requestedScopes.join(", ") : "not configured"}
                   </p>
                   <p className="mt-1 text-xs leading-5 text-white/40">
-                    Account discovery: provider verified · Token recovery: {label(provider.refreshMode)}
+                    Account discovery: verified during authorization · Token recovery: {label(provider.refreshMode)}
                   </p>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
                   {providerConnectors.length > 0
-                    ? `${providerConnectors.length} connected`
+                    ? `${providerConnectors.length} saved`
                     : provider.readyToAuthorize
                       ? "Authorization required"
                       : "Blocked"}

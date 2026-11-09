@@ -41,7 +41,7 @@ function safeCallbackRedirect(
   connectedCount?: number,
 ) {
   const redirect = new URL(redirectAfter, request.url);
-  redirect.searchParams.set("provider", provider);
+  redirect.searchParams.set(redirect.pathname === "/app/social-media/accounts" ? "oauthProvider" : "provider", provider);
   redirect.searchParams.set("connectionState", state);
   if (connectedCount !== undefined) {
     redirect.searchParams.set("connectedCount", String(connectedCount));

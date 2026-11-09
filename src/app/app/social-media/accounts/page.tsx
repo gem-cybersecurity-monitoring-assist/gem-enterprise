@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { oauthByDestination, socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
 import {
   BriefcaseBusiness,
   CheckCircle2,
@@ -6,7 +8,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
 import { db } from "@/lib/db";
 import { getGatewaySessionToken } from "@/lib/auth";
@@ -38,7 +40,7 @@ function StatusBadge({ state }: { state: SocialMediaReadinessState }) {
 export default async function SocialMediaAccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspace?: string | string[] }>;
+  searchParams: Promise<{ workspace?: string | string[]; provider?: string | string[]; connectionState?: string | string[] }>;
 }) {
   const gate = await requireSession();
   if (!gate.ok || gate.accountStatus !== "active") {
@@ -49,6 +51,7 @@ export default async function SocialMediaAccountsPage({
   const requestedWorkspaceId = Array.isArray(params.workspace)
     ? params.workspace[0]?.trim() || null
     : params.workspace?.trim() || null;
+  const usesGateway = gate.session.authSource === "supabase_gateway";
   const gatewayToken =
     gate.session.authSource === "supabase_gateway"
       ? await getGatewaySessionToken()
@@ -67,7 +70,9 @@ export default async function SocialMediaAccountsPage({
           ),
         }),
       )
-    : await resolveWorkspaceAccess(gate.session.userId, requestedWorkspaceId);
+    : usesGateway
+      ? { selected: null }
+      : await resolveWorkspaceAccess(gate.session.userId, requestedWorkspaceId);
   let publishingWorkspace = membershipResolution.selected
     ? { id: membershipResolution.selected.id, name: membershipResolution.selected.name }
     : null;
@@ -75,7 +80,7 @@ export default async function SocialMediaAccountsPage({
   // Admin publishing is organization-scoped. Prefer the admin's organization,
   // then the canonical controlled-production workspace used by GEM/TokMetric.
   // This removes the dead-end manual workspace-ID requirement for GEM Admin.
-  if (!gatewayToken && !publishingWorkspace && isAdminRole(gate.session.role) && gate.session.organizationId) {
+  if (!usesGateway && !publishingWorkspace && isAdminRole(gate.session.role) && gate.session.organizationId) {
     publishingWorkspace = await db.workspace.findFirst({
       where: {
         ...(requestedWorkspaceId ? { id: requestedWorkspaceId } : {}),
@@ -87,7 +92,7 @@ export default async function SocialMediaAccountsPage({
     });
   }
 
-  if (!gatewayToken && !publishingWorkspace && isAdminRole(gate.session.role) && !requestedWorkspaceId) {
+  if (!usesGateway && !publishingWorkspace && isAdminRole(gate.session.role) && !requestedWorkspaceId) {
     const canonicalWorkspaceId =
       process.env.CONTENT_ORCHESTRATOR_WORKSPACE_ID?.trim();
     const serviceActorId =
@@ -117,18 +122,29 @@ export default async function SocialMediaAccountsPage({
     }
   }
 
-  const providers = getSocialMediaProviderReadiness();
-  const oauthProviders = getSafeSocialOAuthReadiness();
+  const allProviders = getSocialMediaProviderReadiness();
+  const destination = allProviders.find((provider) => provider.id === params.provider);
+  if (params.provider !== undefined && !destination) notFound();
+  const providers = destination ? [destination] : allProviders;
+  const oauthProviders = getSafeSocialOAuthReadiness().filter(
+    (provider) => !destination || provider.provider === oauthByDestination[destination.id],
+  );
   const configured = providers.filter((provider) => provider.configurationReady).length;
   const connectedForWrites = providers.filter((provider) => provider.externalWriteAllowed).length;
 
   return (
     <div className="space-y-6">
+      <nav aria-label="Social account destinations" className="flex flex-wrap gap-2">
+        <Link href={socialAccountsHref(undefined, requestedWorkspaceId)} aria-current={!destination ? "page" : undefined} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">All accounts</Link>
+        {socialChannels.map(({ id, label }) => (
+          <Link key={id} href={socialAccountsHref(id, requestedWorkspaceId)} aria-current={destination?.id === id ? "page" : undefined} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200 aria-[current=page]:bg-cyan-400/15">{label}</Link>
+        ))}
+      </nav>
       <section className="grid gap-4 lg:grid-cols-[1fr_0.7fr]">
         <article className="rounded-2xl border border-white/10 bg-card/75 p-5 sm:p-6">
           <div className="flex items-center gap-2">
             <KeyRound className="h-5 w-5 text-cyan-300" />
-            <h2 className="text-lg font-bold text-white">Connect business destinations</h2>
+            <h2 className="text-lg font-bold text-white">{destination ? `${destination.label} accounts` : "Connect business destinations"}</h2>
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
             Authorize the exact Facebook Page, Instagram professional account, X account, LinkedIn organization,
@@ -154,12 +170,26 @@ export default async function SocialMediaAccountsPage({
         </article>
       </section>
 
-      <SocialConnectorPanel
+      {usesGateway && oauthProviders.length > 0 ? (
+        <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-100">
+          Account authorization is unavailable in this session. The social credential store requires a verified transactional backend for gateway sign-in.
+        </p>
+      ) : null}
+
+      {params.connectionState === "connected" && !usesGateway ? (
+        <p role="status" className="rounded-xl border border-emerald-400/25 p-4 text-sm text-emerald-200">
+          Authorization returned. Check the saved destinations below to confirm which accounts were discovered.
+        </p>
+      ) : null}
+
+      {!usesGateway && oauthProviders.length > 0 ? <SocialConnectorPanel
+        key={`${publishingWorkspace?.id ?? ""}:${destination?.id ?? ""}`}
+        destination={destination?.id}
         providers={oauthProviders}
         workspaceId={publishingWorkspace?.id ?? null}
         workspaceLabel={publishingWorkspace?.name ?? null}
         allowManualWorkspaceInput={false}
-      />
+      /> : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
         {providers.map((provider) => (
