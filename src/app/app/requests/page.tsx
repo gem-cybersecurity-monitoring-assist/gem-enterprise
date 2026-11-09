@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { RequestTimeline } from "@/components/requests/RequestTimeline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -482,6 +483,7 @@ export default function RequestsPage() {
                         })}
                       </span>
                     </div>
+                    <RequestTimeline requestId={request.id} />
                   </div>
                 ))}
               </div>
