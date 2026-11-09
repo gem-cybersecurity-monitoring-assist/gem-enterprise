@@ -9,14 +9,25 @@ import {
 } from "./team-gallery-source";
 
 describe("Notion team gallery editorial preview", () => {
-  it("uses ten distinct original role-photo records rather than the old demo portraits", () => {
+  it("preserves nine original photographs and the Advertising source video without demo portraits", () => {
     expect(teamGalleryEntries).toHaveLength(10);
     expect(new Set(teamGalleryEntries.map((entry) => entry.slug)).size).toBe(10);
-    expect(new Set(teamGalleryEntries.map((entry) => entry.imageUrl)).size).toBe(10);
+    const photos = teamGalleryEntries.filter((entry) => entry.mediaKind === "photograph");
+    const videos = teamGalleryEntries.filter((entry) => entry.mediaKind === "video");
+    expect(photos).toHaveLength(9);
+    expect(videos).toHaveLength(1);
+    expect(videos[0]).toMatchObject({ slug: "advertising", imageUrl: null });
+    expect(new Set(photos.map((entry) => entry.imageUrl)).size).toBe(9);
 
     for (const entry of teamGalleryEntries) {
-      expect(entry.imageUrl).toMatch(/^https:\/\/img\.notionusercontent\.com\/s3\//);
-      expect(entry.imageUrl).not.toContain("media.base44.com");
+      if (entry.mediaKind === "photograph") {
+        expect(entry.imageUrl).toMatch(/^https:\/\/bow-sunset-a14\.notion\.site\/image\/attachment/);
+        expect(entry.imageUrl).toContain("imgBuildSrc=requestProxiedImageUrl");
+        expect(entry.imageUrl).not.toContain("media.base44.com");
+        expect(entry.imageUrl).not.toContain("img.notionusercontent.com");
+      } else {
+        expect(entry.imageUrl).toBeNull();
+      }
       expect(entry.notionProfileUrl).toMatch(/^https:\/\/app\.notion\.com\/p\/413b/);
       expect(entry.identityVerified).toBe(false);
       expect(entry.summary.length).toBeGreaterThan(24);
