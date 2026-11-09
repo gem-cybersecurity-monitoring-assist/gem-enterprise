@@ -41,6 +41,42 @@ const ALLOWED = [
   /^(jsonb_build_object|row_to_json|jsonb_agg|gen_random_uuid|search_path|variable_conflict|use_column|service_role)$/,
 ];
 
+// The social_* timestamp columns are timestamp(3) without time zone, while
+// the table-returning RPCs declare timestamptz outputs. RETURN QUERY does not
+// cast implicitly (error 42804 on every call), so the follow-up migration
+// converts each timestamp output with AT TIME ZONE 'UTC'.
+const timestampFixSql = readFileSync(
+  path.join(repoRoot, "supabase/migrations/20261109150000_social_gateway_rpc_timestamptz_outputs.sql"),
+  "utf8",
+);
+
+describe("table-returning gem_social_* RPCs", () => {
+  const tableReturning = [...rpcSql.matchAll(/CREATE OR REPLACE FUNCTION public\.(gem_social_\w+)\([^)]*\)\s*RETURNS TABLE/g)].map(
+    (match) => match[1],
+  );
+
+  it("are all redefined by the timestamptz follow-up", () => {
+    expect(tableReturning.sort()).toEqual([
+      "gem_social_claim_jobs",
+      "gem_social_list_jobs",
+      "gem_social_load_connector_credential",
+      "gem_social_mark_blocked",
+      "gem_social_mark_failed",
+      "gem_social_mark_published",
+    ]);
+    for (const name of tableReturning) {
+      expect(timestampFixSql).toContain(`CREATE OR REPLACE FUNCTION public.${name}(`);
+    }
+  });
+
+  it("convert every timestamp column they return", () => {
+    const code = timestampFixSql.replace(/--[^\n]*/g, "");
+    const unconverted = code.match(/(?<!\()\b(?:jobs|connector|credential)\.\w+_(?:at|for) AS "\w+"/g) ?? [];
+    expect(unconverted).toEqual([]);
+    expect(code.match(/AT TIME ZONE 'UTC'\) AS "\w+"/g)?.length).toBe(8 * 5 + 7);
+  });
+});
+
 describe("gem_social_* RPCs that read tokmetric tables", () => {
   it("the tokmetric tables really are camelCase", () => {
     expect(tokmetricSql).toContain('"globalEmergencyLock" BOOLEAN');
