@@ -48,6 +48,15 @@ export default function SaaSControlPlanePage() {
         </div>
       </header>
 
+      <section aria-labelledby="saas-backend-health-title" className="grid items-center gap-6 rounded-[30px] border border-amber-400/20 bg-[linear-gradient(120deg,rgba(120,53,15,.12),rgba(8,21,38,.95))] px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:py-10">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-amber-300">BACKEND IMPLEMENTATION</p>
+          <h2 id="saas-backend-health-title" className="mt-3 text-2xl font-bold text-white sm:text-3xl">See what is actually connected and what still needs work.</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">Review current database checks, social connector persistence and the separate community, marketplace and billing activation gates. No synthetic success counts are displayed.</p>
+        </div>
+        <Link href="/app/command-center/saas/readiness" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-6 py-3 text-sm font-bold text-amber-100 hover:bg-amber-300/20">Open backend completion center <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+      </section>
+
       <SaaSArchitectureDeck />
 
       <SaaSManagementWorkspace />
