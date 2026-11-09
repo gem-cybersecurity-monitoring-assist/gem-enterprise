@@ -6,7 +6,7 @@ import { SaaSManagementWorkspace } from "@/components/command-center/SaaSManagem
 import { SaaSAssignedWorkspaces } from "@/components/command-center/SaaSAssignedWorkspaces";
 
 export const metadata: Metadata = {
-  title: "GEM SaaS Workspace | GEM Enterprise",
+  title: "SaaS Management Center | GEM Enterprise",
   description: "An easier, unified workspace for managing GEM Enterprise operations and customer services.",
   robots: { index: false, follow: false, nocache: true },
 };
