@@ -47,6 +47,25 @@ evidence of where to find the existing Supabase account, not authorization
 to change Crypto Signal Bot or its database configuration. GEM Enterprise's
 older Vercel storage attachment points to `kcurngdalxcjcqucylyy`.
 
+### Requested transfer destination
+
+The second Supabase connection (Apple sign-in) can see destination organization
+`nnfqefhuldprcjawdybt`, which listed no projects at verification. Keep Crypto
+Signal Bot and Copy Manager in the first account.
+
+The source is a native Vercel Marketplace resource. Supabase documents that
+Marketplace owner roles are synchronized from Vercel and cannot be added
+manually in Supabase Studio. Use the existing Vercel owner identity and the
+verified resource's Studio sign-in. Verify that identity's membership in the
+destination organization, then inspect whether the existing project offers
+Transfer in General Settings and whether Vercel-managed billing permits it.
+If the transfer control is absent, confirm the supported route with Supabase
+before changing any integration or project. The available connections have not
+verified source owner access, eligibility, or the transfer itself.
+
+References: [Marketplace permissions and limitations](https://supabase.com/docs/guides/integrations/vercel-marketplace) and
+[project transfer prerequisites](https://supabase.com/docs/guides/platform/project-transfer).
+
 ### Access check for each work session
 
 1. Fetch project metadata by the exact reference and verify its identity. A healthy application endpoint only proves the application is responding.
