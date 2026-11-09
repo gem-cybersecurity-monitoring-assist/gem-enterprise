@@ -45,15 +45,17 @@ export function TeamProfileDetail({ entry, editorial }: Props) {
 
         <div className="grid gap-7 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
           <section aria-labelledby="photo-heading" className="overflow-hidden rounded-3xl border border-white/10 bg-[#0b1829]">
-            <h2 id="photo-heading" className="px-5 pb-3 pt-6 text-lg font-semibold sm:px-7">Original photograph</h2>
-            <GallerySourceImage url={entry.imageUrl} alt={`Source image associated with ${entry.title}; pictured individual not identified or verified`} label="Notion source photograph" />
+            <h2 id="photo-heading" className="px-5 pb-3 pt-6 text-lg font-semibold sm:px-7">Original source media</h2>
+            <GallerySourceImage url={entry.imageUrl} alt={`Source media associated with ${entry.title}; any pictured individual not identified or verified`} label={entry.mediaKind === "video" ? "Original Notion video" : "Original Notion photograph"} />
             <div className="space-y-3 p-5 sm:p-7">
               <p className="text-sm leading-7 text-slate-300">
-                This is the source photo linked to the role label in your original Notion collection.
-                The role and photograph are editorial inputs; they are not evidence of a verified person-to-position match.
+                This is the source media record associated with the role label in your original Notion collection.
+                {entry.mediaKind === "video"
+                  ? " The Advertising source contains a video rather than a confirmed individual portrait."
+                  : " The role and photograph are editorial inputs, not evidence of a verified person-to-position match."}
               </p>
               <p className="rounded-xl border border-amber-200/15 bg-amber-300/[.05] px-4 py-3 text-xs leading-6 text-amber-100">
-                Photograph reuse, subject consent and professional identity require approval before publication outside this protected workspace.
+                Media reuse, subject consent and professional identity require approval before publication outside this protected workspace.
               </p>
             </div>
           </section>
@@ -95,7 +97,7 @@ export function TeamProfileDetail({ entry, editorial }: Props) {
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
               <h2 id="creative-heading" className="flex items-center gap-2 text-2xl font-bold"><Image className="h-6 w-6 text-cyan-300" /> Ten visual-story concepts</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-400">Proposed professional photographs built around the original source. These are briefs for generation and approval, <strong>not completed image variations</strong>.</p>
+              <p className="mt-2 text-sm leading-7 text-slate-400">Proposed professional visuals using the original source as a reference when an individual portrait is established. These are briefs for generation and approval, <strong>not completed image variations</strong>.</p>
             </div>
             <span className="w-fit rounded-full border border-amber-300/20 bg-amber-300/5 px-3 py-1.5 text-xs font-medium text-amber-200">10 concepts · 0 generated</span>
           </div>
