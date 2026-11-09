@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Building2, CheckCircle2, CircleHelp,
+  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CheckCircle2, CircleHelp,
   Compass, Layers3, LockKeyhole, MoveUpRight, PanelTop, ShieldCheck,
 } from "lucide-react";
 import { requireAdmin } from "@/lib/api/auth-helpers";
@@ -37,7 +37,6 @@ export default async function SaaSAreaPage({ params }: PageProps) {
   const definition = saasAreaArchitecture[selectedArea];
   const tools = saasCapabilityCatalog.filter((item) => item.area === selectedArea);
   const surfaces = tools.filter((item) => item.readiness === "existing-surface").length;
-  const accent = selectedArea === "market" ? "amber" : selectedArea === "community" ? "violet" : selectedArea === "client" ? "emerald" : "cyan";
 
   return (
     <main className="mx-auto w-full max-w-[1820px] space-y-8 px-4 pb-20 pt-7 text-slate-100 sm:px-7 2xl:px-10">
