@@ -1,6 +1,8 @@
 /**
  * Editorial source manifest for GEM's authenticated team-gallery preview.
  * These are original public Notion media references, NOT approved personnel records.
+ * The nine verified public source photographs use Notion proxy image URLs;
+ * the Advertising source item is a video, not a verified person portrait.
  * This snapshot is maintained separately from the publication-gated /personnel API.
  * Do not use this manifest for public directory output or infer identities/licences.
  */
@@ -14,7 +16,8 @@ export interface TeamGalleryEntry {
   category: TeamGalleryCategory;
   summary: string;
   responsibilities: readonly string[];
-  imageUrl: string;
+  imageUrl: string | null;
+  mediaKind: "photograph" | "video";
   notionProfileUrl: string;
   identityVerified: false;
 }
@@ -36,9 +39,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Coordinate governance and policy questions",
       "Route regulated matters to appropriately qualified counsel"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F491b65c9-cdab-44cc-9cc8-8de8be266206%2FIMG_2335.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A491b65c9-cdab-44cc-9cc8-8de8be266206%3AIMG_2335.jpeg?table=block&id=d0177c2d-1ac5-834f-ad34-0151f0b33241&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac28166994ed9c7c4cbbfdc",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "public-speaker-attorney",
@@ -51,9 +55,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Support stakeholder and event discussions",
       "Document and clarify approved public information"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F8b323abe-8fab-4d95-ae38-6b0729963a4d%2FIMG_2334.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A8b323abe-8fab-4d95-ae38-6b0729963a4d%3AIMG_2334.jpeg?table=block&id=f1777c2d-1ac5-83ec-8ce1-81db089e24fa&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac281f78b09c2a813f18bdb",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "regional-hr-sales",
@@ -66,9 +71,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Support regional sales planning and reporting",
       "Review service standards and client follow-up"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2Fa16a774b-06bc-4429-824d-d4cac4e0ce19%2F423B2803-FC8C-4E72-90FA-55317D16AB3A.png/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3Aa16a774b-06bc-4429-824d-d4cac4e0ce19%3A423B2803-FC8C-4E72-90FA-55317D16AB3A.png?table=block&id=84977c2d-1ac5-82b0-8f2e-01f634fc4857&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac2810db352de835576d496",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "data-analyst-cybersecurity",
@@ -81,9 +87,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Review authorized security observations",
       "Prepare risk findings and monitoring summaries"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F44ba531e-b3d7-4196-9a49-cf039ee65343%2F2EEE85FA-C823-4948-9322-CA43F51019B9.png/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A44ba531e-b3d7-4196-9a49-cf039ee65343%3A2EEE85FA-C823-4948-9322-CA43F51019B9.png?table=block&id=01677c2d-1ac5-821c-8c05-0149a655ad80&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac28115b42bfe301bc6293a",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "international-compliance",
@@ -96,9 +103,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Organize due-diligence documentation",
       "Escalate jurisdictional issues for specialist review"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F926fc98f-ad07-4b31-9f17-8c8aab46a910%2FIMG_2319.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A4a7a0411-808a-4dc7-8538-0efcefa83f81%3A79573ED8-E1FE-4B4A-9D30-33E0DD8D7B0B.png?table=block&id=0b277c2d-1ac5-82ad-801c-01e0429b319c&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac28115bf18d2b2fb12dd5e",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "attorney-it-consultant",
@@ -111,9 +119,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Review policy and privacy process requirements",
       "Document technical risks for authorized advisers"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F0860c8ff-9dc6-450d-9e49-3723a7cf5832%2FIMG_2321.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A0860c8ff-9dc6-450d-9e49-3723a7cf5832%3AIMG_2321.jpeg?table=block&id=a4f77c2d-1ac5-82fd-9929-0130e2612519&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac281babebcc5d3d8ceb348",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "software-engineer",
@@ -126,9 +135,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Review code, tests and release readiness",
       "Coordinate engineering and security follow-up"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F26962775-0c7e-4eeb-9a80-57004f0723b2%2FIMG_2430.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A926fc98f-ad07-4b31-9f17-8c8aab46a910%3AIMG_2319.jpeg?table=block&id=cb977c2d-1ac5-8390-a3cc-01653f99adff&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac281028a64dda6acafc4d2",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "financial-tech-markets",
@@ -141,24 +151,26 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Prepare data and risk summaries",
       "Route regulated advisory activity to authorized professionals"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F1a43ca9e-3552-4c5d-ac83-a59256a5e8e5%2Fd1bf8539-08e7-4d12-aeeb-fbfa1084e762.jpeg/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A1a43ca9e-3552-4c5d-ac83-a59256a5e8e5%3Ad1bf8539-08e7-4d12-aeeb-fbfa1084e762.jpeg?table=block&id=edd77c2d-1ac5-821a-8dd4-81806fa315c7&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac28116b7a5c6c6feac73b5",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   },
   {
     "slug": "advertising",
     "title": "Advertising",
     "department": "Marketing & communications",
     "category": "operations",
-    "summary": "Editorial storytelling, creative production, campaign planning and measurement.",
+    "summary": "The Advertising section contains an original Notion video block, not a confirmed staff portrait. This role is presented as a function only until a matching individual photograph is confirmed.",
     "responsibilities": [
       "Develop campaign briefs and visual assets",
       "Coordinate marketing content review",
       "Track creative and engagement performance"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F8991bfa9-bc1d-4b89-aae1-18ebf86b2f6a%2FIMG_0340.jpeg/size/w=2000",
+    "imageUrl": null,
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac281a684bff4cf11c5b49a",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "video"
   },
   {
     "slug": "unassigned-photo",
@@ -171,9 +183,10 @@ export const teamGalleryEntries: readonly TeamGalleryEntry[] = [
       "Confirm person-to-role mapping before attribution",
       "Approve the portrait and profile before public publication"
     ],
-    "imageUrl": "https://img.notionusercontent.com/s3/prod-files-secure%2F07277c2d-1ac5-81a6-9388-0003656615a4%2F4a7a0411-808a-4dc7-8538-0efcefa83f81%2F79573ED8-E1FE-4B4A-9D30-33E0DD8D7B0B.png/size/w=2000",
+    "imageUrl": "https://bow-sunset-a14.notion.site/image/attachment%3A26962775-0c7e-4eeb-9a80-57004f0723b2%3AIMG_2430.jpeg?table=block&id=38577c2d-1ac5-836a-a77d-01d9be76d703&spaceId=07277c2d-1ac5-81a6-9388-0003656615a4&width=2000&userId=&cache=v2&imgBuildSrc=requestProxiedImageUrl",
     "notionProfileUrl": "https://app.notion.com/p/413b5b56eac281ae8c1cde8b0200427b",
-    "identityVerified": false
+    "identityVerified": false,
+    "mediaKind": "photograph"
   }
 ];
 
