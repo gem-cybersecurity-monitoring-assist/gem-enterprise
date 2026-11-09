@@ -43,7 +43,9 @@ The worker adapter can process queued jobs, but does not create OAuth attempts
 or run the daily content planner by itself. To use the existing transactional
 connector store and daily planner with gateway sign-in:
 
-1. Configure the canonical Vercel project with a Prisma connection to the
+1. Keep `GEM_AUTH_GATEWAY_ENABLED=true` when adding the Prisma URL. The
+   application otherwise selects direct sign-in when a database URL is present.
+   Configure the canonical Vercel project with a Prisma connection to the
    **same Supabase project** as `GEM_SUPABASE_GATEWAY_BASE_URL`. Use the
    provider-issued direct or pooler URL for the `postgres` database, with
    `sslmode=require&sslaccept=strict` and its trusted CA if needed.
