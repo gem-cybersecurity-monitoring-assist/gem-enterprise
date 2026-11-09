@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/auth-helpers";
+import { getGatewaySessionToken } from "@/lib/auth";
 import { buildCommandCenterSnapshot } from "@/lib/commandCenterSnapshotService";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
 import {
   getSocialBackendReadiness,
   getSocialBackendReadinessWithProbe,
 } from "@/lib/social-media/backend-readiness";
-import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
-import { buildSaaSReadinessReport } from "@/lib/saasRuntimeReadiness";
+import { adminReadGateway, shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
+import { buildSaaSReadinessReport, isSaaSGatewayAdminStats } from "@/lib/saasRuntimeReadiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,12 +24,25 @@ export async function GET() {
 
   const gatewaySelected = shouldUseSupabaseGateway();
   const providers = getSocialMediaProviderReadiness();
-  const [snapshot, social] = await Promise.all([
+  const gatewayAdminStatsPromise = (async () => {
+    if (!gatewaySelected) return null;
+    const token = await getGatewaySessionToken();
+    if (!token) return null;
+    try {
+      const result: unknown = await adminReadGateway("stats", token);
+      return isSaaSGatewayAdminStats(result) ? result : null;
+    } catch (error) {
+      console.error("[saas-readiness] administrator gateway statistics unavailable", error);
+      return null;
+    }
+  })();
+  const [snapshot, social, gatewayAdminStats] = await Promise.all([
     buildCommandCenterSnapshot(),
     getSocialBackendReadinessWithProbe(gatewaySelected).catch((error: unknown) => {
       console.error("[saas-readiness] social backend probe unavailable", error);
       return getSocialBackendReadiness(gatewaySelected);
     }),
+    gatewayAdminStatsPromise,
   ]);
 
   return NextResponse.json(
@@ -36,6 +50,7 @@ export async function GET() {
       snapshot,
       socialBackendState: social.state,
       gatewaySelected,
+      gatewayAdminStats,
       providers,
     }),
     {
