@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, Blocks, Building2, Compass, FileCheck2, Globe2,
-  LayoutGrid, Layers3, Network, ShieldCheck, UsersRound, Workflow,
+  Layers3, Network, ShieldCheck, UsersRound, Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { saasAreaArchitecture, saasAreaOrder } from "@/lib/saasAreaArchitecture";
