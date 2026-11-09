@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink, FileCheck2, Image, LockKeyhole, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink, FileCheck2, Image as ImageIcon, LockKeyhole, ShieldCheck, Users } from "lucide-react";
 import { GallerySourceImage } from "@/components/admin/TeamGalleryPreview";
 import { NOTION_TEAM_GALLERY_URL, teamGalleryEntries, type TeamGalleryEntry } from "@/lib/team-gallery-source";
 import type { TeamProfileEditorial } from "@/lib/team-gallery-profiles";
@@ -96,7 +96,7 @@ export function TeamProfileDetail({ entry, editorial }: Props) {
         <section aria-labelledby="creative-heading" className="space-y-5">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
-              <h2 id="creative-heading" className="flex items-center gap-2 text-2xl font-bold"><Image className="h-6 w-6 text-cyan-300" /> Ten visual-story concepts</h2>
+              <h2 id="creative-heading" className="flex items-center gap-2 text-2xl font-bold"><ImageIcon className="h-6 w-6 text-cyan-300" /> Ten visual-story concepts</h2>
               <p className="mt-2 text-sm leading-7 text-slate-400">Proposed professional visuals using the original source as a reference when an individual portrait is established. These are briefs for generation and approval, <strong>not completed image variations</strong>.</p>
             </div>
             <span className="w-fit rounded-full border border-amber-300/20 bg-amber-300/5 px-3 py-1.5 text-xs font-medium text-amber-200">10 concepts · 0 generated</span>
