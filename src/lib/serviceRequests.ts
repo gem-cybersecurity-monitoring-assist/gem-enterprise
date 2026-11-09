@@ -9,6 +9,7 @@ import {
 } from "@/lib/serviceRequestCatalog";
 import { resolveServiceRequestScope } from "@/lib/serviceRequestScope";
 import { listAccessibleWorkspaces } from "@/lib/workspaceAccess";
+import { serviceRequestStatusNotification } from "@/lib/serviceRequestNotifications";
 
 export {
   inspectServiceRequestContent,
@@ -760,7 +761,7 @@ export async function transitionServiceRequest(
       async (tx) => {
         const request = await tx.serviceRequest.findUnique({
           where: { id },
-          select: { id: true, status: true, assignedTo: true },
+          select: { id: true, userId: true, workspaceId: true, status: true, assignedTo: true },
         });
         if (!request) {
           throw new ServiceRequestDomainError(
@@ -832,6 +833,20 @@ export async function transitionServiceRequest(
             },
             ipAddress: context.ipAddress,
             userAgent: context.userAgent,
+          },
+        });
+
+        // The notification commits atomically with the audited status change.
+        // No notification is emitted if the transaction rejects the transition.
+        await tx.notification.create({
+          data: {
+            userId: request.userId,
+            workspaceId: request.workspaceId,
+            ...serviceRequestStatusNotification({
+              requestId: id,
+              fromStatus: fromStatus as RequestLifecycleStatus,
+              toStatus,
+            }),
           },
         });
 
