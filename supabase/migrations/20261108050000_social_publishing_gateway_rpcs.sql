@@ -243,11 +243,11 @@ BEGIN
   END IF;
 
   SELECT
-    global_emergency_lock,
-    publishing_disabled,
-    advertising_disabled,
-    shop_write_disabled,
-    connector_disabled
+    "globalEmergencyLock",
+    "publishingDisabled",
+    "advertisingDisabled",
+    "shopWriteDisabled",
+    "connectorDisabled"
   INTO v_global, v_publishing, v_advertising, v_shop, v_connector
   FROM tokmetric_workspaces
   WHERE id = p_workspace_id;
@@ -305,32 +305,32 @@ DECLARE
 BEGIN
   SELECT jsonb_build_object(
     'id', a.id,
-    'workspaceId', a.workspace_id,
-    'contentId', a.content_id,
-    'contentVersionId', a.content_version_id,
-    'requestedById', a.requested_by_id,
-    'requiredRole', a.required_role,
+    'workspaceId', a."workspaceId",
+    'contentId', a."contentId",
+    'contentVersionId', a."contentVersionId",
+    'requestedById', a."requestedById",
+    'requiredRole', a."requiredRole",
     'action', a.action,
-    'objectHash', a.object_hash,
+    'objectHash', a."objectHash",
     'state', a.state,
-    'expiresAt', a.expires_at,
-    'createdAt', a.created_at,
-    'updatedAt', a.updated_at,
+    'expiresAt', a."expiresAt",
+    'createdAt', a."createdAt",
+    'updatedAt', a."updatedAt",
     'content', (
       SELECT row_to_json(c)
       FROM (
         SELECT
           c2.id,
-          c2.workspace_id AS "workspaceId",
-          c2.campaign_id AS "campaignId",
-          c2.owner_id AS "ownerId",
+          c2."workspaceId" AS "workspaceId",
+          c2."campaignId" AS "campaignId",
+          c2."ownerId" AS "ownerId",
           c2.title,
           c2.state,
-          c2.current_version_id AS "currentVersionId",
-          c2.created_at AS "createdAt",
-          c2.updated_at AS "updatedAt"
+          c2."currentVersionId" AS "currentVersionId",
+          c2."createdAt" AS "createdAt",
+          c2."updatedAt" AS "updatedAt"
         FROM tokmetric_contents c2
-        WHERE c2.id = a.content_id
+        WHERE c2.id = a."contentId"
       ) c
     ),
     'contentVersion', (
@@ -338,18 +338,18 @@ BEGIN
       FROM (
         SELECT
           v2.id,
-          v2.content_id AS "contentId",
+          v2."contentId" AS "contentId",
           v2.version,
-          v2.object_hash AS "objectHash",
+          v2."objectHash" AS "objectHash",
           v2.script,
           v2.caption,
           v2.hashtags,
           v2.settings,
-          v2.media_asset_ids AS "mediaAssetIds",
-          v2.created_by_id AS "createdById",
-          v2.created_at AS "createdAt"
+          v2."mediaAssetIds" AS "mediaAssetIds",
+          v2."createdById" AS "createdById",
+          v2."createdAt" AS "createdAt"
         FROM tokmetric_content_versions v2
-        WHERE v2.id = a.content_version_id
+        WHERE v2.id = a."contentVersionId"
       ) v
     ),
     'decisions', (
@@ -357,15 +357,15 @@ BEGIN
       FROM (
         SELECT
           d2.id,
-          d2.approval_request_id AS "approvalRequestId",
-          d2.actor_id AS "actorId",
+          d2."approvalRequestId" AS "approvalRequestId",
+          d2."actorId" AS "actorId",
           d2.decision,
-          d2.object_hash AS "objectHash",
+          d2."objectHash" AS "objectHash",
           d2.reason,
-          d2.created_at AS "createdAt"
+          d2."createdAt" AS "createdAt"
         FROM tokmetric_approval_decisions d2
-        WHERE d2.approval_request_id = a.id
-        ORDER BY d2.created_at DESC
+        WHERE d2."approvalRequestId" = a.id
+        ORDER BY d2."createdAt" DESC
         LIMIT 1
       ) d
     )
@@ -373,8 +373,8 @@ BEGIN
   INTO v_approval
   FROM tokmetric_approval_requests a
   WHERE a.id = p_approval_id
-    AND a.workspace_id = p_workspace_id
-    AND a.object_hash = p_approved_version_hash
+    AND a."workspaceId" = p_workspace_id
+    AND a."objectHash" = p_approved_version_hash
     AND a.state = 'APPROVED';
 
   SELECT row_to_json(r)
@@ -382,17 +382,17 @@ BEGIN
   FROM (
     SELECT
       cr.id,
-      cr.workspace_id AS "workspaceId",
-      cr.content_id AS "contentId",
-      cr.content_version_id AS "contentVersionId",
-      cr.policy_version_id AS "policyVersionId",
+      cr."workspaceId" AS "workspaceId",
+      cr."contentId" AS "contentId",
+      cr."contentVersionId" AS "contentVersionId",
+      cr."policyVersionId" AS "policyVersionId",
       cr.result,
       cr.findings,
-      cr.reviewer_id AS "reviewerId",
-      cr.created_at AS "createdAt"
+      cr."reviewerId" AS "reviewerId",
+      cr."createdAt" AS "createdAt"
     FROM tokmetric_compliance_reviews cr
     WHERE cr.id = p_compliance_review_id
-      AND cr.workspace_id = p_workspace_id
+      AND cr."workspaceId" = p_workspace_id
       AND cr.result IN ('PASS', 'PASS_WITH_DISCLOSURE')
   ) r;
 
@@ -981,8 +981,8 @@ DECLARE
 BEGIN
   v_id := gen_random_uuid()::text;
   INSERT INTO tokmetric_audit_events (
-    id, workspace_id, actor_id, action, entity_type, entity_id,
-    correlation_id, outcome, source_channel, safe_metadata, created_at
+    id, "workspaceId", "actorId", action, "entityType", "entityId",
+    "correlationId", outcome, "sourceChannel", "safeMetadata", "createdAt"
   ) VALUES (
     v_id,
     p_workspace_id,
