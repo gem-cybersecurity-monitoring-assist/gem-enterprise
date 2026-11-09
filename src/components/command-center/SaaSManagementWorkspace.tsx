@@ -32,7 +32,7 @@ const quickActions: QuickAction[] = [
   { id: "clients", label: "Manage clients", description: "Accounts, requests and relationships", href: "/app/admin/client-operations", icon: Users, tone: "text-cyan-300 bg-cyan-400/10" },
   { id: "workspaces", label: "Organizations", description: "Teams, memberships and access", href: "/app/admin/users", icon: Building2, tone: "text-sky-300 bg-sky-400/10" },
   { id: "approvals", label: "Review approvals", description: "Decisions awaiting your attention", href: "/app/admin/approvals", icon: ClipboardCheck, tone: "text-amber-300 bg-amber-400/10" },
-  { id: "services", label: "Service delivery", description: "Requests, cases and support", href: "/app/admin/client-operations", icon: LifeBuoy, tone: "text-emerald-300 bg-emerald-400/10" },
+  { id: "services", label: "Service delivery", description: "Requests, cases and support", href: "/app/requests", icon: LifeBuoy, tone: "text-emerald-300 bg-emerald-400/10" },
   { id: "content", label: "Content & campaigns", description: "Marketing, publishing and reviews", href: "/app/social-media", icon: Megaphone, tone: "text-violet-300 bg-violet-400/10" },
   { id: "monitoring", label: "Monitor platform", description: "Health, evidence and integrations", href: "/app/command-center/monitoring", icon: Activity, tone: "text-rose-300 bg-rose-400/10" },
 ];
