@@ -310,6 +310,12 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         description: "Administrative overview and route directory.",
       },
       {
+        href: "/app/admin/team-gallery",
+        icon: "Users",
+        label: "Teams Gallery Preview",
+        description: "Private review of linked Notion staff photographs and company roles.",
+      },
+      {
         href: "/app/admin/client-operations",
         icon: "Building2",
         label: "Client Operations",
