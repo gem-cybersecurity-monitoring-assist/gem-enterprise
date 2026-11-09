@@ -32,7 +32,7 @@ const filters: readonly { value: "all" | TeamGalleryCategory; label: string }[] 
   { value: "unassigned", label: "Needs attribution" },
 ];
 
-function SourceImage({ url, alt, label }: { url: string; alt: string; label: string }) {
+export function GallerySourceImage({ url, alt, label }: { url: string; alt: string; label: string }) {
   const [broken, setBroken] = useState(false);
   return (
     <div className="relative aspect-[4/3] overflow-hidden bg-[#101e2c]">
@@ -64,7 +64,7 @@ function SourceImage({ url, alt, label }: { url: string; alt: string; label: str
 function TeamCard({ entry, index }: { entry: TeamGalleryEntry; index: number }) {
   return (
     <article className="group overflow-hidden rounded-3xl border border-white/10 bg-[#0c1a2b] shadow-[0_14px_48px_rgba(0,0,0,.2)]">
-      <SourceImage
+      <GallerySourceImage
         url={entry.imageUrl}
         alt={`Original Notion staff photograph ${index + 1}, listed as ${entry.title}; identity not independently verified`}
         label="Original Notion image"
@@ -245,7 +245,7 @@ export function TeamGalleryPreview() {
           <div className="grid gap-5 md:grid-cols-3">
             {atrGalleryMedia.map((media) => (
               <article key={media.title} className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[.035]">
-                <SourceImage url={media.url} alt={media.title} label="ATR source image" />
+                <GallerySourceImage url={media.url} alt={media.title} label="ATR source image" />
                 <div className="p-5">
                   <h3 className="font-semibold text-white">{media.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-400">{media.caption}</p>
