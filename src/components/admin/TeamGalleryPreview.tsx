@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowUpRight,
   BookOpen,
@@ -32,15 +33,15 @@ const filters: readonly { value: "all" | TeamGalleryCategory; label: string }[] 
   { value: "unassigned", label: "Needs attribution" },
 ];
 
-export function GallerySourceImage({ url, alt, label }: { url: string; alt: string; label: string }) {
+export function GallerySourceImage({ url, alt, label }: { url: string | null; alt: string; label: string }) {
   const [broken, setBroken] = useState(false);
   return (
     <div className="relative aspect-[4/3] overflow-hidden bg-[#101e2c]">
-      {broken ? (
+      {broken || !url ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-400">
           <ImageOff className="h-8 w-8" aria-hidden="true" />
-          <span className="text-sm">The Notion media URL is unavailable.</span>
-          <span className="text-xs">Open the linked original profile to view its source image.</span>
+          <span className="text-sm">{url ? "The original media is temporarily unavailable." : "This source record is a video, not a portrait."}</span>
+          <span className="text-xs">Use the linked Notion profile or original source to inspect the media.</span>
         </div>
       ) : (
         <Image
@@ -66,8 +67,8 @@ function TeamCard({ entry, index }: { entry: TeamGalleryEntry; index: number }) 
     <article className="group overflow-hidden rounded-3xl border border-white/10 bg-[#0c1a2b] shadow-[0_14px_48px_rgba(0,0,0,.2)]">
       <GallerySourceImage
         url={entry.imageUrl}
-        alt={`Original Notion staff photograph ${index + 1}, listed as ${entry.title}; identity not independently verified`}
-        label="Original Notion image"
+        alt={`Original Notion source media ${index + 1}, listed as ${entry.title}; identity not independently verified`}
+        label={entry.mediaKind === "video" ? "Notion video source" : "Original Notion photograph"}
       />
       <div className="space-y-4 p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
@@ -96,14 +97,13 @@ function TeamCard({ entry, index }: { entry: TeamGalleryEntry; index: number }) 
           </ul>
         </div>
         <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
-          <a
-            href={entry.notionProfileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={`/app/admin/team-gallery/${entry.slug}`}
             className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-3.5 py-2.5 text-xs font-semibold text-[#071421] hover:bg-cyan-300"
           >
-            Full Notion profile <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </a>
+            Enterprise profile <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+          <a href={entry.notionProfileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200 hover:bg-white/10">Notion source <ExternalLink className="h-3.5 w-3.5" /></a>
           <span className="inline-flex items-center rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-[11px] text-amber-100/90">
             Identity / assignment unconfirmed
           </span>
@@ -137,7 +137,7 @@ export function TeamGalleryPreview() {
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Teams & Staff Gallery</h1>
             <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
               A connected editorial preview of GEM Enterprise team roles and Alliance Trust Realty
-              corporate media, using the original photographs and individual profile pages from
+              corporate media, using the original staff media and individual profile pages from
               your Notion collections.
             </p>
             <p className="mt-4 text-sm leading-6 text-amber-100/90">
@@ -158,7 +158,7 @@ export function TeamGalleryPreview() {
 
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { label: "Original team images", value: teamGalleryEntries.length, icon: Users },
+            { label: "Original staff photos", value: teamGalleryEntries.filter((entry) => entry.mediaKind === "photograph").length, icon: Users },
             { label: "Linked role profiles", value: teamGalleryEntries.length, icon: BookOpen },
             { label: "ATR source visuals", value: atrGalleryMedia.length, icon: Building2 },
           ].map(({ label, value, icon: Icon }) => (
@@ -181,7 +181,7 @@ export function TeamGalleryPreview() {
                 Enterprise professional roles
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
-                Every card links to its dedicated Notion story. Filters use the original photo-to-role mapping,
+                Every card opens a native enterprise role page and its source Notion story. Filters use the source-verified photo-to-role mapping,
                 not the deprecated demo portraits.
               </p>
             </div>
@@ -212,7 +212,7 @@ export function TeamGalleryPreview() {
           </div>
 
           <p className="text-xs text-slate-400" aria-live="polite">
-            Showing {filtered.length} of {teamGalleryEntries.length} original role records.
+            Showing {filtered.length} of {teamGalleryEntries.length} original role/media records (9 photographs, 1 video).
           </p>
           {filtered.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
