@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import type { CommandCenterSnapshot } from "@/lib/commandCenterSnapshot";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
-import { buildSaaSReadinessReport, type SaaSReadinessInputs } from "@/lib/saasRuntimeReadiness";
+import { buildSaaSReadinessReport, isSaaSGatewayAdminStats, type SaaSReadinessInputs } from "@/lib/saasRuntimeReadiness";
 
 const providers = getSocialMediaProviderReadiness({} as NodeJS.ProcessEnv);
 const validMetrics = {
@@ -91,4 +91,38 @@ describe("SaaS backend readiness evidence", () => {
     expect(board).toContain("Show only items requiring attention");
     expect(home).toContain('href="/app/command-center/saas/readiness"');
   });
+  it("accepts only complete nonnegative safe-integer gateway statistics", () => {
+    expect(isSaaSGatewayAdminStats({ totalUsers: 2, pendingKyc: 0, openApprovals: 0, openTickets: 3 })).toBe(true);
+    expect(isSaaSGatewayAdminStats({ totalUsers: 2, pendingKyc: 0, openApprovals: 0 })).toBe(false);
+    expect(isSaaSGatewayAdminStats({ totalUsers: -1, pendingKyc: 0, openApprovals: 0, openTickets: 3 })).toBe(false);
+    expect(isSaaSGatewayAdminStats({ totalUsers: 0.5, pendingKyc: 0, openApprovals: 0, openTickets: 3 })).toBe(false);
+  });
+
+  it("shows partial gateway evidence without claiming full tenant or service verification", () => {
+    const report = buildSaaSReadinessReport({
+      ...input,
+      snapshot: {
+        source: "unavailable", generatedAt: "2026-11-09T00:00:00.000Z",
+        metrics: null, operatingLayer: { source: "unavailable", metrics: null },
+      },
+      gatewayAdminStats: { totalUsers: 3, pendingKyc: 1, openApprovals: 0, openTickets: 2 },
+    });
+    expect(report.items.find((item) => item.id === "core-database")?.state).toBe("PARTIAL");
+    expect(report.items.find((item) => item.id === "core-database")?.evidence).toContain("Complete operating-layer metrics remain unverified");
+    expect(report.items.find((item) => item.id === "tenant-workspaces")?.state).toBe("UNAVAILABLE");
+    expect(report.items.find((item) => item.id === "service-delivery")?.state).toBe("PARTIAL");
+    expect(report.items.find((item) => item.id === "operating-schema")?.state).toBe("UNAVAILABLE");
+    expect(report.items.find((item) => item.id === "billing")?.state).toBe("NOT_ACTIVATED");
+  });
+
+  it("never uses gateway counters for a direct database run or invalid data", () => {
+    const failed = { source: "unavailable" as const, generatedAt: "2026-11-09T00:00:00.000Z", metrics: null,
+      operatingLayer: { source: "unavailable" as const, metrics: null } };
+    const stats = { totalUsers: 4, pendingKyc: 0, openApprovals: 1, openTickets: 0 };
+    const direct = buildSaaSReadinessReport({ ...input, snapshot: failed, gatewaySelected: false, gatewayAdminStats: stats });
+    const malformed = buildSaaSReadinessReport({ ...input, snapshot: failed, gatewayAdminStats: { ...stats, openTickets: -2 } });
+    expect(direct.items.find((item) => item.id === "core-database")?.state).toBe("UNAVAILABLE");
+    expect(malformed.items.find((item) => item.id === "core-database")?.state).toBe("UNAVAILABLE");
+  });
+
 });

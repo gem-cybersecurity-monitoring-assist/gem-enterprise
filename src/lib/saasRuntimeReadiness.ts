@@ -28,11 +28,27 @@ export type SaaSReadinessItem = Readonly<{
   href: string;
 }>;
 
+export type SaaSGatewayAdminStats = Readonly<{
+  totalUsers: number;
+  pendingKyc: number;
+  openApprovals: number;
+  openTickets: number;
+}>;
+
+export function isSaaSGatewayAdminStats(value: unknown): value is SaaSGatewayAdminStats {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return ["totalUsers", "pendingKyc", "openApprovals", "openTickets"].every(
+    (key) => typeof row[key] === "number" && Number.isSafeInteger(row[key]) && (row[key] as number) >= 0,
+  );
+}
+
 export type SaaSReadinessInputs = Readonly<{
   snapshot: CommandCenterSnapshot;
   socialBackendState: SocialBackendState;
   providers: readonly SocialMediaProviderReadiness[];
   gatewaySelected: boolean;
+  gatewayAdminStats?: SaaSGatewayAdminStats | null;
 }>;
 
 export type SaaSReadinessReport = Readonly<{
@@ -46,9 +62,10 @@ export type SaaSReadinessReport = Readonly<{
 
 /** No fake zeroes: unknown counts remain unknown. */
 export function buildSaaSReadinessItems(input: SaaSReadinessInputs): SaaSReadinessItem[] {
-  const { snapshot, socialBackendState, providers, gatewaySelected } = input;
+  const { snapshot, socialBackendState, providers, gatewaySelected, gatewayAdminStats } = input;
   const operational = snapshot.operatingLayer;
   const databaseReadable = snapshot.source === "database" && snapshot.metrics !== null;
+  const gatewayStatsReadable = gatewaySelected && isSaaSGatewayAdminStats(gatewayAdminStats);
   const backend = gatewaySelected ? "Supabase gateway" : "direct PostgreSQL";
   const configuredProviders = providers.filter((p) => p.configurationReady).length;
   const providerApprovalsPending = providers.filter((p) => p.configurationReady && !p.platformApprovalGranted).length;
@@ -62,11 +79,15 @@ export function buildSaaSReadinessItems(input: SaaSReadinessInputs): SaaSReadine
       id: "core-database",
       area: "platform",
       label: "Core operating data",
-      state: databaseReadable ? "VERIFIED_READ_ONLY" : "UNAVAILABLE",
+      state: databaseReadable ? "VERIFIED_READ_ONLY" : gatewayStatsReadable ? "PARTIAL" : "UNAVAILABLE",
       evidence: databaseReadable
         ? `Authenticated aggregate query succeeded on ${backend}. No personal records included.`
-        : `No readable authenticated aggregate snapshot from ${backend}; operation cannot be certified.`,
-      nextAction: databaseReadable ? "Review live aggregate totals and owner access." : "Check connection health, database schema and authorized session.",
+        : gatewayStatsReadable
+          ? "Authenticated administrator gateway returned verified account, identity-review, approval and support-ticket counters. Complete operating-layer metrics remain unverified."
+          : `No readable authenticated aggregate snapshot from ${backend}; operation cannot be certified.`,
+      nextAction: databaseReadable ? "Review live aggregate totals and owner access." : gatewayStatsReadable
+        ? "Validate full tenant and service counts using the authoritative database before launch certification."
+        : "Check connection health, database schema and authorized session.",
       href: "/app/command-center",
     },
     {
@@ -84,10 +105,12 @@ export function buildSaaSReadinessItems(input: SaaSReadinessInputs): SaaSReadine
       id: "service-delivery",
       area: "services",
       label: "Requests and support",
-      state: databaseReadable ? "PARTIAL" : "UNAVAILABLE",
+      state: databaseReadable || gatewayStatsReadable ? "PARTIAL" : "UNAVAILABLE",
       evidence: databaseReadable
         ? "Service and support queue aggregates queried successfully; assignment-to-closure flow is not certified."
-        : "No verified current service-delivery aggregates.",
+        : gatewayStatsReadable
+          ? "Authenticated gateway returned an open-support-ticket counter only. Service requests, assignment and closure were not verified."
+          : "No verified current service-delivery aggregates.",
       nextAction: "Run authenticated request creation, assignment, notifications and closure tests.",
       href: "/app/requests",
     },
