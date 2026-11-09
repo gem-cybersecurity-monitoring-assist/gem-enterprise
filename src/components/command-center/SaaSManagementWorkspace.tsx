@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowRight, ArrowUpRight, BellRing, BookOpen, Bot, Building2,
-  CheckCircle2, ChevronDown, ClipboardCheck, Command, FileText, Filter,
+  Activity, ArrowRight, ArrowUpRight, BookOpen, Building2,
+  CheckCircle2, ChevronDown, ClipboardCheck, Command, Filter,
   Globe2, LayoutGrid, LifeBuoy, LockKeyhole, Megaphone, RefreshCw, Search,
   Settings2, ShieldCheck, Sparkles, Users, Wallet, X,
   type LucideIcon,
