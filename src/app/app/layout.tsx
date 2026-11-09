@@ -183,7 +183,23 @@ function SidebarContent({
   pathname: string;
   viewerRole: string | null;
 }) {
-  const visibleGroups = navigationForRole(viewerRole);
+  const baseGroups = navigationForRole(viewerRole);
+  const visibleGroups = pathname.startsWith("/app/command-center/saas") && ADMIN_ROLES.has(viewerRole ?? "")
+    ? [
+        {
+          label: "SaaS architecture",
+          items: [
+            { href: "/app/command-center/saas", icon: "LayoutDashboard" as const, label: "SaaS overview", description: "Your expanded enterprise home." },
+            { href: "/app/command-center/saas/areas/owner", icon: "ShieldCheck" as const, label: "Governance", description: "Controls, access and decisions." },
+            { href: "/app/command-center/saas/areas/operations", icon: "Briefcase" as const, label: "Operations", description: "Service delivery and teams." },
+            { href: "/app/command-center/saas/areas/client", icon: "Users" as const, label: "Client experience", description: "Customers and care." },
+            { href: "/app/command-center/saas/areas/community", icon: "MessageSquare" as const, label: "Community", description: "Applications and previews." },
+            { href: "/app/command-center/saas/areas/market", icon: "Wallet" as const, label: "Marketplace", description: "Services and enquiries." },
+          ],
+        },
+        ...baseGroups,
+      ]
+    : baseGroups;
 
   return (
     <div className="flex h-full flex-col">
@@ -264,6 +280,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const segment = pathname.split("/").filter(Boolean).pop() ?? "dashboard";
   const pageTitle = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
   const canAccessAdmin = ADMIN_ROLES.has(viewerRole ?? "");
+  const isSaaSSurface = pathname.startsWith("/app/command-center/saas");
   const isAdminSurface =
     pathname.startsWith("/app/admin") || pathname.startsWith("/app/command-center");
   const hideFloatingSupport =
@@ -301,12 +318,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="glass-panel sticky top-0 hidden h-screen w-56 shrink-0 overflow-hidden border-r border-white/10 lg:flex xl:w-64">
+      <aside className={cn("glass-panel sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-white/10 lg:flex", isSaaSSurface ? "w-72 2xl:w-[308px]" : "w-56 xl:w-64")}>
         {sidebar}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass-panel sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/10 px-4">
+        <header className={cn("glass-panel sticky top-0 z-30 flex items-center justify-between border-b border-white/10 px-4", isSaaSSurface ? "h-[72px] px-5 xl:px-8" : "h-14")}>
           <div className="flex items-center gap-3">
             <Sheet>
               <SheetTrigger asChild>
@@ -388,7 +405,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className={cn("min-w-0 flex-1 overflow-auto", isSaaSSurface ? "p-0" : "p-4 sm:p-6")}>{children}</main>
       </div>
 
       {!hideFloatingSupport ? <AIChatWidget profileId="PRF-005" profileName="Platform Support" /> : null}

@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight, ChevronDown, CircleHelp, Command, ExternalLin
 import { SaaSOperationalSnapshot } from "@/components/command-center/SaaSOperationalSnapshot";
 import { SaaSManagementWorkspace } from "@/components/command-center/SaaSManagementWorkspace";
 import { SaaSAssignedWorkspaces } from "@/components/command-center/SaaSAssignedWorkspaces";
+import { SaaSArchitectureDeck } from "@/components/command-center/SaaSArchitectureDeck";
 
 export const metadata: Metadata = {
   title: "SaaS Management Center | GEM Enterprise",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function SaaSControlPlanePage() {
   return (
-    <main id="saas-home" className="relative mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-5 text-slate-100 sm:px-6 sm:pt-8">
+    <main id="saas-home" className="relative mx-auto w-full max-w-[1820px] space-y-12 px-4 pb-24 pt-7 text-slate-100 sm:px-7 lg:space-y-16 2xl:px-10">
       <div className="pointer-events-none absolute left-1/3 top-0 -z-10 h-72 w-72 rounded-full bg-cyan-500/10 blur-[95px]" />
       <nav aria-label="SaaS breadcrumb" className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400">
         <Link href="/app/admin" className="hover:text-cyan-200">Admin</Link>
@@ -21,14 +22,14 @@ export default function SaaSControlPlanePage() {
         <span className="text-slate-200">SaaS workspace</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-[28px] border border-cyan-400/20 bg-[radial-gradient(ellipse_at_top_right,rgba(8,145,178,0.23),transparent_57%),linear-gradient(145deg,rgba(15,23,42,1),rgba(2,6,23,0.98))] px-5 py-7 shadow-2xl shadow-black/20 sm:px-8 sm:py-9 lg:px-10">
+      <header className="relative overflow-hidden rounded-[36px] border border-cyan-400/20 bg-[radial-gradient(ellipse_at_top_right,rgba(8,145,178,0.23),transparent_57%),linear-gradient(145deg,rgba(15,23,42,1),rgba(2,6,23,0.98))] px-6 py-10 shadow-2xl shadow-black/20 sm:px-10 sm:py-14 lg:min-h-[490px] lg:px-14 lg:py-16 2xl:px-20">
         <div className="absolute right-0 top-0 h-full w-1/2 opacity-35" aria-hidden="true" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,.07) 1px, transparent 1px)", backgroundSize: "28px 28px", maskImage: "linear-gradient(to left, black, transparent)" }} />
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 max-w-5xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-cyan-200">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> GEM Enterprise Workspace
           </div>
-          <h1 className="mt-6 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[44px]">Your business. One workspace.</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+          <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl 2xl:text-[74px]">Your business. One workspace.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
             Manage your clients, teams, projects and services without jumping between dashboards.
             Everything stays connected to your existing GEM Enterprise systems.
           </p>
@@ -47,10 +48,12 @@ export default function SaaSControlPlanePage() {
         </div>
       </header>
 
+      <SaaSArchitectureDeck />
+
       <SaaSManagementWorkspace />
 
-      <section aria-label="Additional management views" className="grid gap-3 md:grid-cols-2">
-        <Link href="/app/command-center" className="group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 transition hover:border-cyan-400/25 hover:bg-white/[0.06]">
+      <section aria-label="Additional management views" className="grid gap-5 md:grid-cols-2">
+        <Link href="/app/command-center" className="group flex items-center justify-between gap-4 rounded-[28px] border border-white/10 bg-white/[0.035] px-7 py-8 transition hover:border-cyan-400/25 hover:bg-white/[0.06]">
           <div className="flex items-center gap-3">
             <span className="rounded-xl bg-cyan-400/10 p-3 text-cyan-200"><LayoutDashboard className="h-5 w-5" aria-hidden="true" /></span>
             <div><p className="font-semibold">Enterprise command center</p><p className="mt-1 text-xs text-slate-400">Advanced enterprise-wide operations</p></div>

@@ -32,7 +32,7 @@ const quickActions: QuickAction[] = [
   { id: "clients", label: "Manage clients", description: "Accounts, requests and relationships", href: "/app/admin/client-operations", icon: Users, tone: "text-cyan-300 bg-cyan-400/10" },
   { id: "workspaces", label: "Organizations", description: "Teams, memberships and access", href: "/app/admin/users", icon: Building2, tone: "text-sky-300 bg-sky-400/10" },
   { id: "approvals", label: "Review approvals", description: "Decisions awaiting your attention", href: "/app/admin/approvals", icon: ClipboardCheck, tone: "text-amber-300 bg-amber-400/10" },
-  { id: "services", label: "Service delivery", description: "Requests, cases and support", href: "/app/admin/client-operations", icon: LifeBuoy, tone: "text-emerald-300 bg-emerald-400/10" },
+  { id: "services", label: "Service delivery", description: "Requests, cases and support", href: "/app/requests", icon: LifeBuoy, tone: "text-emerald-300 bg-emerald-400/10" },
   { id: "content", label: "Content & campaigns", description: "Marketing, publishing and reviews", href: "/app/social-media", icon: Megaphone, tone: "text-violet-300 bg-violet-400/10" },
   { id: "monitoring", label: "Monitor platform", description: "Health, evidence and integrations", href: "/app/command-center/monitoring", icon: Activity, tone: "text-rose-300 bg-rose-400/10" },
 ];
@@ -134,26 +134,26 @@ export function SaaSManagementWorkspace() {
   const gatedRoutes = capabilities.length - openRoutes;
 
   return (
-    <div className="space-y-9" data-testid="saas-friendly-workspace">
+    <div className="space-y-14" data-testid="saas-friendly-workspace">
       <section aria-labelledby="saas-quick-actions" className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><Sparkles className="h-3.5 w-3.5" /> Start here</div>
-            <h2 id="saas-quick-actions" className="text-2xl font-bold tracking-tight text-white">What would you like to manage?</h2>
+            <h2 id="saas-quick-actions" className="text-3xl font-bold tracking-tight text-white sm:text-4xl">What would you like to manage?</h2>
             <p className="mt-1 text-sm text-slate-400">Open your most-used GEM workspaces in one tap.</p>
           </div>
           <Link href="/app/admin" className="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-cyan-300 hover:text-cyan-200">
             Full admin center <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
           {quickActions.map(({ id, label, description, href, icon: Icon, tone }) => (
             <Link key={id} href={href}
-              className="group flex min-h-[112px] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-5 transition hover:-translate-y-0.5 hover:border-cyan-400/35 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></div>
+              className="group flex min-h-[190px] items-center gap-6 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(30,41,59,.78),rgba(2,6,23,.94))] px-7 py-8 transition hover:-translate-y-0.5 hover:border-cyan-400/35 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
+              <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${tone}`}><Icon className="h-8 w-8" aria-hidden="true" /></div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-white">{label}</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-400">{description}</p>
+                <h3 className="text-xl font-bold text-white sm:text-2xl">{label}</h3>
+                <p className="mt-1 text-sm leading-7 text-slate-400">{description}</p>
               </div>
               <ArrowRight className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-1 group-hover:text-cyan-200" aria-hidden="true" />
             </Link>
@@ -165,7 +165,7 @@ export function SaaSManagementWorkspace() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><LayoutGrid className="h-3.5 w-3.5" /> Your toolbox</div>
-            <h2 id="saas-management-title" className="text-2xl font-bold tracking-tight">Explore all management tools</h2>
+            <h2 id="saas-management-title" className="text-3xl font-bold tracking-tight sm:text-4xl">Explore all management tools</h2>
             <p className="mt-1 text-sm leading-6 text-slate-400">Find the right tool without searching through different dashboards.</p>
           </div>
           <button type="button" onClick={() => void load()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10">
@@ -177,13 +177,13 @@ export function SaaSManagementWorkspace() {
         {loadingState === "failed" && <div role="alert" className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6 text-sm text-amber-100">{error}</div>}
         {loadingState === "ready" && (
           <>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/55 p-3 sm:p-4">
+            <div className="rounded-[28px] border border-white/10 bg-slate-900/55 p-5 sm:p-7">
               <div className="relative">
                 <Search aria-hidden="true" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input type="search" aria-label="Search platform modules" value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="What are you looking for? Clients, documents, AI, approvals…"
-                  className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-950 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400" />
+                  className="min-h-14 w-full rounded-xl border border-white/10 bg-slate-950 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400" />
                 {query && <button type="button" aria-label="Clear tool search" onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-300 hover:bg-white/10"><X className="h-4 w-4" /></button>}
               </div>
               <div className="mt-4 flex gap-2 overflow-x-auto pb-2" role="group" aria-label="Filter by operating area">
@@ -219,17 +219,17 @@ export function SaaSManagementWorkspace() {
               </div>
             ) : (
               <>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {visible.map((item) => {
                     const Icon = iconByArea[item.area];
                     return (
-                      <article key={item.id} className="group flex flex-col rounded-2xl border border-white/10 bg-slate-900/55 p-5 transition hover:border-white/20 hover:bg-slate-900/80">
+                      <article key={item.id} className="group flex min-h-[300px] flex-col rounded-[28px] border border-white/10 bg-slate-900/55 p-7 transition hover:border-white/20 hover:bg-slate-900/80">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.055] text-slate-300"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.055] text-slate-300"><Icon className="h-5 w-5" aria-hidden="true" /></span>
                           <span title={statusInfo[item.readiness].detail} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusInfo[item.readiness].classes}`}>{statusInfo[item.readiness].short}</span>
                         </div>
-                        <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
-                        <p className="mt-2 flex-1 text-sm leading-6 text-slate-400">{item.description}</p>
+                        <h3 className="mt-6 text-xl font-bold text-white">{item.title}</h3>
+                        <p className="mt-3 flex-1 text-base leading-7 text-slate-400">{item.description}</p>
                         {item.href ? (
                           <Link href={item.href} className="mt-5 inline-flex min-h-10 items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400">
                             Open workspace <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
