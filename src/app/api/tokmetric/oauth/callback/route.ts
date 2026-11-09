@@ -1,14 +1,17 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
-import { correlationId, emitTokMetricAudit, requireWorkspaceAccess, tokMetricErrorResponse, TokMetricError } from "@/lib/tokmetric/security";
+import { correlationId, emitTokMetricAudit, tokMetricErrorResponse, TokMetricError } from "@/lib/tokmetric/security";
 import { exchangeAuthorizationCode } from "@/lib/tokmetric/oauth/client";
 import { decodeOAuthState } from "@/lib/tokmetric/oauth/state";
 import { persistAuthorizedConnector } from "@/lib/tokmetric/oauth/connectors";
 import { consumeOAuthAuthorizationAttempt } from "@/lib/tokmetric/oauth/attempts";
-import { verifySession, type SessionPayload } from "@/lib/auth";
+import { type SessionPayload } from "@/lib/auth";
 
 async function sessionFromStateActor(request: NextRequest, actorId: string): Promise<SessionPayload> {
-  const cookie = request.cookies.get("gem_session")?.value;
-  const session = cookie ? await verifySession(cookie) : null;
+  // getSessionFromRequest (via requireSocialConnectorSession) resolves both
+  // local JWT sessions and supabase_gateway (sg1.) sessions; the previous
+  // local-JWT-only lookup rejected every gateway session with 401 here.
+  const session = await requireSocialConnectorSession(request);
   if (!session || session.userId !== actorId) throw new TokMetricError(401, "UNAUTHENTICATED", "OAuth callback requires the initiating authenticated session.");
   return session;
 }
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
     workspaceId = state.workspaceId;
     actorId = state.actorId;
     const session = await sessionFromStateActor(request, state.actorId);
-    await requireWorkspaceAccess(state.workspaceId, session);
+    await requireSocialConnectorWorkspace(state.workspaceId, session);
     const consumed = await consumeOAuthAuthorizationAttempt(state);
     const token = await exchangeAuthorizationCode({ code, codeVerifier: consumed.codeVerifier });
     const connector = await persistAuthorizedConnector({ workspaceId: state.workspaceId, actorId: session.userId, provider: state.provider, token, correlationId: cid });
