@@ -86,7 +86,7 @@ TikTok connects only through TokMetric. See `docs/tokmetric/activation-runbook.m
 |---|---|
 | Console | developers.tiktok.com → app with Login Kit and Content Posting API |
 | Redirect URL | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/callback` |
-| Variables | `TOKMETRIC_TIKTOK_CLIENT_KEY`, `TOKMETRIC_TIKTOK_CLIENT_SECRET`, `TOKMETRIC_TIKTOK_OAUTH_REDIRECT_URL`, `TOKMETRIC_TIKTOK_OAUTH_ENABLED=true`, `TIKTOK_ENVIRONMENT=sandbox` until app review passes |
+| Variables | `TOKMETRIC_TIKTOK_CLIENT_KEY`, `TOKMETRIC_TIKTOK_CLIENT_SECRET`, `TOKMETRIC_TIKTOK_OAUTH_REDIRECT_URL`, `TOKMETRIC_TIKTOK_OAUTH_ENABLED=true`, `TIKTOK_ENVIRONMENT=sandbox` until app review passes. The unified social-media flow also needs `TIKTOK_SOCIAL_REDIRECT_URI` (its own allow-listed callback URL, `/api/social-media/oauth/tiktok/callback`) and `TIKTOK_APP_AUDIT_APPROVED=true` (gates the TikTok connection until the app audit passes) |
 | Connect | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/start`, then check `/tokmetric/accounts` |
 | TikTok Shop (optional) | Partner Center app credentials and approval; set `TIKTOK_SHOP_REDIRECT_URI=https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/callback`; connect at `https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/start` |
 
