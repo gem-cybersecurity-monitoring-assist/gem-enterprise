@@ -80,7 +80,7 @@ export function SaaSBackendReadinessBoard() {
     return () => controller.abort();
   }, [refresh]);
 
-  const items = state.kind === "ready" ? state.report.items : [];
+  const items = useMemo(() => state.kind === "ready" ? state.report.items : [], [state]);
   const verified = items.filter((item) => item.state === "VERIFIED_READ_ONLY").length;
   const blocked = items.filter((item) => item.state !== "VERIFIED_READ_ONLY").length;
   const visible = useMemo(() => items.filter((item) =>
