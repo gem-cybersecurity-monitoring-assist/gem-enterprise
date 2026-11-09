@@ -219,7 +219,7 @@ export function SaaSManagementWorkspace() {
               </div>
             ) : (
               <>
-                <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {visible.map((item) => {
                     const Icon = iconByArea[item.area];
                     return (
