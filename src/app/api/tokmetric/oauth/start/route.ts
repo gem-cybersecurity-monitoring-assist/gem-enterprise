@@ -1,6 +1,7 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { correlationId, emitTokMetricAudit, requirePermission, requireTokMetricSession, requireWorkspaceAccess, tokMetricErrorResponse, TokMetricError } from "@/lib/tokmetric/security";
+import { correlationId, emitTokMetricAudit, requirePermission, tokMetricErrorResponse, TokMetricError } from "@/lib/tokmetric/security";
 import { buildAuthorizationUrl } from "@/lib/tokmetric/oauth/client";
 import { connectorProviders, isPlatformApprovalRequired, validateTikTokOAuthConfig } from "@/lib/tokmetric/oauth/config";
 import { createPkcePair } from "@/lib/tokmetric/oauth/crypto";
@@ -12,9 +13,9 @@ const startSchema = z.object({ workspaceId: z.string().min(1), provider: z.enum(
 export async function GET(request: NextRequest) {
   const cid = correlationId(request);
   try {
-    const session = await requireTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const params = startSchema.parse(Object.fromEntries(request.nextUrl.searchParams));
-    const membership = await requireWorkspaceAccess(params.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(params.workspaceId, session);
     requirePermission(membership, "manage", "connectors");
     if (isPlatformApprovalRequired(params.provider)) throw new TokMetricError(409, "PLATFORM_APPROVAL_REQUIRED", "This TikTok connector requires platform product approval before authorization.");
     const { ok, missing, config } = validateTikTokOAuthConfig();
