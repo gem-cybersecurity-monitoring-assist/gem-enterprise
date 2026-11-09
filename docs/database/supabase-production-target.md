@@ -31,6 +31,22 @@ The legacy project contains the existing tables `threads`, `thread_users`, `mess
 - Open the project dashboard and verify that the signed-in Supabase account can see **supabase-charcoal-lens**. If the project is absent, switch to the account or organization with access to this project, or have its administrator grant the access required for the operation.
 - Authorize the Supabase connection with that identity. Where a client supports a separate MCP connection, use the [official Supabase OAuth setup](https://supabase.com/docs/guides/getting-started/mcp) with the production project pinned. For a separate inspection connection use `https://mcp.supabase.com/mcp?project_ref=slzdjoqpzbkwzuaexlkj&read_only=true`. An operator who must deploy functions should use an explicitly authorized connection with the required project role.
 
+### Verified Vercel sign-in route
+
+Vercel Storage identifies the exact Supabase project `slzdjoqpzbkwzuaexlkj` as
+`supabase-charcoal-lens`, resource `store_E1xlP6klmbdB3ofE`, with status
+available, provider status ready, SSO supported, and Supabase Free Plan.
+Open the [exact Vercel storage resource](https://vercel.com/geraldhoeven-4141s-projects/~/stores/store_E1xlP6klmbdB3ofE)
+from the owning Vercel team, then use its Supabase dashboard link. Vercel
+identifies `admin@gemcybersecurityassist.com` as the Marketplace installer
+and Vercel team owner. The Supabase organization role is still to be
+verified after sign-in.
+
+The Vercel resource is attached to the Crypto Signal Bot project. This is
+evidence of where to find the existing Supabase account, not authorization
+to change Crypto Signal Bot or its database configuration. GEM Enterprise's
+older Vercel storage attachment points to `kcurngdalxcjcqucylyy`.
+
 ### Access check for each work session
 
 1. Fetch project metadata by the exact reference and verify its identity. A healthy application endpoint only proves the application is responding.
