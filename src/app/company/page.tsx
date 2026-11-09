@@ -321,8 +321,8 @@ export default function CompanyPage() {
               <Users className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold">Team Divisions</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">Six specialized divisions delivering enterprise excellence</p>
+              <h2 className="text-3xl font-bold">Enterprise teams &amp; professional functions</h2>
+              <p className="text-muted-foreground text-sm mt-0.5">Explore how GEM Enterprise disciplines coordinate services and governance</p>
             </div>
           </div>
           <Separator className="mb-12" />
@@ -339,9 +339,6 @@ export default function CompanyPage() {
                         </div>
                         <div>
                           <h3 className="font-bold text-base">{team.name}</h3>
-                          <Badge variant="secondary" className="mt-1.5 text-xs font-mono">
-                            {team.headcount}
-                          </Badge>
                         </div>
                       </div>
                       <div className="md:col-span-6">
@@ -365,6 +362,22 @@ export default function CompanyPage() {
                 </Card>
               );
             })}
+          </div>
+          <div className="mt-9 flex flex-col gap-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-3xl">
+              <h3 className="text-lg font-semibold text-white">Meet approved professionals</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                Our public personnel directory is separate from the internal team-media gallery.
+                Individual photographs, professional identities and credentials are displayed
+                only when their records are verified and approved for website publication.
+              </p>
+            </div>
+            <Link
+              href="/personnel"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/20"
+            >
+              View approved directory <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -96,6 +96,17 @@ function navigationForRole(role: string | null): PlatformNavGroup[] {
         ]),
       },
       {
+        label: "Company & people",
+        items: [
+          {
+            href: "/app/admin/team-gallery",
+            icon: "Users" as const,
+            label: "Teams gallery preview",
+            description: "Review original Notion staff images and company role stories before public approval.",
+          },
+        ],
+      },
+      {
         label: "Decisions & evidence",
         items: items(["/app/admin/intake", "/app/admin/kyc", "/app/admin/approvals", "/app/admin/audit"]),
       },
