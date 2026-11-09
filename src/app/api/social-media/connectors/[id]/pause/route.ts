@@ -1,3 +1,4 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -5,8 +6,6 @@ import {
   emitTokMetricAudit,
   parseJson,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -48,8 +47,8 @@ function requireSameOrigin(request: NextRequest) {
  * the connector management permission.
  */
 function requirePauseAdmin(
-  membership: Awaited<ReturnType<typeof requireWorkspaceAccess>>,
-  session: Awaited<ReturnType<typeof requireActiveTokMetricSession>>,
+  membership: Awaited<ReturnType<typeof requireSocialConnectorWorkspace>>,
+  session: Awaited<ReturnType<typeof requireSocialConnectorSession>>,
 ) {
   requirePermission(membership, "manage", "connectors");
   assertSocialProviderPauseAdmin(membership, session);
@@ -65,12 +64,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   let provider: string | undefined;
   try {
     requireSameOrigin(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const { id: rawProvider } = await context.params;
     provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, pauseSchema);
     workspaceId = parsed.workspaceId!;
-    const membership = await requireWorkspaceAccess(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
     requirePauseAdmin(membership, session);
 
     const record = await pauseSocialProvider({
@@ -124,12 +123,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   let provider: string | undefined;
   try {
     requireSameOrigin(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const { id: rawProvider } = await context.params;
     provider = parseSocialPauseProvider(rawProvider);
     const parsed = await parseJson(request, unpauseSchema);
     workspaceId = parsed.workspaceId!;
-    const membership = await requireWorkspaceAccess(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
     requirePauseAdmin(membership, session);
 
     const result = await unpauseSocialProvider({ workspaceId, provider });

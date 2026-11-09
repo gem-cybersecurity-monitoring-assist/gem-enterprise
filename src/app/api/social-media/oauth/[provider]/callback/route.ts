@@ -1,12 +1,11 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import type { SessionPayload } from "@/lib/auth";
 import {
   correlationId,
   emitTokMetricAudit,
   enforceEmergencyLocks,
-  requireActiveTokMetricSession,
   requirePermission,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -22,7 +21,7 @@ import { decodeSocialOAuthState } from "@/lib/social-media/oauth/state";
 import { consumeSocialOAuthAuthorizationAttempt } from "@/lib/social-media/oauth/store";
 
 async function sessionFromStateActor(request: NextRequest, actorId: string): Promise<SessionPayload> {
-  const session = await requireActiveTokMetricSession(request);
+  const session = await requireSocialConnectorSession(request);
   if (session.userId !== actorId) {
     throw new TokMetricError(
       401,
@@ -93,7 +92,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     workspaceId = state.workspaceId;
     actorId = state.actorId;
     const session = await sessionFromStateActor(request, state.actorId);
-    const membership = await requireWorkspaceAccess(state.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(state.workspaceId, session);
     requirePermission(membership, "manage", "connectors");
     await enforceEmergencyLocks(state.workspaceId, "connector");
     const consumed = await consumeSocialOAuthAuthorizationAttempt(state);

@@ -37,6 +37,33 @@ The publishing worker runs against the Supabase gateway only when the adapter is
 | Machine secret | Set `SOCIAL_GATEWAY_ADAPTER_SECRET` in Supabase (`supabase secrets set ... --project-ref slzdjoqpzbkwzuaexlkj`) and in Vercel (production, sensitive type) — same value. |
 | Flag | Set `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED=true` in Vercel production ONLY after the live verification (health probe passes, claim/mark/idempotency checks) — then redeploy. Until then the cron gate stays 503 and readiness stays `BLOCKED_GATEWAY_BACKEND`. |
 
+## Social OAuth and daily scheduling with gateway sign-in
+
+The worker adapter can process queued jobs, but does not create OAuth attempts
+or run the daily content planner by itself. To use the existing transactional
+connector store and daily planner with gateway sign-in:
+
+1. Configure the canonical Vercel project with a Prisma connection to the
+   **same Supabase project** as `GEM_SUPABASE_GATEWAY_BASE_URL`. Use the
+   provider-issued direct or pooler URL for the `postgres` database, with
+   `sslmode=require&sslaccept=strict` and its trusted CA if needed.
+2. Verify the existing connector, authorization-attempt, credential, workspace
+   and queue tables and verify the worker gateway adapter above. Set
+   `SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED=true` in the test environment.
+   Leave the live publication flags off during connection and queue checks.
+3. With an active account and explicit active workspace membership, open
+   Accounts and authorize each destination. Verify the provider-returned
+   identity and test credential health. Meta can return separate Page and
+   Instagram Professional destinations from the same grant.
+4. Verify daily planning and queue processing against the same workspace.
+   A connected account alone does not release a post. Before live activation,
+   confirm the exact destination and approved content, schedule, provider
+   access, and workspace locks. Verify delivery by the provider post ID.
+
+To stop the new gateway transaction path, turn the flag off and redeploy.
+To stop outbound work, use the existing workspace emergency or provider pause
+controls. This configuration does not change TokMetric's separate live gates.
+
 ## Per provider
 
 Connect URL pattern (sign in as an admin first): `https://www.gemcybersecurityassist.com/api/social-media/oauth/<provider>/start`

@@ -1,3 +1,4 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -6,8 +7,6 @@ import {
   enforceEmergencyLocks,
   parseJson,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -37,7 +36,7 @@ function requireSameOrigin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const cid = correlationId(request);
   try {
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const workspaceId = request.nextUrl.searchParams.get("workspaceId")?.trim();
     if (!workspaceId) {
       return NextResponse.json(
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest) {
         { status: 400, headers: { "Cache-Control": "no-store" } },
       );
     }
-    await requireWorkspaceAccess(workspaceId, session);
+    await requireSocialConnectorWorkspace(workspaceId, session);
     const connectors = await listSocialConnectors(workspaceId);
     const pausedProviders = await getPausedSocialProviders(workspaceId);
     const paused = new Set(pausedProviders);
@@ -76,13 +75,13 @@ export async function DELETE(request: NextRequest) {
   const cid = correlationId(request);
   try {
     requireSameOrigin(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const parsed = await parseJson(request, disconnectSchema);
     const body = {
       workspaceId: parsed.workspaceId!,
       connectorId: parsed.connectorId!,
     };
-    const membership = await requireWorkspaceAccess(body.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(body.workspaceId, session);
     requirePermission(membership, "manage", "connectors");
     await enforceEmergencyLocks(body.workspaceId, "connector");
     const result = await disconnectSocialConnector(body);

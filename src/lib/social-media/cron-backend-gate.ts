@@ -1,3 +1,4 @@
+import { hasSocialTransactionalAuthority } from "./transactional-authority";
 import { NextResponse } from "next/server";
 import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
 import { probeSocialPublishingGatewayAdapter } from "./publishing/gateway-client";
@@ -7,11 +8,9 @@ import { probeSocialPublishingGatewayAdapter } from "./publishing/gateway-client
  * Refuse unsupported Prisma work while the production persistence authority
  * is Supabase gateway; never fall back to an unrelated database.
  *
- * The gate is scoped: only the social publishing worker has a verified
- * gateway adapter. The analytics sync and the daily orchestrator still run
- * Prisma-only work with no adapter, so they stay blocked on gateway even
- * when the publishing adapter is verified — lifting the gate for them would
- * trade a clean 503 for a runtime Prisma failure.
+ * The worker uses the verified gateway adapter. Planning and analytics can
+ * use their existing Prisma transactions when explicitly bound to the same
+ * gateway project and the worker adapter also passes its health check.
  */
 export type SocialCronGatewayScope =
   | "social-publishing"
@@ -37,7 +36,7 @@ export async function socialCronGatewayBlock(
   scope: SocialCronGatewayScope,
 ): Promise<NextResponse | null> {
   if (!shouldUseSupabaseGateway()) return null;
-  if (scope === "social-publishing") {
+  if (scope === "social-publishing" || hasSocialTransactionalAuthority()) {
     // Lifts only when the adapter flag is on AND the health probe passes.
     // Any doubt (flag off, probe failed, gateway error, timeout, or a
     // probe that throws) keeps the 503. The gate never propagates an

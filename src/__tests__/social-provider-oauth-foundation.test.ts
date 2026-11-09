@@ -185,12 +185,12 @@ describe("cross-platform social OAuth foundation", () => {
     const callback = source("src/app/api/social-media/oauth/[provider]/callback/route.ts");
     const connectors = source("src/app/api/social-media/connectors/route.ts");
     const store = source("src/lib/social-media/oauth/store.ts");
-    expect(start).toContain("await requireActiveTokMetricSession(request)");
+    expect(start).toContain("await requireSocialConnectorSession(request)");
     expect(start).toContain('requirePermission(membership, "manage", "connectors")');
     expect(start).toContain('enforceEmergencyLocks(params.workspaceId, "connector")');
     expect(start).toContain("createSocialOAuthAuthorizationAttempt");
     expect(start).toContain('response.headers.set("Cache-Control", "no-store, max-age=0")');
-    expect(callback).toContain("await requireActiveTokMetricSession(request)");
+    expect(callback).toContain("await requireSocialConnectorSession(request)");
     expect(callback).toContain("session.userId !== actorId");
     expect(callback).toContain('requirePermission(membership, "manage", "connectors")');
     expect(callback).toContain('enforceEmergencyLocks(state.workspaceId, "connector")');
@@ -198,7 +198,7 @@ describe("cross-platform social OAuth foundation", () => {
     expect(callback).toContain('response.headers.set("Cache-Control", "no-store, max-age=0")');
     expect(callback).toContain("externalPublishingEnabled: false");
     expect(store).toContain('await enforceEmergencyLocks(input.workspaceId, "connector")');
-    expect(connectors).toContain("requireWorkspaceAccess");
+    expect(connectors).toContain("requireSocialConnectorWorkspace");
     expect(connectors).toContain("requireSameOrigin(request)");
     expect(connectors).toContain("CROSS_ORIGIN_REQUEST_BLOCKED");
     expect(connectors).toContain('enforceEmergencyLocks(body.workspaceId, "connector")');

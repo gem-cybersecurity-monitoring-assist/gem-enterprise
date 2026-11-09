@@ -1,3 +1,4 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -6,8 +7,6 @@ import {
   enforceEmergencyLocks,
   parseJson,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -78,12 +77,12 @@ export async function POST(request: NextRequest) {
 
   try {
     requireSameOrigin(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     actorId = session.userId;
     const parsed = await parseJson(request, healthSchema);
     workspaceId = parsed.workspaceId!;
     connectorId = parsed.connectorId!;
-    const membership = await requireWorkspaceAccess(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
     auditableWorkspaceId = workspaceId;
     requirePermission(membership, "manage", "connectors");
     await enforceEmergencyLocks(workspaceId, "connector");

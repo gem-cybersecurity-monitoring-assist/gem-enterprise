@@ -1,3 +1,4 @@
+import { hasSocialTransactionalAuthority } from "@/lib/social-media/transactional-authority";
 import Link from "next/link";
 import { oauthByDestination, socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
 import {
@@ -52,6 +53,7 @@ export default async function SocialMediaAccountsPage({
     ? params.workspace[0]?.trim() || null
     : params.workspace?.trim() || null;
   const usesGateway = gate.session.authSource === "supabase_gateway";
+  const connectorBackendAvailable = !usesGateway || hasSocialTransactionalAuthority();
   const gatewayToken =
     gate.session.authSource === "supabase_gateway"
       ? await getGatewaySessionToken()
@@ -170,19 +172,19 @@ export default async function SocialMediaAccountsPage({
         </article>
       </section>
 
-      {usesGateway && oauthProviders.length > 0 ? (
+      {!connectorBackendAvailable && oauthProviders.length > 0 ? (
         <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-100">
           Account authorization is unavailable in this session. The social credential store requires a verified transactional backend for gateway sign-in.
         </p>
       ) : null}
 
-      {params.connectionState === "connected" && !usesGateway ? (
+      {params.connectionState === "connected" && connectorBackendAvailable ? (
         <p role="status" className="rounded-xl border border-emerald-400/25 p-4 text-sm text-emerald-200">
           Authorization returned. Check the saved destinations below to confirm which accounts were discovered.
         </p>
       ) : null}
 
-      {!usesGateway && oauthProviders.length > 0 ? <SocialConnectorPanel
+      {connectorBackendAvailable && oauthProviders.length > 0 ? <SocialConnectorPanel
         key={`${publishingWorkspace?.id ?? ""}:${destination?.id ?? ""}`}
         destination={destination?.id}
         providers={oauthProviders}
