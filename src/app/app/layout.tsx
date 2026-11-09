@@ -190,6 +190,8 @@ function SidebarContent({
           label: "SaaS architecture",
           items: [
             { href: "/app/command-center/saas", icon: "LayoutDashboard" as const, label: "SaaS overview", description: "Your expanded enterprise home." },
+            { href: "/app/command-center/saas/readiness", icon: "Activity" as const, label: "Backend completion", description: "Live checks and remaining blockers." },
+            { href: "/app/command-center/saas/service-operations", icon: "ClipboardList" as const, label: "Service operations", description: "Real cases and audited changes." },
             { href: "/app/command-center/saas/areas/owner", icon: "ShieldCheck" as const, label: "Governance", description: "Controls, access and decisions." },
             { href: "/app/command-center/saas/areas/operations", icon: "Briefcase" as const, label: "Operations", description: "Service delivery and teams." },
             { href: "/app/command-center/saas/areas/client", icon: "Users" as const, label: "Client experience", description: "Customers and care." },
