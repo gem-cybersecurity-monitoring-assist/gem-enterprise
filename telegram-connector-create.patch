@@ -1,0 +1,1323 @@
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md telegram-connector-create/docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md
+--- /tmp/gem-enterprise-pristine/docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/docs/social-media/PROVIDER_ACTIVATION_CHECKLIST.md	2026-11-10 10:04:19.982564896 +0100
+@@ -32,7 +32,7 @@
+ |---|---|
+ | Target project | Live gateway project `slzdjoqpzbkwzuaexlkj` (NOT the repo-linked project in `supabase/config.toml`). Deploy with `--project-ref slzdjoqpzbkwzuaexlkj`. |
+ | Tables first | Confirm the `social_*` tables exist in that project (dashboard SQL editor). If any is missing, port the Prisma social migrations first — the RPC migration creates no tables. |
+-| RPCs | Apply `supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql` (12 phase-1 RPCs + the health RPC), then confirm with `select routine_name from information_schema.routines where routine_name like 'gem_social_%'`. |
++| RPCs | Apply `supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql` (12 phase-1 RPCs + the health RPC) and `prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql` (gem_social_create_connector), then confirm with `select routine_name from information_schema.routines where routine_name like 'gem_social_%'` — the health probe expects 14 routines. |
+ | Edge function | `supabase functions deploy gem-social-publishing-gateway --project-ref slzdjoqpzbkwzuaexlkj`. |
+ | Machine secret | Set `SOCIAL_GATEWAY_ADAPTER_SECRET` in Supabase (`supabase secrets set ... --project-ref slzdjoqpzbkwzuaexlkj`) and in Vercel (production, sensitive type) — same value. |
+ | Flag | Set `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED=true` in Vercel production ONLY after the live verification (health probe passes, claim/mark/idempotency checks) — then redeploy. Until then the cron gate stays 503 and readiness stays `BLOCKED_GATEWAY_BACKEND`. |
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql telegram-connector-create/prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql
+--- /tmp/gem-enterprise-pristine/prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql	1970-01-01 01:00:00.000000000 +0100
++++ telegram-connector-create/prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql	2026-11-10 10:04:19.983369925 +0100
+@@ -0,0 +1,318 @@
++-- OP-16 — Create connector (phase 1). The connectors API has no creation
++-- endpoint, so connector creation goes through this RPC, called by the
++-- Next.js admin route via the gem-social-publishing-gateway edge function.
++--
++-- The connector row and its credential row are inserted in one transaction.
++-- The bot token arrives already encrypted (encryption happens in Node, via
++-- encryptSocialCredential; the RPC only ever sees the secretRef ciphertext).
++-- The credential row uses reference_type 'oauth:production' because that is
++-- the reference type the existing credential-load path filters on
++-- (oauth/lifecycle-store.ts and gem_social_load_connector_credential); a
++-- bot-token-specific reference type would make the worker unable to load
++-- the Telegram token.
++--
++-- Idempotency: the (workspace_id, provider, external_account_key) triple
++-- is the connector's identity (the unique constraint
++-- persistSocialConnector relies on). A matching row — even a disconnected
++-- one — is reactivated with the new credential, mirroring the ON CONFLICT
++-- upsert in persistSocialConnector. A concurrent create under the same
++-- identity raises unique_violation; the handler re-reads and applies the
++-- same same-request-or-409 rule as gem_social_create_job. The 409 branch
++-- is defensive: the lookup key is the unique key, so a re-read after a
++-- unique violation always matches the request.
++--
++-- Business errors are returned as JSON envelopes ({ ok: false, code,
++-- message }) instead of RAISE, so the edge function maps them to the same
++-- HTTP status and TokMetricError code the Prisma path produces.
++--
++-- This RPC is counted by gem_social_health, so the live probe inventory
++-- grows from 13 to 14 once this migration is applied. The client constant
++-- EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT is 14.
++
++CREATE OR REPLACE FUNCTION public.gem_social_create_connector(
++  p_workspace_id text,
++  p_provider text,
++  p_display_name text,
++  p_external_account_key text,
++  p_external_account_id text,
++  p_granted_scopes text[],
++  p_safe_metadata jsonb,
++  p_secret_ref text,
++  p_now timestamptz
++)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public
++AS $$
++#variable_conflict use_column
++DECLARE
++  v_connector jsonb;
++  v_id text;
++BEGIN
++  SELECT row_to_json(c)
++  INTO v_connector
++  FROM (
++    SELECT
++      connectors.id,
++      connectors.workspace_id AS "workspaceId",
++      connectors.provider,
++      connectors.state,
++      connectors.display_name AS "displayName",
++      connectors.external_account_id AS "externalAccountId",
++      connectors.granted_scopes AS "grantedScopes",
++      connectors.safe_metadata AS "safeMetadata",
++      connectors.last_health_at AS "lastHealthAt",
++      connectors.disabled_at AS "disabledAt",
++      connectors.created_at AS "createdAt",
++      connectors.updated_at AS "updatedAt"
++    FROM social_connectors connectors
++    WHERE connectors.workspace_id = p_workspace_id
++      AND connectors.provider = p_provider
++      AND connectors.external_account_key = p_external_account_key
++    LIMIT 1
++  ) c;
++
++  IF v_connector IS NOT NULL THEN
++    WITH updated AS (
++      UPDATE social_connectors
++      SET
++        state = 'CONNECTED',
++        display_name = p_display_name,
++        external_account_id = p_external_account_id,
++        granted_scopes = p_granted_scopes,
++        safe_metadata = p_safe_metadata,
++        disabled_at = NULL,
++        last_health_at = p_now,
++        updated_at = p_now
++      WHERE id = v_connector ->> 'id'
++      RETURNING
++        id,
++        workspace_id AS "workspaceId",
++        provider,
++        state,
++        display_name AS "displayName",
++        external_account_id AS "externalAccountId",
++        granted_scopes AS "grantedScopes",
++        safe_metadata AS "safeMetadata",
++        last_health_at AS "lastHealthAt",
++        disabled_at AS "disabledAt",
++        created_at AS "createdAt",
++        updated_at AS "updatedAt"
++    )
++    SELECT row_to_json(updated)
++    INTO v_connector
++    FROM updated;
++
++    INSERT INTO social_connector_credentials (
++      id,
++      connector_id,
++      reference_type,
++      secret_ref,
++      expires_at,
++      refresh_expires_at,
++      rotated_at,
++      created_at,
++      updated_at
++    ) VALUES (
++      gen_random_uuid()::text,
++      v_connector ->> 'id',
++      'oauth:production',
++      p_secret_ref,
++      NULL,
++      NULL,
++      p_now,
++      p_now,
++      p_now
++    )
++    ON CONFLICT (connector_id, reference_type)
++    DO UPDATE SET
++      secret_ref = EXCLUDED.secret_ref,
++      rotated_at = EXCLUDED.rotated_at,
++      updated_at = EXCLUDED.updated_at;
++
++    RETURN jsonb_build_object('ok', true, 'connector', v_connector);
++  END IF;
++
++  v_id := gen_random_uuid()::text;
++
++  BEGIN
++    WITH inserted AS (
++      INSERT INTO social_connectors (
++        id,
++        workspace_id,
++        provider,
++        state,
++        display_name,
++        external_account_key,
++        external_account_id,
++        granted_scopes,
++        safe_metadata,
++        last_health_at,
++        created_at,
++        updated_at
++      ) VALUES (
++        v_id,
++        p_workspace_id,
++        p_provider,
++        'CONNECTED',
++        p_display_name,
++        p_external_account_key,
++        p_external_account_id,
++        p_granted_scopes,
++        p_safe_metadata,
++        p_now,
++        p_now,
++        p_now
++      )
++      RETURNING
++        id,
++        workspace_id AS "workspaceId",
++        provider,
++        state,
++        display_name AS "displayName",
++        external_account_id AS "externalAccountId",
++        granted_scopes AS "grantedScopes",
++        safe_metadata AS "safeMetadata",
++        last_health_at AS "lastHealthAt",
++        disabled_at AS "disabledAt",
++        created_at AS "createdAt",
++        updated_at AS "updatedAt"
++    )
++    SELECT row_to_json(inserted)
++    INTO v_connector
++    FROM inserted;
++
++    INSERT INTO social_connector_credentials (
++      id,
++      connector_id,
++      reference_type,
++      secret_ref,
++      expires_at,
++      refresh_expires_at,
++      rotated_at,
++      created_at,
++      updated_at
++    ) VALUES (
++      gen_random_uuid()::text,
++      v_id,
++      'oauth:production',
++      p_secret_ref,
++      NULL,
++      NULL,
++      p_now,
++      p_now,
++      p_now
++    )
++    ON CONFLICT (connector_id, reference_type)
++    DO UPDATE SET
++      secret_ref = EXCLUDED.secret_ref,
++      rotated_at = EXCLUDED.rotated_at,
++      updated_at = EXCLUDED.updated_at;
++  EXCEPTION WHEN unique_violation THEN
++    -- A concurrent create won the race under the same identity.
++    -- Re-read and apply the same same-request-or-409 rule.
++    SELECT row_to_json(c)
++    INTO v_connector
++    FROM (
++      SELECT
++        connectors.id,
++        connectors.workspace_id AS "workspaceId",
++        connectors.provider,
++        connectors.state,
++        connectors.display_name AS "displayName",
++        connectors.external_account_id AS "externalAccountId",
++        connectors.granted_scopes AS "grantedScopes",
++        connectors.safe_metadata AS "safeMetadata",
++        connectors.last_health_at AS "lastHealthAt",
++        connectors.disabled_at AS "disabledAt",
++        connectors.created_at AS "createdAt",
++        connectors.updated_at AS "updatedAt"
++      FROM social_connectors connectors
++      WHERE connectors.workspace_id = p_workspace_id
++        AND connectors.provider = p_provider
++        AND connectors.external_account_key = p_external_account_key
++      LIMIT 1
++    ) c;
++
++    IF v_connector IS NOT NULL THEN
++      WITH updated AS (
++        UPDATE social_connectors
++        SET
++          state = 'CONNECTED',
++          display_name = p_display_name,
++          external_account_id = p_external_account_id,
++          granted_scopes = p_granted_scopes,
++          safe_metadata = p_safe_metadata,
++          disabled_at = NULL,
++          last_health_at = p_now,
++          updated_at = p_now
++        WHERE id = v_connector ->> 'id'
++        RETURNING
++          id,
++          workspace_id AS "workspaceId",
++          provider,
++          state,
++          display_name AS "displayName",
++          external_account_id AS "externalAccountId",
++          granted_scopes AS "grantedScopes",
++          safe_metadata AS "safeMetadata",
++          last_health_at AS "lastHealthAt",
++          disabled_at AS "disabledAt",
++          created_at AS "createdAt",
++          updated_at AS "updatedAt"
++      )
++      SELECT row_to_json(updated)
++      INTO v_connector
++      FROM updated;
++
++      INSERT INTO social_connector_credentials (
++        id,
++        connector_id,
++        reference_type,
++        secret_ref,
++        expires_at,
++        refresh_expires_at,
++        rotated_at,
++        created_at,
++        updated_at
++      ) VALUES (
++        gen_random_uuid()::text,
++        v_connector ->> 'id',
++        'oauth:production',
++        p_secret_ref,
++        NULL,
++        NULL,
++        p_now,
++        p_now,
++        p_now
++      )
++      ON CONFLICT (connector_id, reference_type)
++      DO UPDATE SET
++        secret_ref = EXCLUDED.secret_ref,
++        rotated_at = EXCLUDED.rotated_at,
++        updated_at = EXCLUDED.updated_at;
++
++      RETURN jsonb_build_object('ok', true, 'connector', v_connector);
++    END IF;
++    RETURN jsonb_build_object(
++      'ok', false,
++      'code', 'SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT',
++      'message', 'A different connector already uses this provider account in this workspace.'
++    );
++  END;
++
++  IF v_connector IS NULL THEN
++    RETURN jsonb_build_object(
++      'ok', false,
++      'code', 'SOCIAL_CONNECTOR_CREATE_FAILED',
++      'message', 'The social connector was not created.'
++    );
++  END IF;
++
++  RETURN jsonb_build_object('ok', true, 'connector', v_connector);
++END;
++$$;
++
++REVOKE ALL ON FUNCTION public.gem_social_create_connector(text, text, text, text, text, text[], jsonb, text, timestamptz) FROM PUBLIC;
++GRANT EXECUTE ON FUNCTION public.gem_social_create_connector(text, text, text, text, text, text[], jsonb, text, timestamptz) TO service_role;
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/__tests__/social-publishing-gateway-adapter.test.ts telegram-connector-create/src/__tests__/social-publishing-gateway-adapter.test.ts
+--- /tmp/gem-enterprise-pristine/src/__tests__/social-publishing-gateway-adapter.test.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/src/__tests__/social-publishing-gateway-adapter.test.ts	2026-11-10 10:04:19.983642925 +0100
+@@ -90,7 +90,7 @@
+   socialPublishingGateway: gateway.call,
+   isSocialPublishingGatewayAdapterEnabled: () => true,
+   probeSocialPublishingGatewayAdapter: async () => true,
+-  EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT: 13,
++  EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT: 14,
+   SOCIAL_PUBLISHING_GATEWAY_ACTIONS: [],
+ }));
+ vi.mock("@/lib/db", () => ({
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/__tests__/social-publishing-gateway-client.test.ts telegram-connector-create/src/__tests__/social-publishing-gateway-client.test.ts
+--- /tmp/gem-enterprise-pristine/src/__tests__/social-publishing-gateway-client.test.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/src/__tests__/social-publishing-gateway-client.test.ts	2026-11-10 10:04:19.983864458 +0100
+@@ -82,8 +82,8 @@
+           (PHASE2_RESERVED_ACTIONS as readonly string[]).includes(action),
+       ).toBe(true);
+     }
+-    expect(SOCIAL_PUBLISHING_GATEWAY_ACTIONS).toHaveLength(13);
+-    expect(EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT).toBe(13);
++    expect(SOCIAL_PUBLISHING_GATEWAY_ACTIONS).toHaveLength(14);
++    expect(EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT).toBe(14);
+   });
+ 
+   it("sends the machine secret as a bearer header and the anon key as apikey", async () => {
+@@ -188,7 +188,7 @@
+   it("probe returns true only when the health action reports the full RPC inventory", async () => {
+     vi.stubEnv("SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED", "true");
+     fetchMock.mockResolvedValue(
+-      mockFetchResponse(200, { ok: true, rpcCount: 13 }),
++      mockFetchResponse(200, { ok: true, rpcCount: 14 }),
+     );
+     expect(await probeSocialPublishingGatewayAdapter()).toBe(true);
+     const [, init] = fetchMock.mock.calls[0] as [
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/__tests__/social-telegram-connector-create.test.ts telegram-connector-create/src/__tests__/social-telegram-connector-create.test.ts
+--- /tmp/gem-enterprise-pristine/src/__tests__/social-telegram-connector-create.test.ts	1970-01-01 01:00:00.000000000 +0100
++++ telegram-connector-create/src/__tests__/social-telegram-connector-create.test.ts	2026-11-10 10:06:24.815854197 +0100
+@@ -0,0 +1,534 @@
++/**
++ * Telegram connector creation (POST /api/social-media/connectors).
++ *
++ * The connectors API had no creation endpoint (GET list + DELETE disconnect
++ * only), so an admin could not create a Telegram (BOT_TOKEN) connector
++ * in-app. This covers the new POST handler on both store paths: gateway
++ * selected (the create_connector RPC, gateway client mocked, Prisma armed
++ * to throw) and direct database (Prisma mocked, gateway never called).
++ *
++ * The bot token is a secret: it is encrypted server-side with the real
++ * encryptSocialCredential (32-byte test key) and must never appear in the
++ * response, the audit metadata, or the returned connector record. The
++ * fake token "test-bot-token" is used throughout; no real token anywhere.
++ */
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { NextRequest } from "next/server";
++
++import { decryptSocialCredential } from "@/lib/social-media/oauth/crypto";
++
++const gatewayErrors = vi.hoisted(() => ({
++  GatewayRequestError: class GatewayRequestError extends Error {
++    constructor(
++      public statusCode: number,
++      public code: string,
++      message: string,
++    ) {
++      super(message);
++    }
++  },
++}));
++const gatewayHandlers = vi.hoisted(
++  () =>
++    new Map<
++      string,
++      (payload: Record<string, unknown>) => unknown | Promise<unknown>
++    >(),
++);
++const gateway = vi.hoisted(() => ({
++  call: vi.fn(
++    async (action: string, payload: Record<string, unknown> = {}) => {
++      const handler = gatewayHandlers.get(action);
++      if (!handler) throw new Error(`unexpected gateway action: ${action}`);
++      return handler(payload);
++    },
++  ),
++}));
++const gatewaySelected = vi.hoisted(() => ({ value: true }));
++const dbMocks = vi.hoisted(() => ({
++  queryRaw: vi.fn(),
++  executeRaw: vi.fn(),
++}));
++const securityErrors = vi.hoisted(() => ({
++  TokMetricError: class TokMetricError extends Error {
++    constructor(
++      public status: number,
++      public code: string,
++      message: string,
++    ) {
++      super(message);
++    }
++  },
++}));
++const securityMocks = vi.hoisted(() => ({
++  permission: vi.fn(),
++  locks: vi.fn(async () => undefined),
++  audit: vi.fn(async (_input: Record<string, unknown>) => undefined),
++}));
++const connectorAuthorityMocks = vi.hoisted(() => ({
++  session: vi.fn(async () => ({ userId: "actor-1" })),
++  workspace: vi.fn(async () => ({ role: "admin" })),
++}));
++const pauseMocks = vi.hoisted(() => ({
++  pausedProviders: vi.fn(async () => [] as string[]),
++}));
++
++vi.mock("@prisma/client", () => ({
++  Prisma: {
++    sql: (parts: TemplateStringsArray, ...values: unknown[]) => ({
++      parts,
++      values,
++    }),
++    join: (values: unknown[], separator?: string) => ({ values, separator }),
++  },
++}));
++vi.mock("@/lib/supabase-gateway", () => ({
++  shouldUseSupabaseGateway: () => gatewaySelected.value,
++  GatewayRequestError: gatewayErrors.GatewayRequestError,
++}));
++vi.mock("@/lib/social-media/publishing/gateway-client", () => ({
++  socialPublishingGateway: gateway.call,
++}));
++vi.mock("@/lib/db", () => ({
++  db: {
++    $queryRaw: dbMocks.queryRaw,
++    $executeRaw: dbMocks.executeRaw,
++    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
++      fn({
++        $queryRaw: dbMocks.queryRaw,
++        $executeRaw: dbMocks.executeRaw,
++      }),
++    ),
++  },
++}));
++vi.mock("@/lib/tokmetric/security", () => {
++  const TokMetricError = securityErrors.TokMetricError;
++  return {
++    TokMetricError,
++    correlationId: () => "test-correlation-id",
++    parseJson: async (
++      request: NextRequest,
++      schema: {
++        safeParse: (value: unknown) => {
++          success: boolean;
++          data?: unknown;
++        };
++      },
++    ) => {
++      const json = await request.json().catch(() => {
++        throw new TokMetricError(
++          400,
++          "INVALID_JSON",
++          "Request body must be valid JSON.",
++        );
++      });
++      const parsed = schema.safeParse(json);
++      if (!parsed.success) {
++        throw new TokMetricError(
++          400,
++          "VALIDATION_ERROR",
++          "Request validation failed.",
++        );
++      }
++      return parsed.data;
++    },
++    tokMetricErrorResponse: (error: unknown, cid: string) => {
++      const safe =
++        error instanceof TokMetricError
++          ? error
++          : new TokMetricError(
++              500,
++              "INTERNAL_ERROR",
++              "An unexpected TokMetric error occurred.",
++            );
++      return new Response(
++        JSON.stringify({
++          ok: false,
++          error: {
++            code: safe.code,
++            message: safe.message,
++            correlationId: cid,
++          },
++        }),
++        {
++          status: safe.status,
++          headers: { "Cache-Control": "no-store" },
++        },
++      );
++    },
++    requirePermission: securityMocks.permission,
++    enforceEmergencyLocks: securityMocks.locks,
++    emitTokMetricAudit: securityMocks.audit,
++    redactSecrets: (value: unknown) => value,
++  };
++});
++vi.mock("@/lib/social-media/connector-authority", () => ({
++  requireSocialConnectorSession: connectorAuthorityMocks.session,
++  requireSocialConnectorWorkspace: connectorAuthorityMocks.workspace,
++}));
++vi.mock("@/lib/social-media/oauth/connectors", () => ({
++  disconnectSocialConnector: vi.fn(),
++  listSocialConnectors: vi.fn(),
++}));
++vi.mock("@/lib/social-media/oauth/provider-pause", () => ({
++  getPausedSocialProviders: pauseMocks.pausedProviders,
++}));
++vi.mock("@/lib/social-media/oauth/probes", () => ({
++  readLiveProbeSignal: () => null,
++}));
++
++import { POST } from "@/app/api/social-media/connectors/route";
++
++const NOW = "2026-11-09T21:00:00.000Z";
++const CHAT_ID = "-1003368597629";
++const BOT_TOKEN = "test-bot-token";
++
++// Gateway JSON row (camelCase keys, ISO timestamp strings), exactly the
++// shape the gem_social_create_connector RPC returns.
++function gatewayConnectorRow() {
++  return {
++    id: "connector-telegram-1",
++    workspaceId: "workspace-1",
++    provider: "TELEGRAM",
++    state: "CONNECTED",
++    displayName: "Telegram",
++    externalAccountId: CHAT_ID,
++    grantedScopes: [],
++    safeMetadata: { telegramChatId: CHAT_ID },
++    lastHealthAt: null,
++    disabledAt: null,
++    createdAt: NOW,
++    updatedAt: NOW,
++  };
++}
++
++// Same row as the Prisma INSERT ... RETURNING returns it (aliased camelCase
++// keys, Date fields).
++function prismaConnectorRow() {
++  return {
++    id: "connector-telegram-1",
++    workspaceId: "workspace-1",
++    provider: "TELEGRAM",
++    state: "CONNECTED",
++    displayName: "Telegram",
++    externalAccountId: CHAT_ID,
++    grantedScopes: [],
++    safeMetadata: { telegramChatId: CHAT_ID },
++    lastHealthAt: null,
++    disabledAt: null,
++    createdAt: new Date(NOW),
++    updatedAt: new Date(NOW),
++  };
++}
++
++function request(body: unknown) {
++  return new NextRequest("http://localhost/api/social-media/connectors", {
++    method: "POST",
++    headers: {
++      origin: "http://localhost",
++      "Content-Type": "application/json",
++    },
++    body: JSON.stringify(body),
++  });
++}
++
++function validBody() {
++  return {
++    workspaceId: "workspace-1",
++    provider: "TELEGRAM",
++    telegramChatId: CHAT_ID,
++    botToken: BOT_TOKEN,
++  };
++}
++
++// On the gateway path the Prisma store must never be touched: arm every
++// mocked Prisma call to throw so a stray Prisma read fails loudly instead
++// of silently returning a canned row.
++function armPrismaToThrow() {
++  const error = new Error("prisma must not be called on the gateway path");
++  dbMocks.queryRaw.mockRejectedValue(error);
++  dbMocks.executeRaw.mockRejectedValue(error);
++}
++
++describe("POST /api/social-media/connectors (Telegram create)", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    gatewayHandlers.clear();
++    // 32-byte test key (hex) for the credential encrypt/decrypt round trip.
++    vi.stubEnv("SOCIAL_TOKEN_ENCRYPTION_KEY", "11".repeat(32));
++    gatewaySelected.value = true;
++    connectorAuthorityMocks.session.mockResolvedValue({ userId: "actor-1" });
++    connectorAuthorityMocks.workspace.mockResolvedValue({ role: "admin" });
++    pauseMocks.pausedProviders.mockResolvedValue([]);
++  });
++
++  afterEach(() => {
++    vi.unstubAllEnvs();
++  });
++
++  it("creates the connector through the gateway and never returns the token", async () => {
++    armPrismaToThrow();
++    let capturedPayload: Record<string, unknown> | undefined;
++    gatewayHandlers.set("create_connector", (payload) => {
++      capturedPayload = payload;
++      return { ok: true, connector: gatewayConnectorRow() };
++    });
++
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(200);
++    expect(body.ok).toBe(true);
++    expect(body.correlationId).toBe("test-correlation-id");
++    expect(body.connector.id).toBe("connector-telegram-1");
++    expect(body.connector.provider).toBe("TELEGRAM");
++    expect(body.connector.state).toBe("CONNECTED");
++    expect(body.connector.displayName).toBe("Telegram");
++    expect(body.connector.externalAccountId).toBe(CHAT_ID);
++    expect(body.connector.safeMetadata).toEqual({ telegramChatId: CHAT_ID });
++    expect(body.connector.providerPaused).toBe(false);
++    expect(body.connector.liveProbe).toBeNull();
++    expect(body.externalActionTaken).toBe(false);
++    // The token and the secretRef never appear in the response.
++    expect(JSON.stringify(body)).not.toContain(BOT_TOKEN);
++    expect(JSON.stringify(body)).not.toContain("secretRef");
++    expect(JSON.stringify(body)).not.toContain("v1.");
++
++    // The RPC received the encrypted credential, not the raw token.
++    expect(capturedPayload).toBeDefined();
++    expect(capturedPayload?.workspaceId).toBe("workspace-1");
++    expect(capturedPayload?.provider).toBe("TELEGRAM");
++    expect(capturedPayload?.displayName).toBe("Telegram");
++    expect(capturedPayload?.externalAccountKey).toBe(CHAT_ID);
++    expect(capturedPayload?.externalAccountId).toBe(CHAT_ID);
++    expect(capturedPayload?.safeMetadata).toEqual({ telegramChatId: CHAT_ID });
++    expect(typeof capturedPayload?.secretRef).toBe("string");
++    expect(String(capturedPayload?.secretRef)).not.toContain(BOT_TOKEN);
++    const decrypted = decryptSocialCredential<{
++      provider: string;
++      accessToken: string;
++      grantedScopes: string[];
++      externalAccountId: string;
++    }>(String(capturedPayload?.secretRef));
++    expect(decrypted).toEqual({
++      provider: "TELEGRAM",
++      accessToken: BOT_TOKEN,
++      grantedScopes: [],
++      externalAccountId: CHAT_ID,
++    });
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++    expect(dbMocks.executeRaw).not.toHaveBeenCalled();
++
++    // The audit records the connection without the token.
++    expect(securityMocks.audit).toHaveBeenCalledOnce();
++    const auditInput = securityMocks.audit.mock.calls[0][0] as Record<
++      string,
++      unknown
++    >;
++    expect(auditInput.action).toBe("social.connector.authorized");
++    expect(auditInput.entityId).toBe("connector-telegram-1");
++    expect(JSON.stringify(auditInput)).not.toContain(BOT_TOKEN);
++  });
++
++  it("creates the connector through Prisma and encrypts the credential there too", async () => {
++    gatewaySelected.value = false;
++    dbMocks.queryRaw.mockResolvedValue([prismaConnectorRow()]);
++    dbMocks.executeRaw.mockResolvedValue(1);
++
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(200);
++    expect(body.ok).toBe(true);
++    expect(body.connector.id).toBe("connector-telegram-1");
++    expect(body.connector.provider).toBe("TELEGRAM");
++    expect(JSON.stringify(body)).not.toContain(BOT_TOKEN);
++    expect(JSON.stringify(body)).not.toContain("secretRef");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).toHaveBeenCalled();
++    expect(dbMocks.executeRaw).toHaveBeenCalled();
++
++    // The credential INSERT carried the encrypted secretRef (values[2];
++    // 'oauth:production' is a SQL literal, not an interpolation), which
++    // decrypts to the same credential the gateway path sends.
++    const credentialInsert = dbMocks.executeRaw.mock.calls[0][0] as {
++      values: unknown[];
++    };
++    const secretRef = String(credentialInsert.values[2]);
++    expect(secretRef.startsWith("v1.")).toBe(true);
++    expect(secretRef).not.toContain(BOT_TOKEN);
++    expect(
++      decryptSocialCredential<{
++        provider: string;
++        accessToken: string;
++        externalAccountId: string;
++      }>(secretRef),
++    ).toEqual({
++      provider: "TELEGRAM",
++      accessToken: BOT_TOKEN,
++      grantedScopes: [],
++      externalAccountId: CHAT_ID,
++    });
++  });
++
++  it("uses the provided display name and public channel when given", async () => {
++    armPrismaToThrow();
++    let capturedPayload: Record<string, unknown> | undefined;
++    gatewayHandlers.set("create_connector", (payload) => {
++      capturedPayload = payload;
++      return {
++        ok: true,
++        connector: {
++          ...gatewayConnectorRow(),
++          displayName: "GEM Channel",
++          safeMetadata: {
++            telegramChatId: CHAT_ID,
++            telegramPublicChannel: "@mycybersecureWealthsolution",
++          },
++        },
++      };
++    });
++
++    const response = await POST(
++      request({
++        ...validBody(),
++        displayName: "GEM Channel",
++        telegramPublicChannel: "@mycybersecureWealthsolution",
++      }),
++    );
++    const body = await response.json();
++
++    expect(response.status).toBe(200);
++    expect(body.connector.displayName).toBe("GEM Channel");
++    expect(capturedPayload?.displayName).toBe("GEM Channel");
++    expect(capturedPayload?.safeMetadata).toEqual({
++      telegramChatId: CHAT_ID,
++      telegramPublicChannel: "@mycybersecureWealthsolution",
++    });
++    expect(JSON.stringify(body)).not.toContain(BOT_TOKEN);
++  });
++
++  it("rejects a non-Telegram provider before any store call", async () => {
++    const response = await POST(
++      request({ ...validBody(), provider: "META" }),
++    );
++    const body = await response.json();
++
++    expect(response.status).toBe(400);
++    expect(body.error.code).toBe("VALIDATION_ERROR");
++    expect(connectorAuthorityMocks.workspace).not.toHaveBeenCalled();
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("rejects a missing telegramChatId before any store call", async () => {
++    const { telegramChatId: _omitted, ...withoutChatId } = validBody();
++    const response = await POST(request(withoutChatId));
++    const body = await response.json();
++
++    expect(response.status).toBe(400);
++    expect(body.error.code).toBe("VALIDATION_ERROR");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("rejects a blank telegramChatId before any store call", async () => {
++    const response = await POST(
++      request({ ...validBody(), telegramChatId: "   " }),
++    );
++    const body = await response.json();
++
++    expect(response.status).toBe(400);
++    expect(body.error.code).toBe("VALIDATION_ERROR");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("rejects a missing bot token before any store call", async () => {
++    const { botToken: _omitted, ...withoutToken } = validBody();
++    const response = await POST(request(withoutToken));
++    const body = await response.json();
++
++    expect(response.status).toBe(400);
++    expect(body.error.code).toBe("VALIDATION_ERROR");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("rejects a missing workspaceId before any store call", async () => {
++    const { workspaceId: _omitted, ...withoutWorkspace } = validBody();
++    const response = await POST(request(withoutWorkspace));
++    const body = await response.json();
++
++    expect(response.status).toBe(400);
++    expect(body.error.code).toBe("VALIDATION_ERROR");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("returns 401 without an active session", async () => {
++    connectorAuthorityMocks.session.mockRejectedValueOnce(
++      new securityErrors.TokMetricError(
++        401,
++        "UNAUTHORIZED",
++        "An active session is required.",
++      ),
++    );
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(401);
++    expect(body.error.code).toBe("UNAUTHORIZED");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("returns 403 when the member may not manage connectors", async () => {
++    securityMocks.permission.mockImplementationOnce(() => {
++      throw new securityErrors.TokMetricError(
++        403,
++        "FORBIDDEN",
++        "Requires manage permission.",
++      );
++    });
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(403);
++    expect(body.error.code).toBe("FORBIDDEN");
++    expect(gateway.call).not.toHaveBeenCalled();
++    expect(dbMocks.queryRaw).not.toHaveBeenCalled();
++  });
++
++  it("fails closed when the gateway returns no connector", async () => {
++    armPrismaToThrow();
++    gatewayHandlers.set("create_connector", () => ({ ok: true }));
++
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(500);
++    expect(body.error.code).toBe(
++      "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
++    );
++    expect(securityMocks.audit).not.toHaveBeenCalled();
++  });
++
++  it("surfaces a gateway 409 as the same code and status", async () => {
++    armPrismaToThrow();
++    gatewayHandlers.set("create_connector", () => {
++      throw new gatewayErrors.GatewayRequestError(
++        409,
++        "SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT",
++        "A different connector already uses this provider account in this workspace.",
++      );
++    });
++
++    const response = await POST(request(validBody()));
++    const body = await response.json();
++
++    expect(response.status).toBe(409);
++    expect(body.error.code).toBe("SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT");
++    expect(securityMocks.audit).not.toHaveBeenCalled();
++  });
++});
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/app/api/social-media/connectors/route.ts telegram-connector-create/src/app/api/social-media/connectors/route.ts
+--- /tmp/gem-enterprise-pristine/src/app/api/social-media/connectors/route.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/src/app/api/social-media/connectors/route.ts	2026-11-10 10:06:15.318854014 +0100
+@@ -14,6 +14,7 @@
+   disconnectSocialConnector,
+   listSocialConnectors,
+ } from "@/lib/social-media/oauth/connectors";
++import { createSocialBotTokenConnector } from "@/lib/social-media/oauth/store";
+ import { getPausedSocialProviders } from "@/lib/social-media/oauth/provider-pause";
+ import { readLiveProbeSignal } from "@/lib/social-media/oauth/probes";
+ 
+@@ -65,6 +66,80 @@
+         externalActionTaken: false,
+       },
+       { headers: { "Cache-Control": "no-store" } },
++    );
++  } catch (error) {
++    return tokMetricErrorResponse(error, cid);
++  }
++}
++
++const createConnectorSchema = z.object({
++  workspaceId: z.string().trim().min(1),
++  provider: z.literal("TELEGRAM"),
++  telegramChatId: z.string().trim().min(1),
++  botToken: z.string().trim().min(1),
++  displayName: z.string().trim().min(1).optional(),
++  telegramPublicChannel: z.string().trim().min(1).optional(),
++});
++
++export async function POST(request: NextRequest) {
++  const cid = correlationId(request);
++  try {
++    requireSameOrigin(request);
++    const session = await requireSocialConnectorSession(request);
++    const parsed = await parseJson(request, createConnectorSchema);
++    const membership = await requireSocialConnectorWorkspace(parsed.workspaceId, session);
++    requirePermission(membership, "manage", "connectors");
++    await enforceEmergencyLocks(parsed.workspaceId, "connector");
++    const telegramChatId = parsed.telegramChatId;
++    const safeMetadata: Record<string, unknown> = { telegramChatId };
++    if (parsed.telegramPublicChannel) {
++      safeMetadata.telegramPublicChannel = parsed.telegramPublicChannel;
++    }
++    // The bot token travels as an encrypted credential; the chat id is
++    // safe metadata. The token and the secretRef never leave this server
++    // and never appear in the response — the returned connector record
++    // carries no secret fields by construction.
++    const connector = await createSocialBotTokenConnector({
++      workspaceId: parsed.workspaceId,
++      provider: "TELEGRAM",
++      displayName: parsed.displayName ?? "Telegram",
++      credential: {
++        provider: "TELEGRAM",
++        accessToken: parsed.botToken,
++        grantedScopes: [],
++        externalAccountId: telegramChatId,
++      },
++      safeMetadata,
++    });
++    await emitTokMetricAudit({
++      workspaceId: parsed.workspaceId,
++      actorId: session.userId,
++      action: "social.connector.authorized",
++      entityType: "connector",
++      entityId: connector.id,
++      correlationId: cid,
++      outcome: "success",
++      sourceChannel: "website",
++      metadata: {
++        provider: "TELEGRAM",
++        telegramChatId,
++        externalPublishingEnabled: false,
++      },
++    });
++    const pausedProviders = await getPausedSocialProviders(parsed.workspaceId);
++    const enriched = {
++      ...connector,
++      providerPaused: new Set(pausedProviders).has(connector.provider),
++      liveProbe: readLiveProbeSignal(connector.safeMetadata),
++    };
++    return NextResponse.json(
++      {
++        ok: true,
++        correlationId: cid,
++        connector: enriched,
++        externalActionTaken: false,
++      },
++      { headers: { "Cache-Control": "no-store" } },
+     );
+   } catch (error) {
+     return tokMetricErrorResponse(error, cid);
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/lib/social-media/oauth/store.ts telegram-connector-create/src/lib/social-media/oauth/store.ts
+--- /tmp/gem-enterprise-pristine/src/lib/social-media/oauth/store.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/src/lib/social-media/oauth/store.ts	2026-11-10 10:04:19.984777288 +0100
+@@ -1,9 +1,19 @@
+ import { randomUUID } from "node:crypto";
+ import { Prisma } from "@prisma/client";
+ import { db } from "@/lib/db";
++import {
++  GatewayRequestError,
++  shouldUseSupabaseGateway,
++} from "@/lib/supabase-gateway";
++import { socialPublishingGateway } from "@/lib/social-media/publishing/gateway-client";
+ import { enforceEmergencyLocks, TokMetricError } from "@/lib/tokmetric/security";
+ import { decryptSocialCredential, encryptSocialCredential } from "./crypto";
+-import type { SocialConnectorProvider, SocialOAuthProvider } from "./config";
++import { parseSocialConnectorProvider } from "./config";
++import type {
++  SocialBotTokenProvider,
++  SocialConnectorProvider,
++  SocialOAuthProvider,
++} from "./config";
+ import type { SocialOAuthStatePayload } from "./state";
+ 
+ const ATTEMPT_TTL_MS = 10 * 60 * 1000;
+@@ -301,6 +311,239 @@
+   }
+ }
+ 
++// Gateway errors keep the edge function's status + stable code (so a 409
++// SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT from the RPC survives the hop
++// instead of becoming a generic 500).
++function gatewayError(error: unknown): never {
++  if (error instanceof GatewayRequestError) {
++    throw new TokMetricError(error.statusCode, error.code, error.message);
++  }
++  throw error;
++}
++
++function isRecord(value: unknown): value is Record<string, unknown> {
++  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
++}
++
++function toDate(value: unknown): Date | null {
++  if (typeof value !== "string" || !value) return null;
++  const date = new Date(value);
++  return Number.isNaN(date.getTime()) ? null : date;
++}
++
++function toNullableString(value: unknown): string | null {
++  return typeof value === "string" ? value : null;
++}
++
++// Row shape the gem_social_create_connector RPC returns (JSON: camelCase
++// keys, ISO timestamp strings). Mirrors SocialConnectorRecord so the
++// gateway branch returns the same record the Prisma branch returns.
++function reviveConnectorRecord(raw: Record<string, unknown>): SocialConnectorRecord {
++  const createdAt = toDate(raw.createdAt);
++  const updatedAt = toDate(raw.updatedAt);
++  if (!createdAt || !updatedAt) {
++    throw new TokMetricError(
++      500,
++      "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
++      "The social publishing gateway returned an unexpected response.",
++    );
++  }
++  return {
++    id: String(raw.id ?? ""),
++    workspaceId: String(raw.workspaceId ?? ""),
++    provider: parseSocialConnectorProvider(String(raw.provider ?? "")),
++    state: String(raw.state ?? ""),
++    displayName: String(raw.displayName ?? ""),
++    externalAccountId: toNullableString(raw.externalAccountId),
++    grantedScopes: Array.isArray(raw.grantedScopes)
++      ? (raw.grantedScopes.filter(
++          (entry): entry is string => typeof entry === "string",
++        ) as string[])
++      : [],
++    safeMetadata: isRecord(raw.safeMetadata) ? raw.safeMetadata : {},
++    lastHealthAt: toDate(raw.lastHealthAt),
++    disabledAt: toDate(raw.disabledAt),
++    createdAt,
++    updatedAt,
++  };
++}
++
++/**
++ * Create a bot-token connector (Telegram). The bot token travels as an
++ * encrypted credential (SOCIAL_TOKEN_ENCRYPTION_KEY); the target chat id is
++ * safe metadata, never a secret. The connector identity is (workspace,
++ * provider, external account key = the chat id), so creating the same
++ * Telegram connector twice returns the existing row (reactivated with the
++ * new token) instead of duplicating it. The emergency-locks check lives in
++ * the route, like disconnectSocialConnector — this function does not
++ * re-check it.
++ */
++export async function createSocialBotTokenConnector(input: {
++  workspaceId: string;
++  provider: SocialBotTokenProvider;
++  displayName: string;
++  credential: StoredSocialCredential;
++  safeMetadata?: Record<string, unknown>;
++}): Promise<SocialConnectorRecord> {
++  if (shouldUseSupabaseGateway()) {
++    return createSocialBotTokenConnectorViaGateway(input);
++  }
++  return createSocialBotTokenConnectorPrisma(input);
++}
++
++async function createSocialBotTokenConnectorPrisma(input: {
++  workspaceId: string;
++  provider: SocialBotTokenProvider;
++  displayName: string;
++  credential: StoredSocialCredential;
++  safeMetadata?: Record<string, unknown>;
++}): Promise<SocialConnectorRecord> {
++  const connectorId = randomUUID();
++  const credentialId = randomUUID();
++  const now = new Date();
++  const externalAccountKey = input.credential.externalAccountId || "default";
++  const encrypted = encryptSocialCredential(input.credential);
++
++  try {
++    return await db.$transaction(async (transaction) => {
++      // The generic type argument is avoided here on purpose: the
++      // sandbox Prisma stub leaves $queryRaw untyped, so $queryRaw<T>
++      // raises TS2347 there (the same pre-existing stub artifact as
++      // persistSocialConnector's call). The cast is identical at
++      // runtime and keeps this file clean under the stub.
++      const connectors = (await transaction.$queryRaw(Prisma.sql`
++        INSERT INTO social_connectors (
++          id,
++          workspace_id,
++          provider,
++          state,
++          display_name,
++          external_account_key,
++          external_account_id,
++          granted_scopes,
++          safe_metadata,
++          last_health_at,
++          created_at,
++          updated_at
++        ) VALUES (
++          ${connectorId},
++          ${input.workspaceId},
++          ${input.provider},
++          'CONNECTED',
++          ${input.displayName},
++          ${externalAccountKey},
++          ${input.credential.externalAccountId ?? null},
++          ${input.credential.grantedScopes},
++          CAST(${JSON.stringify(input.safeMetadata ?? {})} AS jsonb),
++          ${now},
++          ${now},
++          ${now}
++        )
++        ON CONFLICT (workspace_id, provider, external_account_key)
++        DO UPDATE SET
++          state = 'CONNECTED',
++          display_name = EXCLUDED.display_name,
++          external_account_id = EXCLUDED.external_account_id,
++          granted_scopes = EXCLUDED.granted_scopes,
++          safe_metadata = EXCLUDED.safe_metadata,
++          disabled_at = NULL,
++          last_health_at = EXCLUDED.last_health_at,
++          updated_at = EXCLUDED.updated_at
++        RETURNING
++          id,
++          workspace_id AS "workspaceId",
++          provider,
++          state,
++          display_name AS "displayName",
++          external_account_id AS "externalAccountId",
++          granted_scopes AS "grantedScopes",
++          safe_metadata AS "safeMetadata",
++          last_health_at AS "lastHealthAt",
++          disabled_at AS "disabledAt",
++          created_at AS "createdAt",
++          updated_at AS "updatedAt"
++      `)) as SocialConnectorRecord[];
++      const connector = connectors[0];
++      if (!connector) throw new Error("Social connector was not returned after creation.");
++
++      // The credential row uses reference_type 'oauth:production' because
++      // that is the reference type the credential-load path filters on
++      // (lifecycle-store.ts, gem_social_load_connector_credential). A
++      // bot-token-specific reference type would make the worker unable to
++      // load the Telegram token.
++      await transaction.$executeRaw(Prisma.sql`
++        INSERT INTO social_connector_credentials (
++          id,
++          connector_id,
++          reference_type,
++          secret_ref,
++          expires_at,
++          refresh_expires_at,
++          rotated_at,
++          created_at,
++          updated_at
++        ) VALUES (
++          ${credentialId},
++          ${connector.id},
++          'oauth:production',
++          ${encrypted},
++          NULL,
++          NULL,
++          ${now},
++          ${now},
++          ${now}
++        )
++        ON CONFLICT (connector_id, reference_type)
++        DO UPDATE SET
++          secret_ref = EXCLUDED.secret_ref,
++          rotated_at = EXCLUDED.rotated_at,
++          updated_at = EXCLUDED.updated_at
++      `);
++      return connector;
++    });
++  } catch (error) {
++    return storeUnavailable(error);
++  }
++}
++
++async function createSocialBotTokenConnectorViaGateway(input: {
++  workspaceId: string;
++  provider: SocialBotTokenProvider;
++  displayName: string;
++  credential: StoredSocialCredential;
++  safeMetadata?: Record<string, unknown>;
++}): Promise<SocialConnectorRecord> {
++  const externalAccountKey = input.credential.externalAccountId || "default";
++  const encrypted = encryptSocialCredential(input.credential);
++  try {
++    const body = await socialPublishingGateway<{
++      ok: boolean;
++      connector?: Record<string, unknown>;
++    }>("create_connector", {
++      workspaceId: input.workspaceId,
++      provider: input.provider,
++      displayName: input.displayName,
++      externalAccountKey,
++      externalAccountId: input.credential.externalAccountId ?? externalAccountKey,
++      grantedScopes: input.credential.grantedScopes,
++      safeMetadata: input.safeMetadata ?? {},
++      secretRef: encrypted,
++      now: new Date().toISOString(),
++    });
++    if (!isRecord(body.connector)) {
++      throw new TokMetricError(
++        500,
++        "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
++        "The social publishing gateway returned an unexpected response.",
++      );
++    }
++    return reviveConnectorRecord(body.connector);
++  } catch (error) {
++    if (error instanceof TokMetricError) throw error;
++    return gatewayError(error);
++  }
++}
++
+ export async function listSocialConnectors(workspaceId: string) {
+   try {
+     return await db.$queryRaw<SocialConnectorRecord[]>(Prisma.sql`
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/src/lib/social-media/publishing/gateway-client.ts telegram-connector-create/src/lib/social-media/publishing/gateway-client.ts
+--- /tmp/gem-enterprise-pristine/src/lib/social-media/publishing/gateway-client.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/src/lib/social-media/publishing/gateway-client.ts	2026-11-10 10:04:19.984993773 +0100
+@@ -27,10 +27,11 @@
+ 
+ /**
+  * How many gem_social_* routines the health probe expects. The migration
+- * creates 12 phase-1 RPCs plus the health RPC itself; a partially applied
++ * creates 12 phase-1 RPCs plus the health RPC itself, and the connector
++ * creation migration adds gem_social_create_connector; a partially applied
+  * migration fails the probe.
+  */
+-export const EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT = 13;
++export const EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT = 14;
+ 
+ export const SOCIAL_PUBLISHING_GATEWAY_ACTIONS = [
+   "health",
+@@ -45,6 +46,7 @@
+   "mark_reauthorization",
+   "audit_event",
+   "create_job",
++  "create_connector",
+   "list_jobs",
+ ] as const;
+ 
+diff -ruN '--exclude=node_modules' '--exclude=tsconfig.tsbuildinfo' /tmp/gem-enterprise-pristine/supabase/functions/gem-social-publishing-gateway/index.ts telegram-connector-create/supabase/functions/gem-social-publishing-gateway/index.ts
+--- /tmp/gem-enterprise-pristine/supabase/functions/gem-social-publishing-gateway/index.ts	2026-11-10 08:05:06.000000000 +0100
++++ telegram-connector-create/supabase/functions/gem-social-publishing-gateway/index.ts	2026-11-10 10:04:19.985185992 +0100
+@@ -387,6 +387,23 @@
+   return requireRecord(data);
+ }
+ 
++async function createConnector(body: JsonRecord) {
++  const { data, error } = await db.rpc("gem_social_create_connector", {
++    p_workspace_id: stringParam(body, "workspaceId"),
++    p_provider: stringParam(body, "provider"),
++    p_display_name: stringParam(body, "displayName"),
++    p_external_account_key: stringParam(body, "externalAccountKey"),
++    p_external_account_id: stringParam(body, "externalAccountId"),
++    p_granted_scopes: jsonParam(body, "grantedScopes") ?? [],
++    p_safe_metadata: jsonParam(body, "safeMetadata") ?? {},
++    p_secret_ref: stringParam(body, "secretRef"),
++    p_now: stringParam(body, "now"),
++  });
++  if (error) rpcFailure(error);
++  throwOnBusinessError(data);
++  return requireRecord(data);
++}
++
+ async function listJobs(body: JsonRecord) {
+   const { data, error } = await db.rpc("gem_social_list_jobs", {
+     p_workspace_id: stringParam(body, "workspaceId"),
+@@ -441,6 +458,7 @@
+     if (action === "mark_reauthorization") return json(await markReauthorization(body));
+     if (action === "audit_event") return json(await auditEvent(body));
+     if (action === "create_job") return json(await createJob(body));
++    if (action === "create_connector") return json(await createConnector(body));
+     if (action === "list_jobs") return json(await listJobs(body));
+     // Phase 2 actions are reserved names only. The autopilot service has
+     // its own Prisma surface and stays gateway-blocked until its own phase.
