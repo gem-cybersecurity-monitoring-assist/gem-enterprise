@@ -1,5 +1,6 @@
 const NOTION_VERSION = "2025-09-03";
-const PUBLIC_PROFILE_LIMIT = 50;
+const PUBLIC_PROFILE_PAGE_SIZE = 50;
+const MAX_PUBLIC_DIRECTORY_PAGES = 10;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -27,19 +28,19 @@ interface DirectoryEnvironment {
   NOTION_PERSONNEL_DATA_SOURCE_ID?: string;
 }
 
-function record(value: unknown): UnknownRecord | null {
+function asRecord(value: unknown): UnknownRecord | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as UnknownRecord)
     : null;
 }
 
-function property(properties: unknown, name: string): UnknownRecord | null {
-  const values = record(properties);
-  return record(values?.[name]);
+function prop(properties: unknown, name: string): UnknownRecord | null {
+  const values = asRecord(properties);
+  return asRecord(values?.[name]);
 }
 
 function textValue(value: unknown): string | null {
-  const item = record(value);
+  const item = asRecord(value);
   if (!item) return null;
 
   for (const key of ["title", "rich_text"]) {
@@ -47,94 +48,125 @@ function textValue(value: unknown): string | null {
     if (!Array.isArray(parts)) continue;
     const text = parts
       .map((part) => {
-        const richText = record(part);
-        return typeof richText?.plain_text === "string" ? richText.plain_text : "";
+        const entry = asRecord(part);
+        const plain = entry?.plain_text;
+        if (typeof plain === "string") return plain;
+        const textObject = asRecord(entry?.text);
+        return typeof textObject?.content === "string" ? textObject.content : "";
       })
       .join("")
       .trim();
     if (text) return text;
   }
-
   return null;
 }
 
 function labelValue(value: unknown): string | null {
-  const item = record(value);
+  const item = asRecord(value);
   if (!item) return null;
-
   for (const key of ["select", "status"]) {
-    const option = record(item[key]);
-    if (typeof option?.name === "string" && option.name.trim()) {
-      return option.name.trim();
-    }
+    const selected = asRecord(item[key]);
+    if (typeof selected?.name === "string" && selected.name.trim()) return selected.name.trim();
   }
-
   return textValue(item);
 }
 
-function checkboxValue(value: unknown): boolean {
-  return record(value)?.checkbox === true;
+function audienceValues(value: unknown): string[] {
+  const item = asRecord(value);
+  if (!item) return [];
+  // The authoritative GEM registry has a multi_select Audience property, not a select.
+  if (!Array.isArray(item.multi_select)) return [];
+  return item.multi_select
+    .map((v) => asRecord(v)?.name)
+    .filter((v): v is string => typeof v === "string");
+}
+
+function dateValue(value: unknown): string | null {
+  const item = asRecord(value);
+  const date = asRecord(item?.date);
+  return typeof date?.start === "string" ? date.start : null;
 }
 
 function normalized(value: string | null): string {
   return value?.trim().toLowerCase() ?? "";
 }
 
-export function isApprovedPublicDirectoryPage(page: unknown): boolean {
-  const source = record(page);
-  const properties = source?.properties;
-  if (!properties) return false;
-
-  const approved = checkboxValue(property(properties, "Publish Approved"));
-  const visibility = normalized(labelValue(property(properties, "Website Visibility")));
-  const audience = normalized(labelValue(property(properties, "Audience")));
-  const profileType = normalized(labelValue(property(properties, "Type")));
-
-  if (!approved || visibility !== "public") return false;
-  if (audience && audience !== "public") return false;
-  if (["vip", "executive board", "private", "internal"].includes(profileType)) return false;
-
-  return true;
+function isUnexpired(value: unknown, now: Date): boolean {
+  const date = asRecord(asRecord(value)?.date);
+  const expires = typeof date?.end === "string" ? date.end : dateValue(value);
+  if (!expires) return true;
+  // A date-only expiry remains valid through its stated calendar date (UTC).
+  const until = expires.length === 10 ? `${expires}T23:59:59.999Z` : expires;
+  const timestamp = Date.parse(until);
+  return Number.isFinite(timestamp) && timestamp >= now.getTime();
 }
 
-export function parsePublicDirectoryPage(page: unknown): PublicDirectoryProfile | null {
-  if (!isApprovedPublicDirectoryPage(page)) return null;
+function hasReviewer(value: unknown): boolean {
+  const people = asRecord(value)?.people;
+  return Array.isArray(people) && people.length > 0;
+}
 
-  const source = record(page);
+/**
+ * Publication is independently gated by the real Notion schema:
+ * checkbox, Public visibility, explicit Public-only audience, CEO approval,
+ * Verified evidence, reviewer, verification date and non-expired record.
+ * No VIP/AI/internal-only records may be displayed by a malformed query.
+ */
+export function isApprovedPublicDirectoryPage(page: unknown, now = new Date()): boolean {
+  const source = asRecord(page);
+  if (!source || source.archived === true || source.in_trash === true) return false;
+  const p = source.properties;
+  if (!p) return false;
+
+  const approved = prop(p, "Publish Approved")?.checkbox === true;
+  const visibility = normalized(labelValue(prop(p, "Website Visibility")));
+  const audiences = audienceValues(prop(p, "Audience")).map((x) => x.toLowerCase());
+  const type = normalized(labelValue(prop(p, "Type")));
+  const ceoApproval = normalized(labelValue(prop(p, "CEO Approval")));
+  const verified = normalized(labelValue(prop(p, "Verification Status")));
+  const reviewer = hasReviewer(prop(p, "Reviewer"));
+  const verifiedAt = dateValue(prop(p, "Last Verified"));
+  const verificationTime = verifiedAt ? Date.parse(verifiedAt) : NaN;
+
+  return (
+    approved &&
+    visibility === "public" &&
+    audiences.includes("public") &&
+    !audiences.some((audience) => ["vip", "client", "internal", "super admin"].includes(audience)) &&
+    ["human", "function"].includes(type) &&
+    ceoApproval === "approved" &&
+    verified === "verified" &&
+    reviewer &&
+    Number.isFinite(verificationTime) &&
+    verificationTime <= now.getTime() &&
+    isUnexpired(prop(p, "Expires"), now)
+  );
+}
+
+export function parsePublicDirectoryPage(page: unknown, now = new Date()): PublicDirectoryProfile | null {
+  if (!isApprovedPublicDirectoryPage(page, now)) return null;
+
+  const source = asRecord(page);
   const properties = source?.properties;
-  if (!properties) return null;
-
   const name =
-    textValue(property(properties, "Profile ID")) ??
-    textValue(property(properties, "Name"));
-  if (!name) return null;
+    textValue(prop(properties, "Profile / Function")) ??
+    textValue(prop(properties, "Name"));
 
-  const verificationStatus = labelValue(property(properties, "Verification Status"));
-  const allowPublicLicense =
-    checkboxValue(property(properties, "Public License Display")) &&
-    normalized(verificationStatus) === "verified";
+  if (!name) return null;
+  const licenseVisibility = normalized(labelValue(prop(properties, "Public License Display")));
+  const allowLicense = licenseVisibility === "verified";
 
   return {
     id: typeof source?.id === "string" ? source.id : name,
     name,
-    role: textValue(property(properties, "Role")) ?? labelValue(property(properties, "Role")),
-    division:
-      textValue(property(properties, "Division")) ??
-      labelValue(property(properties, "Division")),
-    profileType: labelValue(property(properties, "Type")),
-    bio: textValue(property(properties, "Bio")),
-    verificationStatus,
-    licenseType: allowPublicLicense
-      ? labelValue(property(properties, "License Type"))
-      : null,
-    licenseAuthority: allowPublicLicense
-      ? textValue(property(properties, "License Authority")) ??
-        labelValue(property(properties, "License Authority"))
-      : null,
-    licenseJurisdiction: allowPublicLicense
-      ? textValue(property(properties, "License Jurisdiction")) ??
-        labelValue(property(properties, "License Jurisdiction"))
-      : null,
+    role: textValue(prop(properties, "Role")) ?? labelValue(prop(properties, "Role")),
+    division: textValue(prop(properties, "Division")) ?? labelValue(prop(properties, "Division")),
+    profileType: labelValue(prop(properties, "Type")),
+    bio: textValue(prop(properties, "Public Bio")),
+    verificationStatus: labelValue(prop(properties, "Verification Status")),
+    licenseType: allowLicense ? textValue(prop(properties, "License Type")) : null,
+    licenseAuthority: allowLicense ? textValue(prop(properties, "Licensing Authority")) : null,
+    licenseJurisdiction: allowLicense ? textValue(prop(properties, "License Jurisdiction")) : null,
   };
 }
 
@@ -152,45 +184,65 @@ export async function getPublicDirectory(
 ): Promise<PublicDirectoryResult> {
   const token = env.NOTION_API_TOKEN?.trim();
   const dataSourceId = normalizeDataSourceId(env.NOTION_PERSONNEL_DATA_SOURCE_ID);
-
   if (!token || !dataSourceId) {
     return { configured: false, profiles: [], status: "not_configured" };
   }
 
   try {
-    const response = await request(
-      `https://api.notion.com/v1/data_sources/${encodeURIComponent(dataSourceId)}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Notion-Version": NOTION_VERSION,
-        },
-        body: JSON.stringify({
-          page_size: PUBLIC_PROFILE_LIMIT,
-          filter: {
-            and: [
-              { property: "Publish Approved", checkbox: { equals: true } },
-              { property: "Website Visibility", select: { equals: "Public" } },
-            ],
+    const results: unknown[] = [];
+    let cursor: string | undefined;
+    let complete = false;
+    for (let page = 0; page < MAX_PUBLIC_DIRECTORY_PAGES; page += 1) {
+      const response = await request(
+        `https://api.notion.com/v1/data_sources/${encodeURIComponent(dataSourceId)}/query`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Notion-Version": NOTION_VERSION,
           },
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(8_000),
-      },
-    );
+          body: JSON.stringify({
+            page_size: PUBLIC_PROFILE_PAGE_SIZE,
+            ...(cursor ? { start_cursor: cursor } : {}),
+            filter: {
+              and: [
+                { property: "Publish Approved", checkbox: { equals: true } },
+                { property: "Website Visibility", select: { equals: "Public" } },
+                { property: "CEO Approval", select: { equals: "Approved" } },
+                { property: "Verification Status", select: { equals: "Verified" } },
+                { property: "Audience", multi_select: { contains: "Public" } },
+              ],
+            },
+          }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(8_000),
+        },
+      );
 
-    if (!response.ok) {
-      return { configured: true, profiles: [], status: "provider_error" };
+      if (!response.ok) {
+        return { configured: true, profiles: [], status: "provider_error" };
+      }
+
+      const payload = asRecord(await response.json());
+      if (!payload || !Array.isArray(payload.results)) {
+        return { configured: true, profiles: [], status: "provider_error" };
+      }
+      results.push(...payload.results);
+      if (payload.has_more !== true) {
+        complete = true;
+        break;
+      }
+      if (typeof payload.next_cursor !== "string" || !payload.next_cursor) {
+        return { configured: true, profiles: [], status: "provider_error" };
+      }
+      cursor = payload.next_cursor;
     }
+    if (!complete) return { configured: true, profiles: [], status: "provider_error" };
 
-    const payload = record(await response.json());
-    const results = Array.isArray(payload?.results) ? payload.results : [];
     const profiles = results
-      .map(parsePublicDirectoryPage)
+      .map((item) => parsePublicDirectoryPage(item))
       .filter((item): item is PublicDirectoryProfile => item !== null);
-
     return { configured: true, profiles, status: "ready" };
   } catch {
     return { configured: true, profiles: [], status: "provider_error" };
