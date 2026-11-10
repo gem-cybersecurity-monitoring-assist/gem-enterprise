@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, RefreshCw, Save, ShieldAlert, UsersRound } from "lucide-react";
 import type { LiveTeamContentResult } from "@/lib/live-team-copy";
 import type { RegistryResult } from "@/lib/personnel-registry-management";
+import { PersonDraftCreation } from "@/components/admin/PersonDraftCreation";
 
 type RegistryResponse=RegistryResult & {viewerRole?:string};
 type TeamResponse=LiveTeamContentResult & {viewerRole?:string;sourcePageUrl?:string};
@@ -29,6 +30,7 @@ export function PersonnelLiveManager() {
   const [tab,setTab]=useState<"teams"|"people">("teams");
   const [selectedTeam,setSelectedTeam]=useState("executive-office");
   const [selectedPerson,setSelectedPerson]=useState("");
+  const [creating,setCreating]=useState(false);
   const [teamDraft,setTeamDraft]=useState({title:"",overview:"",mission:"",responsibilities:["","",""],deliverables:["","",""]});
   const [personDraft,setPersonDraft]=useState({role:"",publicBio:""});
   const [confirmName,setConfirmName]=useState("");
@@ -190,16 +192,17 @@ export function PersonnelLiveManager() {
 
     {tab==="people"&&<section className="grid gap-5 xl:grid-cols-[minmax(230px,.8fr)_minmax(0,1.7fr)]">
       <aside className="space-y-3 rounded-2xl border border-white/10 bg-[#0b1929] p-4">
+        <button type="button" onClick={()=>{setCreating(true);setNotice("");}} disabled={registry?.status!=="connected"} className="w-full rounded-xl bg-cyan-400 px-3 py-3 text-sm font-bold text-[#061423] disabled:cursor-not-allowed disabled:opacity-40">Create new unpublished record</button>
         <label className="block text-xs text-slate-400">Search registry records<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Name, role, division" className="mt-2 w-full rounded-lg border border-white/15 bg-[#081320] p-3 text-sm text-white"/></label>
         <div className="max-h-[550px] space-y-2 overflow-y-auto">
-          {currentRecords.map(r=><button key={r.id} onClick={()=>{setSelectedPerson(r.id);setNotice("");}} className={`w-full rounded-xl border p-3 text-left ${person?.id===r.id?"border-cyan-300/60 bg-cyan-300/10":"border-transparent hover:bg-white/10"}`}>
+          {currentRecords.map(r=><button key={r.id} onClick={()=>{setSelectedPerson(r.id);setCreating(false);setNotice("");}} className={`w-full rounded-xl border p-3 text-left ${person?.id===r.id?"border-cyan-300/60 bg-cyan-300/10":"border-transparent hover:bg-white/10"}`}>
             <span className="block text-sm font-semibold">{r.name}</span><span className="mt-1 block text-xs text-slate-400">{r.role||r.type}</span>
             <span className={`mt-2 block text-[11px] ${r.published?"text-emerald-300":"text-amber-200"}`}>{r.published?"Published":"Not published"}</span>
           </button>)}
           {!currentRecords.length&&<p className="text-sm text-slate-400">No accessible records match the search.</p>}
         </div>
       </aside>
-      {person?<div className="space-y-5 rounded-2xl border border-white/10 bg-[#0b1929] p-5 sm:p-7">
+      {creating?<PersonDraftCreation onCancel={()=>setCreating(false)} onCreated={async(id)=>{await refresh();setSelectedPerson(id);setCreating(false);setNotice("New registry draft created in Notion. Evidence verification and publication are still pending.");}}/>:person?<div className="space-y-5 rounded-2xl border border-white/10 bg-[#0b1929] p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><p className="text-xs uppercase tracking-wider text-cyan-300">{person.type} · {person.division}</p><h2 className="mt-2 text-2xl font-bold">{person.name}</h2></div>
           {person.pageUrl&&<a href={person.pageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex gap-1 text-xs text-cyan-300">Original record <ExternalLink className="h-4 w-4"/></a>}
