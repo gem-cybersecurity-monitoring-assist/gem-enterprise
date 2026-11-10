@@ -387,6 +387,23 @@ async function createJob(body: JsonRecord) {
   return requireRecord(data);
 }
 
+async function createConnector(body: JsonRecord) {
+  const { data, error } = await db.rpc("gem_social_create_connector", {
+    p_workspace_id: stringParam(body, "workspaceId"),
+    p_provider: stringParam(body, "provider"),
+    p_display_name: stringParam(body, "displayName"),
+    p_external_account_key: stringParam(body, "externalAccountKey"),
+    p_external_account_id: stringParam(body, "externalAccountId"),
+    p_granted_scopes: jsonParam(body, "grantedScopes") ?? [],
+    p_safe_metadata: jsonParam(body, "safeMetadata") ?? {},
+    p_secret_ref: stringParam(body, "secretRef"),
+    p_now: stringParam(body, "now"),
+  });
+  if (error) rpcFailure(error);
+  throwOnBusinessError(data);
+  return requireRecord(data);
+}
+
 async function listJobs(body: JsonRecord) {
   const { data, error } = await db.rpc("gem_social_list_jobs", {
     p_workspace_id: stringParam(body, "workspaceId"),
@@ -441,6 +458,7 @@ Deno.serve(async (req) => {
     if (action === "mark_reauthorization") return json(await markReauthorization(body));
     if (action === "audit_event") return json(await auditEvent(body));
     if (action === "create_job") return json(await createJob(body));
+    if (action === "create_connector") return json(await createConnector(body));
     if (action === "list_jobs") return json(await listJobs(body));
     // Phase 2 actions are reserved names only. The autopilot service has
     // its own Prisma surface and stays gateway-blocked until its own phase.
