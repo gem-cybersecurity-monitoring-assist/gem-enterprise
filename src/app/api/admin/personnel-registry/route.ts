@@ -8,7 +8,7 @@ import { fetchRegistryRows, notionRequest, toManagerRecord, belongsToRegistry, p
 export const dynamic="force-dynamic";
 const uuid=z.string().regex(/^[\da-f-]{32,36}$/i);
 const mutation=z.discriminatedUnion("action",[
- z.object({action:z.literal("saveDraft"),id:uuid,expectedLastEditedTime:z.string().min(10),role:z.string().trim().max(200),publicBio:z.string().trim().max(1900)}),
+ z.object({action:z.literal("saveDraft"),id:uuid,expectedLastEditedTime:z.string().min(10),role:z.string().trim().max(200),publicBio:z.string().trim().max(1900),reason:z.string().trim().min(10).max(500)}),
  z.object({action:z.literal("unpublish"),id:uuid,expectedLastEditedTime:z.string().min(10),confirmName:z.string().trim().min(1),reason:z.string().trim().min(10).max(500)}),
  z.object({action:z.literal("publish"),id:uuid,expectedLastEditedTime:z.string().min(10),confirmName:z.string().trim().min(1),reason:z.string().trim().min(10).max(500)}),
 ]);
