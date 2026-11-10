@@ -99,6 +99,29 @@ export function toManagerRecord(page:unknown):PersonnelRegistryRecord|null {
   };
 }
 
+export interface NewPersonnelDraft {
+ name:string;role:string;publicBio:string;
+ division:"Executive"|"Cybersecurity"|"Operations"|"Real Estate"|"Finance"|"Support"|"AI Governance";
+ type:"Human"|"Function";
+}
+export function buildUnapprovedDraftProperties(draft:NewPersonnelDraft) {
+ const rich=(value:string)=>value?[{type:"text",text:{content:value}}]:[];
+ return {
+   "Profile / Function":{title:rich(draft.name)},
+   "Role":{rich_text:rich(draft.role)},
+   "Division":{select:{name:draft.division}},
+   "Type":{select:{name:draft.type}},
+   "Public Bio":{rich_text:rich(draft.publicBio)},
+   "Publish Approved":{checkbox:false},
+   "Website Visibility":{select:{name:"Hidden"}},
+   "Audience":{multi_select:[{name:"Internal"}]},
+   "Verification Status":{select:{name:"Evidence Required"}},
+   "CEO Approval":{select:{name:"Pending"}},
+   "Photo Status":{select:{name:"No Photo"}},
+   "Public License Display":{select:{name:"Not Applicable"}},
+ };
+}
+
 export interface RegistryResult {
  status:"connected"|"not_configured"|"provider_error";
  records:PersonnelRegistryRecord[];
