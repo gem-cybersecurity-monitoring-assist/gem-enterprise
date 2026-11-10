@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PersonnelFunctionsExplorer } from "@/components/public/PersonnelFunctionsExplorer";
-import { publicDivisions, publicFunctionalTeams } from "@/lib/public-personnel-teams";
+import { publicDivisions } from "@/lib/public-personnel-teams";
+import { getLiveTeamContent } from "@/lib/live-team-copy";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getPublicDirectory,
@@ -113,7 +114,7 @@ function ProfileCard({ profile }: { profile: PublicDirectoryProfile }) {
 }
 
 export default async function PersonnelPage() {
-  const directory = await getPublicDirectory();
+  const [directory, teamContent] = await Promise.all([getPublicDirectory(), getLiveTeamContent()]);
   const hasProfiles = directory.status === "ready" && directory.profiles.length > 0;
 
   return (
@@ -148,7 +149,7 @@ export default async function PersonnelPage() {
         </div>
       </section>
 
-      <PersonnelFunctionsExplorer teams={publicFunctionalTeams} divisions={publicDivisions} />
+      <PersonnelFunctionsExplorer teams={teamContent.teams} divisions={publicDivisions} />
 
       <section id="approved-people" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6">
         {hasProfiles ? (
