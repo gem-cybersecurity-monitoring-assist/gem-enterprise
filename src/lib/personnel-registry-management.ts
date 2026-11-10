@@ -105,7 +105,10 @@ export interface RegistryResult {
 }
 
 export async function fetchRegistryRows(
- env:{NOTION_API_TOKEN?:string;NOTION_PERSONNEL_DATA_SOURCE_ID?:string}=process.env,
+ env:{NOTION_API_TOKEN?:string;NOTION_PERSONNEL_DATA_SOURCE_ID?:string}={
+   NOTION_API_TOKEN:process.env.NOTION_API_TOKEN,
+   NOTION_PERSONNEL_DATA_SOURCE_ID:process.env.NOTION_PERSONNEL_DATA_SOURCE_ID,
+ },
  request:typeof fetch=fetch
 ):Promise<RegistryResult>{
  const token=env.NOTION_API_TOKEN?.trim();
