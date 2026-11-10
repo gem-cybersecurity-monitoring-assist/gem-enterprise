@@ -100,7 +100,10 @@ export function validateTeamCopyUpdate(
 }
 
 export async function getLiveTeamContent(
-  env: {NOTION_API_TOKEN?:string;NOTION_TEAM_COPY_PAGE_ID?:string} = process.env,
+  env: {NOTION_API_TOKEN?:string;NOTION_TEAM_COPY_PAGE_ID?:string} = {
+    NOTION_API_TOKEN: process.env.NOTION_API_TOKEN,
+    NOTION_TEAM_COPY_PAGE_ID: process.env.NOTION_TEAM_COPY_PAGE_ID,
+  },
   request: typeof fetch = fetch,
 ): Promise<LiveTeamContentResult> {
   const fallback: LiveTeamContentResult = {status:"not_configured",teams:[...publicFunctionalTeams],records:[]};
