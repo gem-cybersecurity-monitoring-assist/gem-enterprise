@@ -4,12 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, RefreshCw, Save, ShieldAlert, UsersRound } from "lucide-react";
 import type { LiveTeamContentResult } from "@/lib/live-team-copy";
-import type { PersonnelRegistryRecord, RegistryResult } from "@/lib/personnel-registry-management";
+import type { RegistryResult } from "@/lib/personnel-registry-management";
 
 type RegistryResponse=RegistryResult & {viewerRole?:string};
 type TeamResponse=LiveTeamContentResult & {viewerRole?:string;sourcePageUrl?:string};
 type Action="saveDraft"|"publish"|"unpublish";
-const empty=(value:string|undefined|null)=>value??"";
 
 async function readJson<T>(url:string):Promise<T>{
   const r=await fetch(url,{cache:"no-store",credentials:"same-origin"});
