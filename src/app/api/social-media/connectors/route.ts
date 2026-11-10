@@ -1,4 +1,5 @@
 import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { createSocialBotTokenConnector } from "@/lib/social-media/oauth/store";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -20,6 +21,14 @@ import { readLiveProbeSignal } from "@/lib/social-media/oauth/probes";
 const disconnectSchema = z.object({
   workspaceId: z.string().trim().min(1),
   connectorId: z.string().trim().min(1),
+});
+
+const createConnectorSchema = z.object({
+  workspaceId: z.string().trim().min(1),
+  provider: z.literal("telegram"),
+  botToken: z.string().trim().min(1).max(256),
+  displayName: z.string().trim().min(1).max(120).optional(),
+  idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 function requireSameOrigin(request: NextRequest) {
@@ -106,6 +115,59 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(
       { ok: true, correlationId: cid, ...result },
       { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return tokMetricErrorResponse(error, cid);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const cid = correlationId(request);
+  try {
+    requireSameOrigin(request);
+    const session = await requireSocialConnectorSession(request);
+    const parsed = await parseJson(request, createConnectorSchema);
+    const body = {
+      workspaceId: parsed.workspaceId!,
+      provider: parsed.provider,
+      botToken: parsed.botToken!,
+      displayName: parsed.displayName,
+      idempotencyKey: parsed.idempotencyKey!,
+    };
+    const membership = await requireSocialConnectorWorkspace(body.workspaceId, session);
+    requirePermission(membership, "manage", "connectors");
+    await enforceEmergencyLocks(body.workspaceId, "connector");
+    const result = await createSocialBotTokenConnector({
+      workspaceId: body.workspaceId,
+      provider: body.provider,
+      botToken: body.botToken,
+      displayName: body.displayName,
+      idempotencyKey: body.idempotencyKey,
+      actorId: session.userId,
+    });
+    await emitTokMetricAudit({
+      workspaceId: body.workspaceId,
+      actorId: session.userId,
+      action: "social.connector.created",
+      entityType: "connector",
+      entityId: result.connector.id,
+      correlationId: cid,
+      outcome: "success",
+      sourceChannel: "website",
+      metadata: {
+        provider: "telegram",
+        credentialStored: "secretRef",
+        externalPublishingEnabled: false,
+      },
+    });
+    return NextResponse.json(
+      {
+        ok: true,
+        correlationId: cid,
+        connector: result.connector,
+        externalActionTaken: false,
+      },
+      { status: 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     return tokMetricErrorResponse(error, cid);
