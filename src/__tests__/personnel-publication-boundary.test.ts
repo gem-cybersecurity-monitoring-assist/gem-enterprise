@@ -26,7 +26,7 @@ describe("public people and team publication controls",()=>{
     expect(getPublicFunctionalTeam("vip-relationships")).toBeNull();
     expect(teamPage).toContain("if(!team) notFound()");
     expect(teamPage).toContain("getPublicFunctionalTeam");
-    expect(publicFunctionalTeams.every(t=>t.status!=="restricted")).toBe(true);
+    expect(publicFunctionalTeams.map(t=>t.status)).not.toContain("restricted");
   });
   it("404s private or missing people, looking them up only in the approved public result",()=>{
     const detail=read("src/app/personnel/profile/[id]/page.tsx");
