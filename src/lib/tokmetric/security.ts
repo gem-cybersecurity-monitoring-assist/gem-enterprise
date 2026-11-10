@@ -153,15 +153,15 @@ function gatewayError(error: unknown): never {
   throw error;
 }
 
-export async function enforceEmergencyLocks(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector") {
-  if (shouldUseSupabaseGateway()) {
+export async function enforceEmergencyLocks(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector", database?: typeof db) {
+  if (!database && shouldUseSupabaseGateway()) {
     return enforceEmergencyLocksViaGateway(workspaceId, action);
   }
-  return enforceEmergencyLocksPrisma(workspaceId, action);
+  return enforceEmergencyLocksPrisma(workspaceId, action, database);
 }
 
-async function enforceEmergencyLocksPrisma(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector") {
-  const workspace = await db.workspace.findUnique({ where: { id: workspaceId } });
+async function enforceEmergencyLocksPrisma(workspaceId: string, action: "publish" | "advertise" | "shop_write" | "connector", database = db) {
+  const workspace = await database.workspace.findUnique({ where: { id: workspaceId } });
   if (!workspace) throw new TokMetricError(404, "WORKSPACE_NOT_FOUND", "Workspace was not found.");
   const blocked = workspace.globalEmergencyLock ||
     (action === "publish" && workspace.publishingDisabled) ||
@@ -188,15 +188,15 @@ async function enforceEmergencyLocksViaGateway(workspaceId: string, action: "pub
   }
 }
 
-export async function emitTokMetricAudit(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }) {
-  if (shouldUseSupabaseGateway()) {
+export async function emitTokMetricAudit(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }, database?: typeof db) {
+  if (!database && shouldUseSupabaseGateway()) {
     return emitTokMetricAuditViaGateway(input);
   }
-  return emitTokMetricAuditPrisma(input);
+  return emitTokMetricAuditPrisma(input, database);
 }
 
-async function emitTokMetricAuditPrisma(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }) {
-  await db.auditEvent.create({ data: { workspaceId: input.workspaceId, actorId: input.actorId, action: input.action, entityType: input.entityType, entityId: input.entityId, correlationId: input.correlationId, outcome: input.outcome, sourceChannel: input.sourceChannel, safeMetadata: redactSecrets(input.metadata ?? {}) as object } });
+async function emitTokMetricAuditPrisma(input: { workspaceId?: string; actorId?: string; action: string; entityType: string; entityId?: string; correlationId: string; outcome: string; metadata?: unknown; sourceChannel: string }, database = db) {
+  await database.auditEvent.create({ data: { workspaceId: input.workspaceId, actorId: input.actorId, action: input.action, entityType: input.entityType, entityId: input.entityId, correlationId: input.correlationId, outcome: input.outcome, sourceChannel: input.sourceChannel, safeMetadata: redactSecrets(input.metadata ?? {}) as object } });
 }
 
 /**

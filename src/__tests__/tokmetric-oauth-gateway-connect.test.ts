@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   connectorFindMany: vi.fn(),
   credentialUpsert: vi.fn(),
   queryRaw: vi.fn(),
+  scopedClient: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getSessionFromRequest: mocks.session }));
@@ -38,6 +39,9 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 vi.mock("@prisma/client", () => ({
+  PrismaClient: class {
+    constructor(options: unknown) { return mocks.scopedClient(options); }
+  },
   Prisma: { sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }) },
 }));
 
@@ -168,6 +172,41 @@ describe("legacy TokMetric TikTok OAuth over a supabase_gateway session", () => 
     expect(mocks.connectorFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { workspaceId: "workspace-1" } }),
     );
+  });
+
+  it("uses only the namespaced database for gateway TokMetric readback", async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: "user-1", email: gatewaySession.email, role: "admin", organizationId: null,
+      isActive: true, status: "active", sessionVersion: 2,
+    });
+    const findFirst = vi.fn().mockResolvedValue({ role: { permissions: [] } });
+    const findMany = vi.fn().mockResolvedValue([]);
+    mocks.scopedClient.mockReturnValue({
+      user: { findUnique }, workspaceMember: { findFirst }, connector: { findMany },
+    });
+    vi.stubEnv("POSTGRES_PRISMA_URL", "");
+    vi.stubEnv("GEM_SOCIAL_POSTGRES_PRISMA_URL", POOLER_URL.split("?")[0]);
+    const response = await legacyConnectorsGet(new NextRequest(
+      "http://localhost/api/tokmetric/connectors?workspaceId=workspace-1",
+    ));
+    expect(response.status).toBe(200);
+    expect(mocks.scopedClient).toHaveBeenCalledWith({ datasourceUrl: POOLER_URL });
+    expect(findUnique).toHaveBeenCalledOnce();
+    expect(findFirst).toHaveBeenCalledOnce();
+    expect(findMany).toHaveBeenCalledOnce();
+    expect(mocks.account).not.toHaveBeenCalled();
+    expect(mocks.membership).not.toHaveBeenCalled();
+    expect(mocks.connectorFindMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects a namespaced URL for another project even if the default URL is valid", async () => {
+    vi.stubEnv("GEM_SOCIAL_POSTGRES_PRISMA_URL", POOLER_URL.replace("slzdjoqpzbkwzuaexlkj", "aaaaaaaaaaaaaaaaaaaa"));
+    const response = await legacyConnectorsGet(new NextRequest(
+      "http://localhost/api/tokmetric/connectors?workspaceId=workspace-1",
+    ));
+    expect(response.status).toBe(503);
+    expect(mocks.scopedClient).not.toHaveBeenCalled();
+    expect(mocks.account).not.toHaveBeenCalled();
   });
 
   it("blocks the connected-account readback without the transactional authority", async () => {

@@ -59,8 +59,8 @@ export function providerDisplayName(provider: TokMetricConnectorProvider) {
   }[provider];
 }
 
-export async function listWorkspaceConnectors(workspaceId: string) {
-  const persisted = await db.connector.findMany({ where: { workspaceId }, include: { credentialReferences: true }, orderBy: { createdAt: "asc" } });
+export async function listWorkspaceConnectors(workspaceId: string, database = db) {
+  const persisted = await database.connector.findMany({ where: { workspaceId }, include: { credentialReferences: true }, orderBy: { createdAt: "asc" } });
   const defaults = connectorDefaults();
   return defaults.map((item) => {
     const matches = persisted.filter((connector) => connector.provider === item.provider);
@@ -81,29 +81,30 @@ export async function listWorkspaceConnectors(workspaceId: string) {
   });
 }
 
-export async function persistAuthorizedConnector(input: { workspaceId: string; actorId?: string; provider: TokMetricConnectorProvider; token: TikTokTokenResponse; correlationId: string; existingCredential?: StoredTikTokCredential }) {
-  await enforceEmergencyLocks(input.workspaceId, "connector");
+export async function persistAuthorizedConnector(input: { workspaceId: string; actorId?: string; provider: TokMetricConnectorProvider; token: TikTokTokenResponse; correlationId: string; existingCredential?: StoredTikTokCredential }, scopedDatabase?: typeof db) {
+  const database = scopedDatabase ?? db;
+  await enforceEmergencyLocks(input.workspaceId, "connector", scopedDatabase);
   const config = getTikTokOAuthConfig();
   const { credential, metadata } = mergeCredential({ existing: input.existingCredential, token: input.token, provider: input.provider, environment: config.environment });
   const encrypted = encryptCredential(credential);
 
-  const connector = await db.connector.upsert({
+  const connector = await database.connector.upsert({
     where: { workspaceId_provider_externalAccountId: { workspaceId: input.workspaceId, provider: input.provider, externalAccountId: credential.externalAccountId ?? "default" } },
     update: { state: "CONNECTED", displayName: providerDisplayName(input.provider), grantedScopes: credential.grantedScopes, lastHealthAt: new Date(), disabledAt: null },
     create: { workspaceId: input.workspaceId, provider: input.provider, state: "CONNECTED", displayName: providerDisplayName(input.provider), externalAccountId: credential.externalAccountId ?? "default", grantedScopes: credential.grantedScopes, lastHealthAt: new Date() },
   });
 
-  await db.connectorCredentialReference.upsert({
+  await database.connectorCredentialReference.upsert({
     where: { connectorId_referenceType: { connectorId: connector.id, referenceType: referenceTypeFor(config.environment) } },
     update: { secretRef: encrypted, expiresAt: credential.expiresAt ? new Date(credential.expiresAt) : undefined, rotatedAt: new Date() },
     create: { connectorId: connector.id, referenceType: referenceTypeFor(config.environment), secretRef: encrypted, expiresAt: credential.expiresAt ? new Date(credential.expiresAt) : undefined },
   });
-  await emitTokMetricAudit({ workspaceId: input.workspaceId, actorId: input.actorId, action: "tokmetric.connector.authorized", entityType: "connector", entityId: connector.id, correlationId: input.correlationId, outcome: "success", sourceChannel: "website", metadata });
+  await emitTokMetricAudit({ workspaceId: input.workspaceId, actorId: input.actorId, action: "tokmetric.connector.authorized", entityType: "connector", entityId: connector.id, correlationId: input.correlationId, outcome: "success", sourceChannel: "website", metadata }, scopedDatabase);
   return connector;
 }
 
-async function loadEnvironmentCredential(connectorId: string, environment: TikTokEnvironment) {
-  const ref = await db.connectorCredentialReference.findUnique({ where: { connectorId_referenceType: { connectorId, referenceType: referenceTypeFor(environment) } } });
+async function loadEnvironmentCredential(connectorId: string, environment: TikTokEnvironment, database = db) {
+  const ref = await database.connectorCredentialReference.findUnique({ where: { connectorId_referenceType: { connectorId, referenceType: referenceTypeFor(environment) } } });
   if (!ref) throw new TokMetricError(409, "REAUTHORIZATION_REQUIRED", "Connector requires reauthorization for the active TikTok environment.");
   return { ref, stored: decryptCredential<StoredTikTokCredential>(ref.secretRef) };
 }
@@ -185,17 +186,18 @@ export async function refreshConnector(input: { workspaceId: string; connectorId
   }
 }
 
-export async function disconnectConnector(input: { workspaceId: string; connectorId: string; actorId: string; correlationId: string; revoke?: boolean }) {
-  const connector = await db.connector.findFirst({ where: { id: input.connectorId, workspaceId: input.workspaceId } });
+export async function disconnectConnector(input: { workspaceId: string; connectorId: string; actorId: string; correlationId: string; revoke?: boolean }, scopedDatabase?: typeof db) {
+  const database = scopedDatabase ?? db;
+  const connector = await database.connector.findFirst({ where: { id: input.connectorId, workspaceId: input.workspaceId } });
   if (!connector) throw new TokMetricError(404, "CONNECTOR_NOT_FOUND", "Connector was not found.");
   const config = getTikTokOAuthConfig();
   if (input.revoke) {
-    const { stored } = await loadEnvironmentCredential(connector.id, config.environment);
+    const { stored } = await loadEnvironmentCredential(connector.id, config.environment, database);
     await revokeTikTokToken(stored.accessToken);
   }
-  await db.connector.update({ where: { id: connector.id }, data: { state: input.revoke ? "DISCONNECTED" : "AUTHORIZATION_REQUIRED", disabledAt: new Date() } });
-  await db.connectorCredentialReference.deleteMany({ where: { connectorId: connector.id, referenceType: referenceTypeFor(config.environment) } });
-  await emitTokMetricAudit({ workspaceId: input.workspaceId, actorId: input.actorId, action: input.revoke ? "tokmetric.connector.revoked" : "tokmetric.connector.disconnected", entityType: "connector", entityId: connector.id, correlationId: input.correlationId, outcome: "success", sourceChannel: "website" });
+  await database.connector.update({ where: { id: connector.id }, data: { state: input.revoke ? "DISCONNECTED" : "AUTHORIZATION_REQUIRED", disabledAt: new Date() } });
+  await database.connectorCredentialReference.deleteMany({ where: { connectorId: connector.id, referenceType: referenceTypeFor(config.environment) } });
+  await emitTokMetricAudit({ workspaceId: input.workspaceId, actorId: input.actorId, action: input.revoke ? "tokmetric.connector.revoked" : "tokmetric.connector.disconnected", entityType: "connector", entityId: connector.id, correlationId: input.correlationId, outcome: "success", sourceChannel: "website" }, scopedDatabase);
 }
 
 export async function updateConnectorHealth(workspaceId: string) {

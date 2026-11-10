@@ -49,6 +49,11 @@ connector store and daily planner with gateway sign-in:
    **same Supabase project** as `GEM_SUPABASE_GATEWAY_BASE_URL`. Use the
    provider-issued direct or pooler URL for the `postgres` database, with
    `sslmode=require&sslaccept=strict` and its trusted CA if needed.
+   For TokMetric account connection only, a namespaced Marketplace installation
+   can supply `GEM_SOCIAL_POSTGRES_PRISMA_URL` instead. TokMetric uses that
+   connection for gateway-session connector operations without changing the
+   shared application database. The connection must still match the sign-in
+   project and require strict TLS.
 2. Verify the existing connector, authorization-attempt, credential, workspace
    and queue tables and verify the worker gateway adapter above. Set
    `SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED=true` in the test environment.

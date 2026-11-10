@@ -1,8 +1,8 @@
 /** Explicitly bind direct social transactions to the database that owns gateway sign-in. */
-export function hasSocialTransactionalAuthority(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+export function hasSocialTransactionalAuthority(env: Readonly<Record<string, string | undefined>> = process.env, connectionOverride?: string): boolean {
   if (env.SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED !== "true") return false;
-  const connection = env.POSTGRES_PRISMA_URL?.trim() || env.DATABASE_URL?.trim() ||
-    env.POSTGRES_URL?.trim() || env.NEON_DATABASE_URL?.trim();
+  const connection = connectionOverride ?? (env.POSTGRES_PRISMA_URL?.trim() || env.DATABASE_URL?.trim() ||
+    env.POSTGRES_URL?.trim() || env.NEON_DATABASE_URL?.trim());
   if (!connection) return false;
 
   try {
