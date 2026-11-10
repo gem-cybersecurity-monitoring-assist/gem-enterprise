@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, RefreshCw, Save, ShieldAlert, UsersRound } from "lucide-react";
 import type { LiveTeamContentResult } from "@/lib/live-team-copy";
@@ -69,16 +69,26 @@ export function PersonnelLiveManager() {
   const currentRecords=useMemo(()=>registry?.records.filter(x=>
     [x.name,x.role,x.division].some(t=>t.toLowerCase().includes(search.trim().toLowerCase())))??[],
     [registry,search]);
+  // Keep unsaved edits intact during the 30-second live status refresh. A source
+  // revision or selected record change refreshes the form from Notion.
+  const teamVersionRef = useRef("");
+  const personVersionRef = useRef("");
   useEffect(()=>{
     if(!team)return;
+    const version = `${team.slug}:${teamRecord?.lastEditedTime??"unavailable"}`;
+    if(teamVersionRef.current===version)return;
+    teamVersionRef.current=version;
     setTeamDraft({title:team.title,overview:team.overview,mission:team.mission,
       responsibilities:[...team.responsibilities],deliverables:[...team.deliverables]});
-  },[team?.slug,team?.title,team?.mission,team?.overview,team?.responsibilities,team?.deliverables]);
+  },[team,teamRecord]);
   useEffect(()=>{
     if(!person)return;
+    const version = `${person.id}:${person.lastEditedTime}`;
+    if(personVersionRef.current===version)return;
+    personVersionRef.current=version;
     setPersonDraft({role:person.role,publicBio:person.publicBio});
     setConfirmName("");
-  },[person?.id,person?.lastEditedTime]);
+  },[person]);
 
   const write=async(url:string,payload:unknown)=>{
     setBusy(true);setError("");setNotice("");
