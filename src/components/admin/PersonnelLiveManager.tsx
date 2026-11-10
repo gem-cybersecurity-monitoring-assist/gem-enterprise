@@ -115,7 +115,7 @@ export function PersonnelLiveManager() {
   const changePerson=async(action:Action)=>{
     if(!person)return;
     const payload=action==="saveDraft"?
-      {action,id:person.id,expectedLastEditedTime:person.lastEditedTime,...personDraft}:
+      {action,id:person.id,expectedLastEditedTime:person.lastEditedTime,...personDraft,reason}:
       {action,id:person.id,expectedLastEditedTime:person.lastEditedTime,confirmName,reason};
     await write("/api/admin/personnel-registry",payload);
   };
@@ -212,7 +212,7 @@ export function PersonnelLiveManager() {
         </div>
         <label className="block text-sm text-slate-300">Role<input disabled={person.publishApproved||person.websiteVisibility==="Public"||busy} value={personDraft.role} onChange={e=>setPersonDraft(p=>({...p,role:e.target.value}))} className="mt-2 w-full rounded-xl border border-white/15 bg-[#081320] p-3 text-white disabled:opacity-50"/></label>
         <label className="block text-sm text-slate-300">Public biography<textarea rows={6} maxLength={1900} disabled={person.publishApproved||person.websiteVisibility==="Public"||busy} value={personDraft.publicBio} onChange={e=>setPersonDraft(p=>({...p,publicBio:e.target.value}))} className="mt-2 w-full rounded-xl border border-white/15 bg-[#081320] p-3 text-white disabled:opacity-50"/></label>
-        <button type="button" onClick={()=>void changePerson("saveDraft")} disabled={busy||person.publishApproved||person.websiteVisibility==="Public"} className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/35 px-4 py-2.5 text-sm font-bold text-cyan-300 disabled:opacity-40"><Save className="h-4 w-4"/> Save draft to Notion</button>
+        <button type="button" onClick={()=>void changePerson("saveDraft")} disabled={busy||person.publishApproved||person.websiteVisibility==="Public"||reason.trim().length<10} className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/35 px-4 py-2.5 text-sm font-bold text-cyan-300 disabled:opacity-40"><Save className="h-4 w-4"/> Save draft to Notion</button>
         <section className="rounded-2xl border border-amber-300/20 bg-amber-300/[.04] p-5">
           <h3 className="text-lg font-bold">Publication evidence and approval gates</h3>
           <p className="mt-2 text-sm leading-7 text-slate-300">Publication is unavailable unless an authorized reviewer has independently verified the source record, CEO approval, audience, identity and expiry.</p>
