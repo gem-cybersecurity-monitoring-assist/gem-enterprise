@@ -1,9 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import {
+  GatewayRequestError,
+  shouldUseSupabaseGateway,
+} from "@/lib/supabase-gateway";
+import { socialPublishingGateway } from "@/lib/social-media/publishing/gateway-client";
 import { enforceEmergencyLocks, TokMetricError } from "@/lib/tokmetric/security";
 import { decryptSocialCredential, encryptSocialCredential } from "./crypto";
-import type { SocialConnectorProvider, SocialOAuthProvider } from "./config";
+import { parseSocialConnectorProvider } from "./config";
+import type {
+  SocialBotTokenProvider,
+  SocialConnectorProvider,
+  SocialOAuthProvider,
+} from "./config";
 import type { SocialOAuthStatePayload } from "./state";
 
 const ATTEMPT_TTL_MS = 10 * 60 * 1000;
@@ -298,6 +308,239 @@ export async function persistSocialConnector(input: {
     });
   } catch (error) {
     return storeUnavailable(error);
+  }
+}
+
+// Gateway errors keep the edge function's status + stable code (so a 409
+// SOCIAL_PUBLISHING_IDEMPOTENCY_CONFLICT from the RPC survives the hop
+// instead of becoming a generic 500).
+function gatewayError(error: unknown): never {
+  if (error instanceof GatewayRequestError) {
+    throw new TokMetricError(error.statusCode, error.code, error.message);
+  }
+  throw error;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function toDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+// Row shape the gem_social_create_connector RPC returns (JSON: camelCase
+// keys, ISO timestamp strings). Mirrors SocialConnectorRecord so the
+// gateway branch returns the same record the Prisma branch returns.
+function reviveConnectorRecord(raw: Record<string, unknown>): SocialConnectorRecord {
+  const createdAt = toDate(raw.createdAt);
+  const updatedAt = toDate(raw.updatedAt);
+  if (!createdAt || !updatedAt) {
+    throw new TokMetricError(
+      500,
+      "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
+      "The social publishing gateway returned an unexpected response.",
+    );
+  }
+  return {
+    id: String(raw.id ?? ""),
+    workspaceId: String(raw.workspaceId ?? ""),
+    provider: parseSocialConnectorProvider(String(raw.provider ?? "")),
+    state: String(raw.state ?? ""),
+    displayName: String(raw.displayName ?? ""),
+    externalAccountId: toNullableString(raw.externalAccountId),
+    grantedScopes: Array.isArray(raw.grantedScopes)
+      ? (raw.grantedScopes.filter(
+          (entry): entry is string => typeof entry === "string",
+        ) as string[])
+      : [],
+    safeMetadata: isRecord(raw.safeMetadata) ? raw.safeMetadata : {},
+    lastHealthAt: toDate(raw.lastHealthAt),
+    disabledAt: toDate(raw.disabledAt),
+    createdAt,
+    updatedAt,
+  };
+}
+
+/**
+ * Create a bot-token connector (Telegram). The bot token travels as an
+ * encrypted credential (SOCIAL_TOKEN_ENCRYPTION_KEY); the target chat id is
+ * safe metadata, never a secret. The connector identity is (workspace,
+ * provider, external account key = the chat id), so creating the same
+ * Telegram connector twice returns the existing row (reactivated with the
+ * new token) instead of duplicating it. The emergency-locks check lives in
+ * the route, like disconnectSocialConnector — this function does not
+ * re-check it.
+ */
+export async function createSocialBotTokenConnector(input: {
+  workspaceId: string;
+  provider: SocialBotTokenProvider;
+  displayName: string;
+  credential: StoredSocialCredential;
+  safeMetadata?: Record<string, unknown>;
+}): Promise<SocialConnectorRecord> {
+  if (shouldUseSupabaseGateway()) {
+    return createSocialBotTokenConnectorViaGateway(input);
+  }
+  return createSocialBotTokenConnectorPrisma(input);
+}
+
+async function createSocialBotTokenConnectorPrisma(input: {
+  workspaceId: string;
+  provider: SocialBotTokenProvider;
+  displayName: string;
+  credential: StoredSocialCredential;
+  safeMetadata?: Record<string, unknown>;
+}): Promise<SocialConnectorRecord> {
+  const connectorId = randomUUID();
+  const credentialId = randomUUID();
+  const now = new Date();
+  const externalAccountKey = input.credential.externalAccountId || "default";
+  const encrypted = encryptSocialCredential(input.credential);
+
+  try {
+    return await db.$transaction(async (transaction) => {
+      // The generic type argument is avoided here on purpose: the
+      // sandbox Prisma stub leaves $queryRaw untyped, so $queryRaw<T>
+      // raises TS2347 there (the same pre-existing stub artifact as
+      // persistSocialConnector's call). The cast is identical at
+      // runtime and keeps this file clean under the stub.
+      const connectors = (await transaction.$queryRaw(Prisma.sql`
+        INSERT INTO social_connectors (
+          id,
+          workspace_id,
+          provider,
+          state,
+          display_name,
+          external_account_key,
+          external_account_id,
+          granted_scopes,
+          safe_metadata,
+          last_health_at,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${connectorId},
+          ${input.workspaceId},
+          ${input.provider},
+          'CONNECTED',
+          ${input.displayName},
+          ${externalAccountKey},
+          ${input.credential.externalAccountId ?? null},
+          ${input.credential.grantedScopes},
+          CAST(${JSON.stringify(input.safeMetadata ?? {})} AS jsonb),
+          ${now},
+          ${now},
+          ${now}
+        )
+        ON CONFLICT (workspace_id, provider, external_account_key)
+        DO UPDATE SET
+          state = 'CONNECTED',
+          display_name = EXCLUDED.display_name,
+          external_account_id = EXCLUDED.external_account_id,
+          granted_scopes = EXCLUDED.granted_scopes,
+          safe_metadata = EXCLUDED.safe_metadata,
+          disabled_at = NULL,
+          last_health_at = EXCLUDED.last_health_at,
+          updated_at = EXCLUDED.updated_at
+        RETURNING
+          id,
+          workspace_id AS "workspaceId",
+          provider,
+          state,
+          display_name AS "displayName",
+          external_account_id AS "externalAccountId",
+          granted_scopes AS "grantedScopes",
+          safe_metadata AS "safeMetadata",
+          last_health_at AS "lastHealthAt",
+          disabled_at AS "disabledAt",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+      `)) as SocialConnectorRecord[];
+      const connector = connectors[0];
+      if (!connector) throw new Error("Social connector was not returned after creation.");
+
+      // The credential row uses reference_type 'oauth:production' because
+      // that is the reference type the credential-load path filters on
+      // (lifecycle-store.ts, gem_social_load_connector_credential). A
+      // bot-token-specific reference type would make the worker unable to
+      // load the Telegram token.
+      await transaction.$executeRaw(Prisma.sql`
+        INSERT INTO social_connector_credentials (
+          id,
+          connector_id,
+          reference_type,
+          secret_ref,
+          expires_at,
+          refresh_expires_at,
+          rotated_at,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${credentialId},
+          ${connector.id},
+          'oauth:production',
+          ${encrypted},
+          NULL,
+          NULL,
+          ${now},
+          ${now},
+          ${now}
+        )
+        ON CONFLICT (connector_id, reference_type)
+        DO UPDATE SET
+          secret_ref = EXCLUDED.secret_ref,
+          rotated_at = EXCLUDED.rotated_at,
+          updated_at = EXCLUDED.updated_at
+      `);
+      return connector;
+    });
+  } catch (error) {
+    return storeUnavailable(error);
+  }
+}
+
+async function createSocialBotTokenConnectorViaGateway(input: {
+  workspaceId: string;
+  provider: SocialBotTokenProvider;
+  displayName: string;
+  credential: StoredSocialCredential;
+  safeMetadata?: Record<string, unknown>;
+}): Promise<SocialConnectorRecord> {
+  const externalAccountKey = input.credential.externalAccountId || "default";
+  const encrypted = encryptSocialCredential(input.credential);
+  try {
+    const body = await socialPublishingGateway<{
+      ok: boolean;
+      connector?: Record<string, unknown>;
+    }>("create_connector", {
+      workspaceId: input.workspaceId,
+      provider: input.provider,
+      displayName: input.displayName,
+      externalAccountKey,
+      externalAccountId: input.credential.externalAccountId ?? externalAccountKey,
+      grantedScopes: input.credential.grantedScopes,
+      safeMetadata: input.safeMetadata ?? {},
+      secretRef: encrypted,
+      now: new Date().toISOString(),
+    });
+    if (!isRecord(body.connector)) {
+      throw new TokMetricError(
+        500,
+        "SOCIAL_PUBLISHING_GATEWAY_RESPONSE_INVALID",
+        "The social publishing gateway returned an unexpected response.",
+      );
+    }
+    return reviveConnectorRecord(body.connector);
+  } catch (error) {
+    if (error instanceof TokMetricError) throw error;
+    return gatewayError(error);
   }
 }
 
