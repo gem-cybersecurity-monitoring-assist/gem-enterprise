@@ -90,7 +90,7 @@ vi.mock("@/lib/social-media/publishing/gateway-client", () => ({
   socialPublishingGateway: gateway.call,
   isSocialPublishingGatewayAdapterEnabled: () => true,
   probeSocialPublishingGatewayAdapter: async () => true,
-  EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT: 13,
+  EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT: 14,
   SOCIAL_PUBLISHING_GATEWAY_ACTIONS: [],
 }));
 vi.mock("@/lib/db", () => ({
