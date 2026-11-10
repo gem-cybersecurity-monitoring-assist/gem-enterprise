@@ -27,10 +27,11 @@ const PROBE_TIMEOUT_MS = 5_000;
 
 /**
  * How many gem_social_* routines the health probe expects. The migration
- * creates 12 phase-1 RPCs plus the health RPC itself; a partially applied
+ * creates 12 phase-1 RPCs plus the health RPC itself, and the connector
+ * creation migration adds gem_social_create_connector; a partially applied
  * migration fails the probe.
  */
-export const EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT = 13;
+export const EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT = 14;
 
 export const SOCIAL_PUBLISHING_GATEWAY_ACTIONS = [
   "health",
@@ -45,6 +46,7 @@ export const SOCIAL_PUBLISHING_GATEWAY_ACTIONS = [
   "mark_reauthorization",
   "audit_event",
   "create_job",
+  "create_connector",
   "list_jobs",
 ] as const;
 

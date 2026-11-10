@@ -82,8 +82,8 @@ describe("social publishing gateway client", () => {
           (PHASE2_RESERVED_ACTIONS as readonly string[]).includes(action),
       ).toBe(true);
     }
-    expect(SOCIAL_PUBLISHING_GATEWAY_ACTIONS).toHaveLength(13);
-    expect(EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT).toBe(13);
+    expect(SOCIAL_PUBLISHING_GATEWAY_ACTIONS).toHaveLength(14);
+    expect(EXPECTED_SOCIAL_PUBLISHING_GATEWAY_RPC_COUNT).toBe(14);
   });
 
   it("sends the machine secret as a bearer header and the anon key as apikey", async () => {
@@ -188,7 +188,7 @@ describe("social publishing gateway client", () => {
   it("probe returns true only when the health action reports the full RPC inventory", async () => {
     vi.stubEnv("SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED", "true");
     fetchMock.mockResolvedValue(
-      mockFetchResponse(200, { ok: true, rpcCount: 13 }),
+      mockFetchResponse(200, { ok: true, rpcCount: 14 }),
     );
     expect(await probeSocialPublishingGatewayAdapter()).toBe(true);
     const [, init] = fetchMock.mock.calls[0] as [
