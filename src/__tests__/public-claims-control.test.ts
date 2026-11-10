@@ -94,6 +94,21 @@ describe("public claims control", () => {
     expect(page).not.toContain("National Cybersecurity Alliance");
   });
 
+  it("provides navigable leadership and team function anchors without exposing roster claims", () => {
+    const page = source("src/app/company-controlled/page.tsx");
+
+    expect(page).toContain('id="leadership"');
+    expect(page).toContain('id="teams"');
+    expect(page).toContain('href="/personnel"');
+    expect(page).toContain("GEM Cybersecurity & Monitoring Assist");
+    expect(page).toContain("Alliance Trust Realty (ATR)");
+    expect(page).toContain("Shared enterprise operations");
+    expect(page).toContain("identity matching, image consent and role approval");
+    expect(page).not.toContain("Sarah Johnson");
+    expect(page).not.toContain("40+ Specialists");
+    expect(page).not.toContain("24/7 staffed");
+  });
+
   it("keeps public access requests non-binding and free of response promises", () => {
     const page = source("src/app/request-access-controlled/page.tsx");
 
