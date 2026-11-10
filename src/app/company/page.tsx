@@ -30,28 +30,28 @@ export const metadata: Metadata = { title: "Company | GEM Enterprise" };
 
 const executives = [
   {
-    name: "Alexander Mercer",
-    title: "Chief Executive Officer",
-    bio: "A veteran of enterprise risk and institutional finance with over two decades navigating global markets, regulatory environments, and high-stakes security operations. Mercer founded GEM Enterprise with a mandate to deliver intelligence-grade security at institutional scale, drawing on prior leadership roles at a major sovereign wealth fund and a Big Four advisory practice.",
-    initials: "AM",
+    name: "Executive Office & Governance",
+    title: "Company-level strategic oversight",
+    bio: "Defines enterprise direction, approves material decisions, and coordinates priorities between GEM Server Security, Alliance Trust Realty, and shared operations. Specific appointments require documentary confirmation.",
+    initials: "EO",
   },
   {
-    name: "Dr. Samira Okonkwo",
-    title: "Chief Security Officer",
-    bio: "Former lead of a national-level cyber threat intelligence unit with deep expertise in advanced persistent threats, critical infrastructure protection, and zero-trust architecture. Dr. Okonkwo holds a doctorate in information systems security and has testified before regulatory bodies on enterprise cybersecurity standards.",
-    initials: "SO",
+    name: "Cybersecurity Leadership & Assurance",
+    title: "Security and operational governance",
+    bio: "Defines responsibilities for threat monitoring, control oversight, incident readiness and evidence review. The existence of this function does not establish a staffed security operations center or named officer.",
+    initials: "CS",
   },
   {
-    name: "Marcus Thornton",
-    title: "Chief Financial Officer",
-    bio: "A seasoned financial executive with institutional investment banking, fund administration, and multi-jurisdictional regulatory compliance experience spanning over 18 years. Thornton leads GEM's financial operations and oversees client asset protection frameworks with prior tenures at a Tier 1 investment bank and a leading asset management firm.",
-    initials: "MT",
+    name: "Realty Advisory & Governance",
+    title: "Alliance Trust Realty (ATR)",
+    bio: "Coordinates realty service design, client disclosures, property documentation, and professional referral pathways. Any brokerage or agent activity depends on independently verified licensing.",
+    initials: "ATR",
   },
   {
-    name: "Catherine Voss, Esq.",
-    title: "General Counsel & Chief Compliance Officer",
-    bio: "An accomplished attorney specializing in data privacy law, regulatory enforcement, and corporate governance across financial services and technology sectors. Voss provides legal oversight for all client engagements, compliance programs, and GEM's operational policies across multiple jurisdictions, including prior service as Deputy General Counsel at a global financial institution.",
-    initials: "CV",
+    name: "VIP & Client Relationship Desk",
+    title: "Restricted executive service function",
+    bio: "Outlines processes for priority client enquiries, confidential escalations and governance review. It is a service desk rather than a named board member and does not expose private client relationships.",
+    initials: "VIP",
   },
 ];
 
@@ -81,84 +81,84 @@ const values = [
 const teams = [
   {
     icon: Cpu,
-    name: "Cybersecurity Division",
-    headcount: "40+ Specialists",
-    description:
-      "Our core security team operates the GEM Security Operations Center and delivers threat intelligence, incident response, penetration testing, and security architecture services to enterprise clients globally. This division maintains 24/7 operational coverage across all client environments.",
-    capabilities: ["SOC Operations", "Threat Intelligence", "Red Team", "Digital Forensics"],
+    name: "GEM Cybersecurity & Monitoring Assist",
+    description: "The GEM cybersecurity operating model covers leadership, defensive monitoring, risk intelligence and documented response workflows. Individual staffing and live service coverage require independent verification.",
+    capabilities: ["Security monitoring design", "Threat intelligence", "Incident readiness", "Risk reporting"],
   },
   {
     icon: Shield,
-    name: "Intelligence Division",
-    headcount: "12+ Analysts",
-    description:
-      "A specialized unit focused on open-source intelligence, dark web monitoring, geopolitical risk analysis, and adversary profiling. The Intelligence Division informs proactive defense decisions across all client engagements and contributes to GEM's proprietary threat intelligence feeds.",
-    capabilities: ["OSINT Operations", "Dark Web Monitoring", "Adversary Profiling", "Geopolitical Risk"],
+    name: "Threat Intelligence & Data Analysis",
+    description: "Research and analysis functions intended to turn authorized information into defensible findings, source records and actionable security recommendations.",
+    capabilities: ["Defensive intelligence", "Data analysis", "Evidence handling", "Research briefings"],
   },
   {
-    icon: TrendingUp,
-    name: "Financial Security Division",
-    headcount: "15+ Analysts",
-    description:
-      "Specialists in financial institution security, fraud prevention, AML compliance, and regulatory risk. This division protects client financial operations, supports risk quantification and regulatory reporting, and coordinates with forensic accounting partners on complex investigations.",
-    capabilities: ["Transaction Security", "Fraud Prevention", "AML Compliance", "Financial Forensics"],
+    icon: Scale,
+    name: "Governance, Legal & Compliance",
+    description: "Cross-division support for policy reviews, documented control evidence and compliance coordination, with regulated legal services limited to appropriately authorized professionals.",
+    capabilities: ["Control documentation", "Legal coordination", "Audit readiness", "Privacy processes"],
   },
   {
     icon: Home,
-    name: "Real Estate Division",
-    headcount: "10+ Advisors",
-    description:
-      "Security advisors focused on property and transaction protection. This team secures real estate investment platforms, property management systems, and closing processes. The division maintains integrations with major county recorder databases for real-time deed monitoring.",
-    capabilities: ["Property Security", "Title Monitoring", "Closing Protection", "Portfolio Management"],
+    name: "Alliance Trust Realty (ATR)",
+    description: "Property advisory, client-service and transaction-coordination functions subject to actual professional appointment, jurisdictional rules and applicable brokerage licensing.",
+    capabilities: ["Client enquiries", "Property documentation", "Agent onboarding", "Advisory workflow"],
   },
   {
     icon: Settings,
-    name: "Operations Division",
-    headcount: "20+ Professionals",
-    description:
-      "The operational backbone of GEM Enterprise. This team manages client onboarding, platform infrastructure, internal security, vendor relationships, and organizational resilience programs. Operations ensures consistent service delivery and SLA adherence across all engagements.",
-    capabilities: ["Client Onboarding", "Platform Operations", "Vendor Management", "Business Continuity"],
+    name: "Client Support & Enterprise Operations",
+    description: "Shared service responsibilities for intake, case routing, escalations, business continuity and operations; staffing or service-level commitments must be established separately.",
+    capabilities: ["Support intake", "Escalation records", "Client follow-up", "Operating procedures"],
+  },
+  {
+    icon: Cpu,
+    name: "Software Engineering & Cloud Operations",
+    description: "Functional planning for software quality, platform maintenance, deployment review and incident response in the existing enterprise SaaS services.",
+    capabilities: ["Software engineering", "Quality assurance", "Release controls", "Platform reliability"],
+  },
+  {
+    icon: TrendingUp,
+    name: "Financial & Affiliate Support",
+    description: "Non-custodial administrative and affiliate-support coordination. This does not claim banking authority, investment management licenses or authorization to handle client funds.",
+    capabilities: ["Documentation routing", "Risk escalation", "Operational reporting", "Compliance checks"],
   },
   {
     icon: Gavel,
-    name: "Compliance Division",
-    headcount: "8+ Attorneys & Compliance Officers",
-    description:
-      "In-house legal and compliance professionals ensuring GEM operates within applicable regulatory frameworks and that client engagements adhere to the highest standards of legal and ethical practice. This division manages KYC/AML screening, regulatory filings, and client compliance advisory.",
-    capabilities: ["Regulatory Compliance", "KYC/AML Oversight", "Data Privacy", "Audit Support"],
+    name: "People, Marketing & Business Coordination",
+    description: "Planned cross-functional activities for onboarding, regional sales process design, brand communications, internal training and partner evidence review.",
+    capabilities: ["People operations", "Brand content", "Sales coordination", "Partner review"],
   },
 ];
 
 const partners = [
   {
     name: "National Cybersecurity Alliance",
-    type: "Industry Association",
-    description: "Strategic membership providing access to coordinated threat intelligence sharing, policy advocacy, and best-practice frameworks for enterprise security programs.",
+    type: "Industry reference",
+    description: "A public educational resource for cybersecurity awareness and organizational practices. GEM membership or partnership is not established by this listing.",
   },
   {
     name: "Financial Services Information Sharing and Analysis Center (FS-ISAC)",
-    type: "Intelligence Consortium",
-    description: "Participation in the global financial sector's primary threat intelligence sharing network, enabling real-time correlation of financial sector-specific threats.",
+    type: "Sector reference",
+    description: "A recognized sector organization associated with financial threat-information sharing. No membership, feed access or data-sharing agreement is claimed here.",
   },
   {
     name: "American Land Title Association (ALTA)",
-    type: "Industry Body",
-    description: "Affiliation with the national association for title insurance and settlement services, supporting GEM's real estate security standards and title fraud prevention programs.",
+    type: "Realty reference",
+    description: "An industry association relevant to title and settlement practices. No GEM/ATR membership or legal authority is implied.",
   },
   {
-    name: "ISACA — Information Systems Audit and Control Association",
-    type: "Standards Body",
-    description: "Organizational membership supporting GEM's commitment to internationally recognized IT governance, audit, and security standards across all client engagements.",
+    name: "ISACA",
+    type: "Governance reference",
+    description: "Industry frameworks and professional development resources for governance, audit and security. This does not represent verified corporate membership.",
   },
   {
     name: "Association of Certified Fraud Examiners (ACFE)",
-    type: "Professional Association",
-    description: "Partnership supporting GEM's financial forensics capabilities and professional development standards for fraud examination and financial crime investigation.",
+    type: "Professional reference",
+    description: "Professional learning resources relevant to fraud examination. No GEM affiliate, certification or partnership status is asserted.",
   },
   {
     name: "Cloud Security Alliance (CSA)",
-    type: "Research Organization",
-    description: "Contributing membership to the global standards body defining cloud security best practices, informing GEM's cloud security assessment frameworks and client advisory services.",
+    type: "Security reference",
+    description: "Cloud-security research and knowledge-sharing resources. This listing is not evidence of membership, sponsorship or partnership.",
   },
 ];
 
@@ -177,15 +177,14 @@ export default function CompanyPage() {
             <span className="text-gradient-primary">Driven by Intelligence.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            GEM Enterprise exists to close the gap between enterprise ambition and operational security reality.
-            We deliver intelligence-grade protection for organizations that cannot afford to be wrong.
+            GEM Enterprise is developing a connected environment for cybersecurity, risk governance and responsible operational services, with each capability represented according to its documented readiness.
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {[
               { label: "Leadership & Vision", href: "#leadership" },
-              { label: "Executive Board", href: "#board" },
+              { label: "Leadership functions", href: "#board" },
               { label: "Teams", href: "#teams" },
-              { label: "Partners & Trustees", href: "#partners" },
+              { label: "Industry references", href: "#partners" },
             ].map((link) => (
               <Link
                 key={link.label}
@@ -285,8 +284,8 @@ export default function CompanyPage() {
               <Briefcase className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold">Executive Board</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">The leadership team guiding GEM Enterprise</p>
+              <h2 className="text-3xl font-bold">Leadership &amp; Oversight Functions</h2>
+              <p className="text-muted-foreground text-sm mt-0.5">Organizational functions and responsibilities; named appointments require separate confirmation</p>
             </div>
           </div>
           <Separator className="mb-12" />
@@ -390,8 +389,8 @@ export default function CompanyPage() {
               <Handshake className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold">Partners & Trustees</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">Strategic alliances and institutional relationships that strengthen our capabilities</p>
+              <h2 className="text-3xl font-bold">Industry Standards &amp; Professional References</h2>
+              <p className="text-muted-foreground text-sm mt-0.5">Reference organizations and resources; no membership or partnership is asserted without evidence</p>
             </div>
           </div>
           <Separator className="mb-12" />
@@ -418,9 +417,8 @@ export default function CompanyPage() {
           <div className="mt-8 glass-panel rounded-xl p-5 border-border/30 text-center">
             <Globe className="h-4 w-4 text-primary mx-auto mb-2" />
             <p className="text-xs text-muted-foreground max-w-2xl mx-auto">
-              Confidential trustee and institutional partner identities are disclosed to clients under NDA
-              during the onboarding process. GEM Enterprise does not publicly disclose specific financial
-              custodian or institutional relationships without written authorization.
+              These reference organizations are not identified as GEM Enterprise partners, trustees, sponsors or members.
+              Any verified relationship or professional affiliation requires supporting records and permission before publication.
             </p>
           </div>
         </div>
