@@ -34,7 +34,7 @@ export async function PATCH(req:NextRequest){
   if(!parsed.success)return respond({error:"Team content is invalid",details:parsed.error.flatten()},400);
   const {reason,blockId,expectedLastEditedTime,...candidate}=parsed.data;
   const validation=validateTeamCopyUpdate(candidate);
-  if(!validation.ok)return respond({error:validation.error},400);
+  if(validation.ok === false)return respond({error:validation.error},400);
   const token=process.env.NOTION_API_TOKEN?.trim();
   const pageId=process.env.NOTION_TEAM_COPY_PAGE_ID?.trim()||DEFAULT_TEAM_COPY_PAGE_ID;
   if(!token)return respond({error:"The website content connection is not active",code:"NOTION_NOT_CONNECTED"},503);
