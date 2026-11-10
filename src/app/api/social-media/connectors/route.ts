@@ -1,5 +1,4 @@
 import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
-import { createSocialBotTokenConnector } from "@/lib/social-media/oauth/store";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -15,20 +14,13 @@ import {
   disconnectSocialConnector,
   listSocialConnectors,
 } from "@/lib/social-media/oauth/connectors";
+import { createSocialBotTokenConnector } from "@/lib/social-media/oauth/store";
 import { getPausedSocialProviders } from "@/lib/social-media/oauth/provider-pause";
 import { readLiveProbeSignal } from "@/lib/social-media/oauth/probes";
 
 const disconnectSchema = z.object({
   workspaceId: z.string().trim().min(1),
   connectorId: z.string().trim().min(1),
-});
-
-const createConnectorSchema = z.object({
-  workspaceId: z.string().trim().min(1),
-  provider: z.literal("telegram"),
-  botToken: z.string().trim().min(1).max(256),
-  displayName: z.string().trim().min(1).max(120).optional(),
-  idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 function requireSameOrigin(request: NextRequest) {
@@ -80,6 +72,80 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const createConnectorSchema = z.object({
+  workspaceId: z.string().trim().min(1),
+  provider: z.literal("TELEGRAM"),
+  telegramChatId: z.string().trim().min(1),
+  botToken: z.string().trim().min(1),
+  displayName: z.string().trim().min(1).optional(),
+  telegramPublicChannel: z.string().trim().min(1).optional(),
+});
+
+export async function POST(request: NextRequest) {
+  const cid = correlationId(request);
+  try {
+    requireSameOrigin(request);
+    const session = await requireSocialConnectorSession(request);
+    const parsed = await parseJson(request, createConnectorSchema);
+    const membership = await requireSocialConnectorWorkspace(parsed.workspaceId, session);
+    requirePermission(membership, "manage", "connectors");
+    await enforceEmergencyLocks(parsed.workspaceId, "connector");
+    const telegramChatId = parsed.telegramChatId;
+    const safeMetadata: Record<string, unknown> = { telegramChatId };
+    if (parsed.telegramPublicChannel) {
+      safeMetadata.telegramPublicChannel = parsed.telegramPublicChannel;
+    }
+    // The bot token travels as an encrypted credential; the chat id is
+    // safe metadata. The token and the secretRef never leave this server
+    // and never appear in the response — the returned connector record
+    // carries no secret fields by construction.
+    const connector = await createSocialBotTokenConnector({
+      workspaceId: parsed.workspaceId,
+      provider: "TELEGRAM",
+      displayName: parsed.displayName ?? "Telegram",
+      credential: {
+        provider: "TELEGRAM",
+        accessToken: parsed.botToken,
+        grantedScopes: [],
+        externalAccountId: telegramChatId,
+      },
+      safeMetadata,
+    });
+    await emitTokMetricAudit({
+      workspaceId: parsed.workspaceId,
+      actorId: session.userId,
+      action: "social.connector.authorized",
+      entityType: "connector",
+      entityId: connector.id,
+      correlationId: cid,
+      outcome: "success",
+      sourceChannel: "website",
+      metadata: {
+        provider: "TELEGRAM",
+        telegramChatId,
+        externalPublishingEnabled: false,
+      },
+    });
+    const pausedProviders = await getPausedSocialProviders(parsed.workspaceId);
+    const enriched = {
+      ...connector,
+      providerPaused: new Set(pausedProviders).has(connector.provider),
+      liveProbe: readLiveProbeSignal(connector.safeMetadata),
+    };
+    return NextResponse.json(
+      {
+        ok: true,
+        correlationId: cid,
+        connector: enriched,
+        externalActionTaken: false,
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return tokMetricErrorResponse(error, cid);
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   const cid = correlationId(request);
   try {
@@ -115,59 +181,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(
       { ok: true, correlationId: cid, ...result },
       { headers: { "Cache-Control": "no-store" } },
-    );
-  } catch (error) {
-    return tokMetricErrorResponse(error, cid);
-  }
-}
-
-export async function POST(request: NextRequest) {
-  const cid = correlationId(request);
-  try {
-    requireSameOrigin(request);
-    const session = await requireSocialConnectorSession(request);
-    const parsed = await parseJson(request, createConnectorSchema);
-    const body = {
-      workspaceId: parsed.workspaceId!,
-      provider: parsed.provider,
-      botToken: parsed.botToken!,
-      displayName: parsed.displayName,
-      idempotencyKey: parsed.idempotencyKey!,
-    };
-    const membership = await requireSocialConnectorWorkspace(body.workspaceId, session);
-    requirePermission(membership, "manage", "connectors");
-    await enforceEmergencyLocks(body.workspaceId, "connector");
-    const result = await createSocialBotTokenConnector({
-      workspaceId: body.workspaceId,
-      provider: body.provider,
-      botToken: body.botToken,
-      displayName: body.displayName,
-      idempotencyKey: body.idempotencyKey,
-      actorId: session.userId,
-    });
-    await emitTokMetricAudit({
-      workspaceId: body.workspaceId,
-      actorId: session.userId,
-      action: "social.connector.created",
-      entityType: "connector",
-      entityId: result.connector.id,
-      correlationId: cid,
-      outcome: "success",
-      sourceChannel: "website",
-      metadata: {
-        provider: "telegram",
-        credentialStored: "secretRef",
-        externalPublishingEnabled: false,
-      },
-    });
-    return NextResponse.json(
-      {
-        ok: true,
-        correlationId: cid,
-        connector: result.connector,
-        externalActionTaken: false,
-      },
-      { status: 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     return tokMetricErrorResponse(error, cid);
