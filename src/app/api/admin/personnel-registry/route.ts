@@ -44,7 +44,10 @@ export async function POST(req:NextRequest){
    const targetName=parsed.data.name.toLocaleLowerCase();
    if(current.records.some(r=>r.name.trim().toLocaleLowerCase()===targetName))
      return respond({error:"This name already exists in the registry. Open the existing record instead.",code:"DUPLICATE_RECORD"},409);
-   const properties=buildUnapprovedDraftProperties(parsed.data);
+   const {name,role,division,type,publicBio}=parsed.data;
+   if(!name||!role||!division||!type||publicBio===undefined)
+     return respond({error:"Personnel draft fields are required"},400);
+   const properties=buildUnapprovedDraftProperties({name,role,division,type,publicBio});
    const response=await fetch("https://api.notion.com/v1/pages",{
      method:"POST",
      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json","Notion-Version":"2025-09-03"},
