@@ -8,7 +8,7 @@ const read = (p: string) => readFileSync(join(process.cwd(),p),"utf8");
 describe("public people and team publication controls",()=>{
   it("shows functional overview even when no staff records are approved",()=>{
     const page=read("src/app/personnel/page.tsx");
-    expect(page).toContain("<PersonnelFunctionsExplorer teams={publicFunctionalTeams} divisions={publicDivisions} />");
+    expect(page).toContain("<PersonnelFunctionsExplorer teams={teamContent.teams} divisions={publicDivisions} />");
     expect(page).toContain("Individual professional profiles are awaiting publication approval");
     expect(page).toContain("id=\"approved-people\"");
     expect(page).toContain('href="#team-functions"');
@@ -25,7 +25,7 @@ describe("public people and team publication controls",()=>{
     const teamPage=read("src/app/personnel/teams/[slug]/page.tsx");
     expect(getPublicFunctionalTeam("vip-relationships")).toBeNull();
     expect(teamPage).toContain("if(!team) notFound()");
-    expect(teamPage).toContain("getPublicFunctionalTeam");
+    expect(teamPage).toContain("getLiveTeamContent");
     expect(publicFunctionalTeams.map(t=>t.status)).not.toContain("restricted");
   });
   it("404s private or missing people, looking them up only in the approved public result",()=>{

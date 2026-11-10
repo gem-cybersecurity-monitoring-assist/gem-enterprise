@@ -310,10 +310,17 @@ export const adminPortalNavGroups: PlatformNavGroup[] = [
         description: "Administrative overview and route directory.",
       },
       {
+        href: "/app/admin/personnel-management",
+        icon: "UserCheck",
+        label: "People & Teams Live Management",
+        description: "Live Notion source editing, personnel evidence review, publication and emergency unpublishing.",
+        ownerOnly: false,
+      },
+      {
         href: "/app/admin/team-gallery",
         icon: "Users",
-        label: "Teams Gallery Preview",
-        description: "Private review of linked Notion staff photographs and company roles.",
+        label: "Teams Source Gallery",
+        description: "Private source-media review of original Notion photographs and organization roles.",
       },
       {
         href: "/app/admin/client-operations",

@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, FileCheck2, ShieldCheck, UsersRound } from "lucide-react";
-import { getPublicFunctionalTeam, publicFunctionalTeams } from "@/lib/public-personnel-teams";
+import { getLiveTeamContent } from "@/lib/live-team-copy";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{slug:string}> }): Promise<Metadata> {
   const { slug } = await params;
-  const team = getPublicFunctionalTeam(slug);
+  const source = await getLiveTeamContent();
+  const team = source.teams.find(x=>x.slug===slug);
   if (!team) return { title:"Team not found | GEM Enterprise", robots: {index:false} };
   return {
     title: `${team.title} | GEM Enterprise`,
@@ -19,9 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{slug:strin
 
 export default async function PublicTeamProfile({params}:{params:Promise<{slug:string}>}) {
   const {slug} = await params;
-  const team = getPublicFunctionalTeam(slug);
+  const source = await getLiveTeamContent();
+  const team = source.teams.find(x=>x.slug===slug);
   if(!team) notFound();
-  const related=publicFunctionalTeams.filter(x=>x.division===team.division && x.slug!==slug).slice(0,3);
+  const related=source.teams.filter(x=>x.division===team.division && x.slug!==slug).slice(0,3);
   return <main className="min-h-screen bg-[#020817] text-white">
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:py-14">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
