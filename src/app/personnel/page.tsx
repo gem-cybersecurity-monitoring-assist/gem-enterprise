@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   AlertTriangle,
+  ArrowRight,
   BadgeCheck,
   Building2,
   ExternalLink,
@@ -9,6 +10,8 @@ import {
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PersonnelFunctionsExplorer } from "@/components/public/PersonnelFunctionsExplorer";
+import { publicDivisions, publicFunctionalTeams } from "@/lib/public-personnel-teams";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getPublicDirectory,
@@ -18,9 +21,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Verified Personnel Directory | GEM Enterprise",
+  title: "People, Teams & Professional Functions | GEM Enterprise",
   description:
-    "Publication-controlled directory of GEM personnel and approved professional profiles.",
+    "Explore GEM Enterprise organizational functions and approved public professional profiles.",
   alternates: { canonical: "/personnel" },
 };
 
@@ -61,6 +64,7 @@ function ProfileCard({ profile }: { profile: PublicDirectoryProfile }) {
         </div>
 
         {profile.bio && <p className="mt-5 text-sm leading-7 text-slate-300">{profile.bio}</p>}
+        <Link href={`/personnel/profile/${profile.id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-white">Full verified profile <ArrowRight className="h-4 w-4" /></Link>
 
         {(profile.licenseType ||
           profile.licenseAuthority ||
@@ -126,24 +130,34 @@ export default async function PersonnelPage() {
             </Badge>
           </div>
           <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">
-            Verified people and professional teams
+            People, teams &amp; professional functions
           </h1>
           <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">
-            This page publishes only records that have completed evidence review and received
-            explicit website approval. Private sessions, VIP governance records, evidence files,
-            internal notes, and license numbers are never displayed here.
+            Explore the departments and professional functions that shape GEM Enterprise.
+            Individual biographies appear only when identity, role, evidence and publication
+            authorization have been reviewed. Private records and license numbers remain confidential.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="#team-functions" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-[#081525] hover:bg-cyan-300">
+              Explore our teams <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="#approved-people" className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10">
+              Approved people
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <PersonnelFunctionsExplorer teams={publicFunctionalTeams} divisions={publicDivisions} />
+
+      <section id="approved-people" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6">
         {hasProfiles ? (
           <>
             <div className="mb-7 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold">Published directory</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  {directory.profiles.length} human-approved public{" "}
+                  {directory.profiles.length} reviewed public{" "}
                   {directory.profiles.length === 1 ? "profile" : "profiles"}
                 </p>
               </div>
@@ -156,8 +170,8 @@ export default async function PersonnelPage() {
             </div>
           </>
         ) : (
-          <div className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.06] p-8 sm:p-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-200">
+          <div className="rounded-3xl border border-white/10 bg-[#0c1929] p-6 sm:p-8">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/[.05] text-cyan-200">
               {directory.status === "provider_error" ? (
                 <AlertTriangle className="h-6 w-6" />
               ) : (
@@ -165,21 +179,29 @@ export default async function PersonnelPage() {
               )}
             </div>
             <h2 className="mt-5 text-2xl font-semibold">
-              {directory.status === "not_configured"
-                ? "Directory publication is not configured"
-                : directory.status === "provider_error"
-                  ? "Directory is temporarily unavailable"
-                  : "No profiles are approved for public publication"}
+              {directory.status === "provider_error"
+                ? "Individual profiles are temporarily unavailable"
+                : "Individual professional profiles are awaiting publication approval"}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-              GEM does not substitute sample people or generated credentials when verified public
-              records are unavailable. An authorized reviewer must verify evidence and approve each
-              record before it can appear on this page.
+              The department profiles above describe professional functions without assigning
+              unverified people to them. Named biographies and portraits will appear here only
+              after evidence review, consent, and explicit publication approval.
             </p>
           </div>
         )}
 
-        <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm leading-7 text-slate-400">
+        <div className="mt-8 flex flex-col gap-5 rounded-3xl border border-cyan-300/15 bg-gradient-to-r from-[#13283a] to-[#0b1929] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <h2 className="text-xl font-semibold">Connect with the appropriate team</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">Share what you are looking to accomplish. We can route the enquiry according to scope, availability and professional qualifications.</p>
+          </div>
+          <Link href="/get-started" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-[#081525] hover:bg-cyan-300">
+            Contact GEM <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm leading-7 text-slate-400">
           Publication approval confirms that a record may appear on this website; it does not
           replace verification by the issuing authority. For regulated work, confirm the
           professional&apos;s current standing directly with the relevant public registry.
