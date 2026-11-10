@@ -203,7 +203,14 @@ describe("cross-platform social OAuth foundation", () => {
     expect(connectors).toContain("CROSS_ORIGIN_REQUEST_BLOCKED");
     expect(connectors).toContain('enforceEmergencyLocks(body.workspaceId, "connector")');
     expect(connectors).toContain("credentialDeleted: true");
-    expect(connectors).not.toContain("accessToken");
+        // The Telegram POST handler is the single legitimate accessToken use:
+    // it passes the bot token as the credential's accessToken so the store
+    // can encrypt it server-side. The token never appears in a response
+    // (see social-telegram-connector-create.test.ts, "never returns the
+    // token"). Nothing else in this route may mention an access token.
+    const accessTokenUses = connectors.match(/accessToken/g) ?? [];
+    expect(accessTokenUses).toHaveLength(1);
+    expect(connectors).toContain("accessToken: parsed.botToken");
     expect(connectors).not.toContain("refreshToken");
   });
 
