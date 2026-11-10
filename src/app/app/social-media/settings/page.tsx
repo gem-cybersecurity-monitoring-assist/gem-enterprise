@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Settings2, ShieldCheck } from "lucide-react";
-import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
-import { getSafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
+import { socialAccountsHref } from "@/lib/social-media/channel-routes";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
 import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
 import { getSocialBackendReadiness } from "@/lib/social-media/backend-readiness";
 
 export default function SocialMediaSettingsPage() {
   const providers = getSocialMediaProviderReadiness();
-  const oauthProviders = getSafeSocialOAuthReadiness();
   const backend = getSocialBackendReadiness(shouldUseSupabaseGateway());
   const configured = providers.filter((provider) => provider.configurationReady).length;
   const liveReady = providers.filter((provider) => provider.externalWriteAllowed).length;
@@ -42,7 +40,9 @@ export default function SocialMediaSettingsPage() {
         <p className="mt-2 text-sm text-amber-100/80">Provider configuration and sign-in do not certify live posting. Nothing is published from this status check.</p>
       </section>
 
-      <SocialConnectorPanel providers={oauthProviders} />
+      <Link href={socialAccountsHref()} className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/25 px-4 py-2 text-sm font-semibold text-cyan-200">
+        Manage social accounts <ArrowRight className="h-4 w-4" />
+      </Link>
 
       <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
         <p className="text-sm leading-6 text-amber-100/80">

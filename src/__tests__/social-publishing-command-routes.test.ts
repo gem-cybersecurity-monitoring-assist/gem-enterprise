@@ -27,7 +27,7 @@ describe("social publishing command routes", () => {
     expect(campaignsPage).toContain("ContentOrchestratorPanel");
     expect(queuePage).toContain("SocialPublishingQueuePanel");
     expect(activityPage).toContain("SocialPublishingQueuePanel");
-    expect(settingsPage).toContain("SocialConnectorPanel");
+    expect(settingsPage).toContain("socialAccountsHref()");
   });
 
   it("keeps provider activation and queue writes outside these new operator pages", () => {

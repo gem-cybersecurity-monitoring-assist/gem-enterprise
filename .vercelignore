@@ -53,6 +53,7 @@ supabase/migrations/*
 !supabase/migrations/20260813123000_organization_workspace_operating_system.sql
 !supabase/migrations/20260829120000_news_refresh_cadence.sql
 !supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql
+!supabase/migrations/20261109150000_social_gateway_rpc_timestamptz_outputs.sql
 
 # Documentation is excluded from deployment bundles
 *.md

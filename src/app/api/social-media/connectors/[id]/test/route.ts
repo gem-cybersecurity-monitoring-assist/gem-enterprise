@@ -1,10 +1,9 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import {
   correlationId,
   emitTokMetricAudit,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -33,7 +32,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   let actorId: string | undefined;
 
   try {
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     actorId = session.userId;
     const { id } = await context.params;
     connectorId = id?.trim();
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!workspaceId) {
       throw new TokMetricError(400, "VALIDATION_ERROR", "workspaceId is required.");
     }
-    const membership = await requireWorkspaceAccess(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
     requirePermission(membership, "manage", "connectors");
 
     const stored = await loadSocialConnectorCredential({ workspaceId, connectorId });

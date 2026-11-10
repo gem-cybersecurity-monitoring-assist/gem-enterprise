@@ -37,6 +37,40 @@ The publishing worker runs against the Supabase gateway only when the adapter is
 | Machine secret | Set `SOCIAL_GATEWAY_ADAPTER_SECRET` in Supabase (`supabase secrets set ... --project-ref slzdjoqpzbkwzuaexlkj`) and in Vercel (production, sensitive type) — same value. |
 | Flag | Set `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED=true` in Vercel production ONLY after the live verification (health probe passes, claim/mark/idempotency checks) — then redeploy. Until then the cron gate stays 503 and readiness stays `BLOCKED_GATEWAY_BACKEND`. |
 
+## Social OAuth and daily scheduling with gateway sign-in
+
+The worker adapter can process queued jobs, but does not create OAuth attempts
+or run the daily content planner by itself. To use the existing transactional
+connector store and daily planner with gateway sign-in:
+
+1. Keep `GEM_AUTH_GATEWAY_ENABLED=true` when adding the Prisma URL. The
+   application otherwise selects direct sign-in when a database URL is present.
+   Configure the canonical Vercel project with a Prisma connection to the
+   **same Supabase project** as `GEM_SUPABASE_GATEWAY_BASE_URL`. Use the
+   provider-issued direct or pooler URL for the `postgres` database, with
+   `sslmode=require&sslaccept=strict` and its trusted CA if needed.
+   For TokMetric account connection only, a namespaced Marketplace installation
+   can supply `GEM_SOCIAL_POSTGRES_PRISMA_URL` instead. TokMetric uses that
+   connection for gateway-session connector operations without changing the
+   shared application database. The connection must still match the sign-in
+   project and require strict TLS.
+2. Verify the existing connector, authorization-attempt, credential, workspace
+   and queue tables and verify the worker gateway adapter above. Set
+   `SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED=true` in the test environment.
+   Leave the live publication flags off during connection and queue checks.
+3. With an active account and explicit active workspace membership, open
+   Accounts and authorize each destination. Verify the provider-returned
+   identity and test credential health. Meta can return separate Page and
+   Instagram Professional destinations from the same grant.
+4. Verify daily planning and queue processing against the same workspace.
+   A connected account alone does not release a post. Before live activation,
+   confirm the exact destination and approved content, schedule, provider
+   access, and workspace locks. Verify delivery by the provider post ID.
+
+To stop the new gateway transaction path, turn the flag off and redeploy.
+To stop outbound work, use the existing workspace emergency or provider pause
+controls. This configuration does not change TokMetric's separate live gates.
+
 ## Per provider
 
 Connect URL pattern (sign in as an admin first): `https://www.gemcybersecurityassist.com/api/social-media/oauth/<provider>/start`
@@ -57,7 +91,7 @@ TikTok connects only through TokMetric. See `docs/tokmetric/activation-runbook.m
 |---|---|
 | Console | developers.tiktok.com → app with Login Kit and Content Posting API |
 | Redirect URL | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/callback` |
-| Variables | `TOKMETRIC_TIKTOK_CLIENT_KEY`, `TOKMETRIC_TIKTOK_CLIENT_SECRET`, `TOKMETRIC_TIKTOK_OAUTH_REDIRECT_URL`, `TOKMETRIC_TIKTOK_OAUTH_ENABLED=true`, `TIKTOK_ENVIRONMENT=sandbox` until app review passes |
+| Variables | `TOKMETRIC_TIKTOK_CLIENT_KEY`, `TOKMETRIC_TIKTOK_CLIENT_SECRET`, `TOKMETRIC_TIKTOK_OAUTH_REDIRECT_URL`, `TOKMETRIC_TIKTOK_OAUTH_ENABLED=true`, `TIKTOK_ENVIRONMENT=sandbox` until app review passes. The unified social-media flow also needs `TIKTOK_SOCIAL_REDIRECT_URI` (its own allow-listed callback URL, `/api/social-media/oauth/tiktok/callback`) and `TIKTOK_APP_AUDIT_APPROVED=true` (gates the TikTok connection until the app audit passes) |
 | Connect | `https://www.gemcybersecurityassist.com/api/tokmetric/oauth/start`, then check `/tokmetric/accounts` |
 | TikTok Shop (optional) | Partner Center app credentials and approval; set `TIKTOK_SHOP_REDIRECT_URI=https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/callback`; connect at `https://www.gemcybersecurityassist.com/api/tokmetric/shop/oauth/start` |
 

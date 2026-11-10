@@ -1,3 +1,4 @@
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -5,8 +6,6 @@ import {
   emitTokMetricAudit,
   enforceEmergencyLocks,
   requirePermission,
-  requireActiveTokMetricSession,
-  requireWorkspaceAccess,
   TokMetricError,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
@@ -40,7 +39,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const cid = correlationId(request);
   try {
     requireTrustedNavigation(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request);
     const { provider: rawProvider } = await context.params;
     const provider = parseSocialOAuthProvider(rawProvider);
     const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
@@ -52,7 +51,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
     const params = parsed.data;
-    const membership = await requireWorkspaceAccess(params.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(params.workspaceId, session);
     requirePermission(membership, "manage", "connectors");
     await enforceEmergencyLocks(params.workspaceId, "connector");
 

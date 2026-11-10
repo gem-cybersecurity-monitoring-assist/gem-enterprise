@@ -18,6 +18,7 @@ import {
   Settings2,
   Video,
 } from "lucide-react";
+import { socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
 import { cn } from "@/lib/utils";
 
 const suiteItems = [
@@ -145,6 +146,13 @@ export function SocialMediaSuiteNav() {
             </Link>
           );
         })}
+      </div>
+      <div className="flex flex-wrap gap-2 border-t border-white/10 px-2 pt-2">
+        {socialChannels.map(({ id, label }) => (
+          <Link key={id} href={socialAccountsHref(id)} className="rounded-lg px-3 py-2 text-sm text-cyan-200 hover:bg-white/10">
+            {label}
+          </Link>
+        ))}
       </div>
     </nav>
   );

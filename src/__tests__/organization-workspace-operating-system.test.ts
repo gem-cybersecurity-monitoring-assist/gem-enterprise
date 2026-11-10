@@ -65,7 +65,8 @@ describe("organization workspace operating system", () => {
     expect(page).toContain('gate.session.authSource === "supabase_gateway"');
     expect(socialAccounts).toContain('gate.session.authSource === "supabase_gateway"');
     expect(socialAccounts).toContain('workspaceGateway<{ workspaces: AccessibleWorkspace[] }>("access"');
-    expect(socialAccounts).toContain('if (!gatewayToken && !publishingWorkspace');
+    expect(socialAccounts).toContain('if (!usesGateway && !publishingWorkspace');
+    expect(socialAccounts).toMatch(/: usesGateway\s*\? \{ selected: null \}\s*:\s*await resolveWorkspaceAccess/);
   });
 
   it("keeps AI consent receipts and native news ownership explicit",()=>{

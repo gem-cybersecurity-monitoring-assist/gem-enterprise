@@ -12,10 +12,10 @@ export function createAuthorizationNonce() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-export async function createOAuthAuthorizationAttempt(input: { workspaceId: string; actorId: string; provider: TokMetricConnectorProvider; environment: TikTokEnvironment; codeVerifier: string }) {
+export async function createOAuthAuthorizationAttempt(input: { workspaceId: string; actorId: string; provider: TokMetricConnectorProvider; environment: TikTokEnvironment; codeVerifier: string }, database = db) {
   const nonce = createAuthorizationNonce();
   const encryptedCodeVerifier = encryptCredential({ codeVerifier: input.codeVerifier });
-  const attempt = await db.oAuthAuthorizationAttempt.create({
+  const attempt = await database.oAuthAuthorizationAttempt.create({
     data: {
       nonce,
       workspaceId: input.workspaceId,
@@ -29,13 +29,13 @@ export async function createOAuthAuthorizationAttempt(input: { workspaceId: stri
   return attempt;
 }
 
-export async function consumeOAuthAuthorizationAttempt(state: OAuthStatePayload) {
+export async function consumeOAuthAuthorizationAttempt(state: OAuthStatePayload, database = db) {
   const { config, ok } = await import("./config").then((module) => module.validateTikTokOAuthConfig());
   if (!ok) throw new TokMetricError(503, "TOKMETRIC_OAUTH_NOT_CONFIGURED", "TikTok OAuth configuration is no longer valid.");
   if (config.environment !== state.environment) throw new TokMetricError(401, "OAUTH_ENVIRONMENT_MISMATCH", "OAuth environment changed before callback completed.");
   if (!connectorProviders.includes(state.provider)) throw new TokMetricError(400, "UNSUPPORTED_CONNECTOR_PROVIDER", "Connector provider is not supported.");
 
-  const attempt = await db.oAuthAuthorizationAttempt.findUnique({ where: { nonce: state.nonce } });
+  const attempt = await database.oAuthAuthorizationAttempt.findUnique({ where: { nonce: state.nonce } });
   if (!attempt) throw new TokMetricError(401, "OAUTH_ATTEMPT_NOT_FOUND", "OAuth authorization attempt was not found.");
   if (attempt.consumedAt) throw new TokMetricError(401, "OAUTH_ATTEMPT_CONSUMED", "OAuth authorization attempt was already consumed.");
   if (attempt.expiresAt.getTime() <= Date.now()) throw new TokMetricError(401, "OAUTH_ATTEMPT_EXPIRED", "OAuth authorization attempt expired.");
@@ -44,7 +44,7 @@ export async function consumeOAuthAuthorizationAttempt(state: OAuthStatePayload)
   }
   if (attempt.environment !== getTikTokOAuthConfig().environment) throw new TokMetricError(401, "OAUTH_ENVIRONMENT_MISMATCH", "OAuth environment changed before callback completed.");
 
-  const consumed = await db.oAuthAuthorizationAttempt.updateMany({ where: { id: attempt.id, consumedAt: null }, data: { consumedAt: new Date() } });
+  const consumed = await database.oAuthAuthorizationAttempt.updateMany({ where: { id: attempt.id, consumedAt: null }, data: { consumedAt: new Date() } });
   if (consumed.count !== 1) throw new TokMetricError(401, "OAUTH_ATTEMPT_CONSUMED", "OAuth authorization attempt was already consumed.");
   const decrypted = decryptCredential<{ codeVerifier: string }>(attempt.encryptedCodeVerifier);
   return { attempt, codeVerifier: decrypted.codeVerifier };

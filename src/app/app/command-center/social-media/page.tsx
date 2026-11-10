@@ -11,8 +11,7 @@ import {
   Megaphone,
   ShieldCheck,
 } from "lucide-react";
-import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
-import { getSafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
+import { socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
 import {
   getSocialMediaProviderReadiness,
   type SocialMediaReadinessState,
@@ -43,7 +42,6 @@ function StatusBadge({ state }: { state: SocialMediaReadinessState }) {
 
 export default function SocialMediaCommandCenterPage() {
   const providers = getSocialMediaProviderReadiness();
-  const oauthProviders = getSafeSocialOAuthReadiness();
   const configuredCount = providers.filter((provider) => provider.configurationReady).length;
   const approvalCount = providers.filter(
     (provider) => provider.platformApprovalRequired && provider.platformApprovalGranted,
@@ -110,7 +108,15 @@ export default function SocialMediaCommandCenterPage() {
         </article>
       </section>
 
-      <SocialConnectorPanel providers={oauthProviders} />
+      <section aria-label="Social connections" className="rounded-2xl border border-white/10 bg-card/75 p-5">
+        <h2 className="text-lg font-semibold text-white">Social connections</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href={socialAccountsHref()} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">All accounts</Link>
+          {socialChannels.map(({ id, label }) => (
+            <Link key={id} href={socialAccountsHref(id)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">{label}</Link>
+          ))}
+        </div>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         {providers.map((provider) => (
