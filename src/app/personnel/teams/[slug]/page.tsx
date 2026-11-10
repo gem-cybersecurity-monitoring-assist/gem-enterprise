@@ -20,7 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{slug:strin
 
 export default async function PublicTeamProfile({params}:{params:Promise<{slug:string}>}) {
   const {slug} = await params;
-  const team = getPublicFunctionalTeam(slug);
+  const source = await getLiveTeamContent();
+  const team = source.teams.find(x=>x.slug===slug);
   if(!team) notFound();
   const related=source.teams.filter(x=>x.division===team.division && x.slug!==slug).slice(0,3);
   return <main className="min-h-screen bg-[#020817] text-white">
