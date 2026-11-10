@@ -32,7 +32,7 @@ The publishing worker runs against the Supabase gateway only when the adapter is
 |---|---|
 | Target project | Live gateway project `slzdjoqpzbkwzuaexlkj` (NOT the repo-linked project in `supabase/config.toml`). Deploy with `--project-ref slzdjoqpzbkwzuaexlkj`. |
 | Tables first | Confirm the `social_*` tables exist in that project (dashboard SQL editor). If any is missing, port the Prisma social migrations first — the RPC migration creates no tables. |
-| RPCs | Apply `supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql` (12 phase-1 RPCs + the health RPC), then confirm with `select routine_name from information_schema.routines where routine_name like 'gem_social_%'`. |
+| RPCs | Apply `supabase/migrations/20261108050000_social_publishing_gateway_rpcs.sql` (12 phase-1 RPCs + the health RPC), then `prisma/migrations/20261109220000_social_publishing_create_connector/migration.sql` (gem_social_create_connector — local change; NOT applied to any database by this PR), then confirm with `select routine_name from information_schema.routines where routine_name like 'gem_social_%'`. |
 | Edge function | `supabase functions deploy gem-social-publishing-gateway --project-ref slzdjoqpzbkwzuaexlkj`. |
 | Machine secret | Set `SOCIAL_GATEWAY_ADAPTER_SECRET` in Supabase (`supabase secrets set ... --project-ref slzdjoqpzbkwzuaexlkj`) and in Vercel (production, sensitive type) — same value. |
 | Flag | Set `SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED=true` in Vercel production ONLY after the live verification (health probe passes, claim/mark/idempotency checks) — then redeploy. Until then the cron gate stays 503 and readiness stays `BLOCKED_GATEWAY_BACKEND`. |
