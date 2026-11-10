@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { EnterpriseTeamDirectory } from "@/components/admin/EnterpriseTeamDirectory";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -226,6 +227,8 @@ export function TeamGalleryPreview() {
             </div>
           )}
         </section>
+
+        <EnterpriseTeamDirectory />
 
         <section aria-labelledby="atr-title" className="space-y-5 border-t border-white/10 pt-10">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
