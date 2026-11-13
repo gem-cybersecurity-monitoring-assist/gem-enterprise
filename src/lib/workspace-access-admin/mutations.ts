@@ -40,11 +40,12 @@ export async function createWorkspaceRole(
     reason: string;
   },
   context: WorkspaceAdministrationContext,
+  database = db,
 ) {
   const name = normalizeWorkspaceRoleName(input.name);
   const permissions = controlledPermissions(input.permissions);
 
-  return db.$transaction(async (tx) => {
+  return database.$transaction(async (tx) => {
     const workspace = await tx.workspace.findUnique({
       where: { id: input.workspaceId },
       select: {
@@ -135,8 +136,9 @@ export async function assignWorkspaceMembership(
     reason: string;
   },
   context: WorkspaceAdministrationContext,
+  database = db,
 ) {
-  return db.$transaction(async (tx) => {
+  return database.$transaction(async (tx) => {
     const workspace = await tx.workspace.findUnique({
       where: { id: input.workspaceId },
       select: {
@@ -256,6 +258,7 @@ export async function updateWorkspaceMembership(
     reason: string;
   },
   context: WorkspaceAdministrationContext,
+  database = db,
 ) {
   const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
   if (Number.isNaN(expectedUpdatedAt.getTime())) {
@@ -265,7 +268,7 @@ export async function updateWorkspaceMembership(
     );
   }
 
-  return db.$transaction(async (tx) => {
+  return database.$transaction(async (tx) => {
     const current = await tx.workspaceMember.findUnique({
       where: { id: input.membershipId },
       select: {

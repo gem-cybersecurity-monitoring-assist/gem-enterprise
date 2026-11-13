@@ -28,6 +28,7 @@ import {
   TokMetricError,
 } from "@/lib/tokmetric/security";
 import { hasSocialTransactionalAuthority } from "./transactional-authority";
+import { supabaseRootCertificatePath } from "./supabase-root-certificate";
 import { connectorDatabaseFailure } from "./database-failure";
 
 let tokMetricDatabase: PrismaClient | undefined;
@@ -47,7 +48,10 @@ export function tokMetricConnectorDatabase(session: SessionPayload): PrismaClien
   if (!connection || !hasSocialTransactionalAuthority(process.env, connection)) {
     throw new TokMetricError(503, "SOCIAL_CONNECTOR_BACKEND_REQUIRED", "The social connector needs the verified database for this sign-in project.");
   }
-  return tokMetricDatabase ??= new PrismaClient({ datasourceUrl: connection });
+  if (tokMetricDatabase) return tokMetricDatabase;
+  const trustedConnection = new URL(connection);
+  trustedConnection.searchParams.set("sslcert", supabaseRootCertificatePath());
+  return tokMetricDatabase = new PrismaClient({ datasourceUrl: trustedConnection.toString() });
 }
 
 export async function requireSocialConnectorSession(request: NextRequest, scopedTokMetric = false) {

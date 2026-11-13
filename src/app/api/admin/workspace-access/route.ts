@@ -14,6 +14,8 @@ import {
 } from "@/lib/workspaceAccessAdministration";
 import { provisionOrganizationWorkspace } from "@/lib/organizationWorkspace";
 import { getGatewaySessionToken } from "@/lib/auth";
+import { tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
+import type { SessionPayload } from "@/lib/auth";
 import { GatewayRequestError, workspaceGateway } from "@/lib/supabase-gateway";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +46,7 @@ const createRoleSchema = z
         "Use letters, numbers, spaces, hyphens, or underscores.",
       ),
     description: z.string().trim().max(300).optional().nullable(),
-    permissions: z.array(permissionSchema).min(1).max(11),
+    permissions: z.array(permissionSchema).min(1).max(13),
     reason,
   })
   .strict();
@@ -134,11 +136,20 @@ async function parsedJson(request: NextRequest) {
   }
 }
 
+function administrationDatabase(session: SessionPayload) {
+  if (session.authSource !== "supabase_gateway") return undefined;
+  const database = tokMetricConnectorDatabase(session);
+  if (!database) {
+    throw new WorkspaceAdministrationError("The verified social database is required for workspace access changes.", 503, "WORKSPACE_ADMIN_BACKEND_REQUIRED");
+  }
+  return database;
+}
+
 function administrationError(error: unknown) {
   if (error instanceof WorkspaceAdministrationError) {
     return json({ error: error.message, code: error.code }, error.statusCode);
   }
-  console.error("[workspace-access-admin] operation failed", error);
+  console.error("[workspace-access-admin] operation failed");
   return json({ error: "Workspace access administration is unavailable." }, 500);
 }
 
@@ -196,6 +207,7 @@ export async function POST(request: NextRequest) {
       );
       return json({ ok: true, operation: data.operation, result }, 201);
     }
+    const database = administrationDatabase(gate.session);
     if (data.operation === "create_role") {
       const role = await createWorkspaceRole(
         {
@@ -213,6 +225,7 @@ export async function POST(request: NextRequest) {
           actorUserId: gate.session.userId,
           ...requestContext,
         },
+        database,
       );
       return json({ ok: true, operation: data.operation, role }, 201);
     }
@@ -230,6 +243,7 @@ export async function POST(request: NextRequest) {
         actorUserId: gate.session.userId,
         ...requestContext,
       },
+      database,
     );
     return json({ ok: true, operation: data.operation, membership }, 201);
   } catch (error) {
@@ -274,6 +288,7 @@ export async function PATCH(request: NextRequest) {
         actorUserId: gate.session.userId,
         ...getRequestContext(request),
       },
+      administrationDatabase(gate.session),
     );
     return json({ ok: true, operation: "update_membership", membership });
   } catch (error) {

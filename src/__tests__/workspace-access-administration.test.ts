@@ -39,7 +39,7 @@ describe("workspace access administration", () => {
   });
 
   it("keeps role and membership writes transactional and audited", () => {
-    expect(mutationSource.match(/db\.\$transaction/g)?.length).toBe(3);
+    expect(mutationSource.match(/database\.\$transaction/g)?.length).toBe(3);
     expect(mutationSource.match(/tx\.auditLog\.create/g)?.length).toBe(3);
     expect(mutationSource).toContain('action: "admin_action"');
     expect(mutationSource).toContain('resource: "workspace_role"');
@@ -87,7 +87,7 @@ describe("workspace access administration", () => {
   });
 
   it("limits role permissions to the controlled workspace catalog", () => {
-    expect(workspacePermissionCatalog).toHaveLength(11);
+    expect(workspacePermissionCatalog).toHaveLength(13);
     expect(
       workspacePermissionCatalog.every((permission) =>
         ["view", "manage"].includes(permission.action),
@@ -107,6 +107,12 @@ describe("workspace access administration", () => {
     expect(() =>
       normalizeWorkspacePermissions([{ action: "publish", scope: "publishing" }]),
     ).toThrow(/PERMISSION_NOT_ALLOWED/);
+  });
+
+  it("allows connector administration without publishing or wildcard privileges", () => {
+    expect(normalizeWorkspacePermissions([{action: "view", scope: "connectors"}, {action: "manage", scope: "connectors"}])).toHaveLength(2);
+    expect(() => normalizeWorkspacePermissions([{action: "manage", scope: "*"}])).toThrow(/PERMISSION_NOT_ALLOWED/);
+    expect(() => normalizeWorkspacePermissions([{action: "manage", scope: "publishing"}])).toThrow(/PERMISSION_NOT_ALLOWED/);
   });
 
   it("deduplicates and orders controlled permissions deterministically", () => {
