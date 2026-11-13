@@ -190,7 +190,13 @@ describe("legacy TokMetric TikTok OAuth over a supabase_gateway session", () => 
       "http://localhost/api/tokmetric/connectors?workspaceId=workspace-1",
     ));
     expect(response.status).toBe(200);
-    expect(mocks.scopedClient).toHaveBeenCalledWith({ datasourceUrl: POOLER_URL });
+    const supplied = new URL(mocks.scopedClient.mock.calls[0][0].datasourceUrl);
+    const expected = new URL(POOLER_URL);
+    const certificate = supplied.searchParams.get("sslcert");
+    expect(certificate).toMatch(/gem-supabase-root-807025ad50d4ed21\.pem$/);
+    expect(readFileSync(certificate!, "utf8")).toContain("BEGIN CERTIFICATE");
+    supplied.searchParams.delete("sslcert");
+    expect(supplied.toString()).toBe(expected.toString());
     expect(findUnique).toHaveBeenCalledOnce();
     expect(findFirst).toHaveBeenCalledOnce();
     expect(findMany).toHaveBeenCalledOnce();

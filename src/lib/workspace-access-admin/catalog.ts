@@ -1,6 +1,18 @@
 export const workspacePermissionCatalog = [
   {
     action: "view",
+    scope: "connectors",
+    label: "View connectors",
+    description: "Review connected social accounts in this workspace without exposing tokens.",
+  },
+  {
+    action: "manage",
+    scope: "connectors",
+    label: "Manage connectors",
+    description: "Authorize or disconnect social accounts in this workspace; does not grant publishing access.",
+  },
+  {
+    action: "view",
     scope: "workspace",
     label: "View workspace",
     description: "See workspace identity, membership role, safety controls, and aggregate state.",

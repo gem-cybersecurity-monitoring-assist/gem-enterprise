@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { workspacePermissionCatalog } from "@/lib/workspace-access-admin/catalog";
 import type { WorkspaceAdministrationSnapshot } from "@/lib/workspace-access-admin/snapshot";
 
 interface WorkspaceAccessAdministrationProps {
@@ -594,7 +595,7 @@ export function WorkspaceAccessAdministration({
                 <fieldset className="space-y-2">
                   <legend className="text-xs text-slate-400">Controlled permission set</legend>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {snapshot.permissionCatalog.map((permission) => {
+                    {workspacePermissionCatalog.map((permission) => {
                       const key = `${permission.scope}:${permission.action}`;
                       const label = permission.label || `${permission.action} ${permission.scope}`.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
                       const description = permission.description || `Allows ${permission.action} access within the ${permission.scope.replace(/_/g, " ")} scope only.`;
