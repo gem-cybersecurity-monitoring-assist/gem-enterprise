@@ -28,6 +28,7 @@ import {
   TokMetricError,
 } from "@/lib/tokmetric/security";
 import { hasSocialTransactionalAuthority } from "./transactional-authority";
+import { connectorDatabaseFailure } from "./database-failure";
 
 let tokMetricDatabase: PrismaClient | undefined;
 
@@ -60,7 +61,7 @@ export async function requireSocialConnectorSession(request: NextRequest, scoped
   const account = await (scopedDatabase ?? db).user.findUnique({
     where: { id: session.userId },
     select: { id: true, email: true, role: true, organizationId: true, isActive: true, status: true, sessionVersion: true },
-  });
+  }).catch((error: unknown) => { throw connectorDatabaseFailure(error); });
   const authority = reconcileSessionAuthority(session, account);
   if (authority.ok === false) throw new TokMetricError(authority.statusCode, authority.code, authority.message);
   if (authority.accountStatus !== "active") {

@@ -190,3 +190,9 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 | STATUS | Isolated source reconciliation; GitHub CI and preview validation required |
 | RELEASE CONTROL | Separate ChatGPT sign-in and membership entitlement required; do not present preview members as real |
 | NEXT STEP | Validate on hosted CI and preview; check workspace destination before production merge |
+
+## Social connector runtime repair — 2026-11-13
+
+Owner: ChatGPT Work. Task: [SOCIAL-CONNECTOR-RUNTIME](tasks/SOCIAL-CONNECTOR-RUNTIME.md).
+Branch: `fix/social-connector-runtime-20261113`. Scope: connector authority error diagnostics and focused tests.
+Status: IN_PROGRESS. No overlapping active lane identified; production publishing remains off.
