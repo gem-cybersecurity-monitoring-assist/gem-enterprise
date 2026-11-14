@@ -197,5 +197,10 @@ Owner: ChatGPT Work. Task: [SOCIAL-CONNECTOR-RUNTIME](tasks/SOCIAL-CONNECTOR-RUN
 Branch: `fix/social-connector-runtime-20261113`. Scope: connector authority error diagnostics and focused tests.
 Status: IN_PROGRESS. No overlapping active lane identified; production publishing remains off.
 
+## Meta destination verification — 2026-11-14
+Owner: ChatGPT Work. Task: [META-DESTINATION-VERIFICATION](tasks/META-DESTINATION-VERIFICATION.md).
+Branch: `fix/meta-account-probes`, base `8b387137f802142d4ca6fd1f3615c9b2cf14c8b6`.
+Scope: exact Meta destination probes, existing health/test routes and connector evidence display; focused tests. No credentials, schema, publishing, or other projects. Status: IN_PROGRESS.
+
 ## Shared social connections — 2026-11-14
 Owner: ChatGPT Work. Task: [SHARED-SOCIAL-CONNECTIONS](tasks/SHARED-SOCIAL-CONNECTIONS.md). Branch: `fix/shared-social-database`. Scope: existing OAuth/account persistence and readiness. No publishing, provider approval claims, schema or other projects. Status: IN_PROGRESS; no overlapping owner identified.

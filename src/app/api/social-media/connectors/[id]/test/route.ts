@@ -69,6 +69,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const probe = await probeSocialConnector({
       config: getSocialOAuthProviderConfig(stored.connector.provider),
       credential: stored.credential,
+      accountType: typeof stored.connector.safeMetadata.accountType === "string"
+        ? stored.connector.safeMetadata.accountType : undefined,
     });
 
     await emitTokMetricAudit({

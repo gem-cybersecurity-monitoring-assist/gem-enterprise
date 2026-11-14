@@ -55,19 +55,31 @@ interface ProbeTarget {
   url: URL;
   headers?: Record<string, string>;
   accountName: (payload: unknown) => string | null;
+  matchesAccount?: (payload: unknown) => boolean;
 }
 
 function probeTarget(
   config: SocialOAuthProviderConfig,
   credential: StoredSocialCredential,
+  accountType?: string,
 ): ProbeTarget {
   switch (config.provider) {
     case "META": {
-      const url = new URL(`${metaGraphBaseUrl(config)}/me`);
-      url.searchParams.set("fields", "id,name");
+      const accountId = credential.externalAccountId;
+      if (!accountId || !/^\d+$/.test(accountId)) {
+        throw new TokMetricError(503, "SOCIAL_PROBE_ACCOUNT_REQUIRED", "A verified Meta destination ID is required for a live account check.");
+      }
+      // /me resolves to the Page owning the token, including when that token
+      // authorizes a linked Instagram account. Query the saved destination.
+      const instagram = accountType === "INSTAGRAM_PROFESSIONAL";
+      const url = new URL(`${metaGraphBaseUrl(config)}/${accountId}`);
+      url.searchParams.set("fields", instagram ? "id,username,name" : "id,name");
       return {
         url,
-        accountName: (payload) => stringValue(object(payload)?.name) || null,
+        accountName: (payload) =>
+          (instagram ? stringValue(object(payload)?.username) : undefined) ||
+          stringValue(object(payload)?.name) || null,
+        matchesAccount: (payload) => stringValue(object(payload)?.id) === accountId,
       };
     }
     case "X": {
@@ -138,9 +150,10 @@ function probeTarget(
 export async function probeSocialConnector(input: {
   config: SocialOAuthProviderConfig;
   credential: StoredSocialCredential;
+  accountType?: string;
 }): Promise<SocialConnectorProbeResult> {
   const { config, credential } = input;
-  const target = probeTarget(config, credential);
+  const target = probeTarget(config, credential, input.accountType);
   const checkedAt = new Date().toISOString();
   const startedAt = Date.now();
 
@@ -174,7 +187,7 @@ export async function probeSocialConnector(input: {
   }
 
   const latencyMs = Date.now() - startedAt;
-  if (!response.ok) {
+  if (!response.ok || (target.matchesAccount && !target.matchesAccount(payload))) {
     return {
       healthy: false,
       latencyMs,

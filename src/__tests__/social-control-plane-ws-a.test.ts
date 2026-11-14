@@ -545,7 +545,7 @@ describe("WS-A: read-only connector probe", () => {
     for (const provider of socialOAuthProviders) {
       const result = await probeSocialConnector({
         config: probeConfig(provider),
-        credential: credential(provider, { externalAccountId: "ext-1" }),
+        credential: credential(provider, { externalAccountId: provider === "META" ? "1" : "ext-1" }),
       });
       expect(result.healthy).toBe(true);
       expect(result.checkedAt).toBeDefined();
@@ -570,7 +570,7 @@ describe("WS-A: read-only connector probe", () => {
     );
     const result = await probeSocialConnector({
       config: probeConfig("META"),
-      credential: credential("META"),
+      credential: credential("META", { externalAccountId: "1" }),
     });
     expect(result.healthy).toBe(false);
     expect(result.accountName).toBeNull();
