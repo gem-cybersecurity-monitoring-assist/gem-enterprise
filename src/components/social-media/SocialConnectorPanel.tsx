@@ -260,6 +260,12 @@ export function SocialConnectorPanel({
                 </span>
               </div>
 
+              {provider.platformApproval === "NEEDS_REVIEW" ? (
+                <p className="mt-3 text-xs leading-5 text-amber-100">
+                  Platform review is pending. The provider may limit authorization to app-role accounts and eligible assets. Publishing remains disabled.
+                </p>
+              ) : null}
+
               {provider.missing.length > 0 ? (
                 <p className="mt-3 text-xs leading-5 text-amber-100">
                   Missing or blocked: {provider.missing.join(", ")}

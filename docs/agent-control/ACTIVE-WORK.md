@@ -196,3 +196,6 @@ Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 Owner: ChatGPT Work. Task: [SOCIAL-CONNECTOR-RUNTIME](tasks/SOCIAL-CONNECTOR-RUNTIME.md).
 Branch: `fix/social-connector-runtime-20261113`. Scope: connector authority error diagnostics and focused tests.
 Status: IN_PROGRESS. No overlapping active lane identified; production publishing remains off.
+
+## Shared social connections — 2026-11-14
+Owner: ChatGPT Work. Task: [SHARED-SOCIAL-CONNECTIONS](tasks/SHARED-SOCIAL-CONNECTIONS.md). Branch: `fix/shared-social-database`. Scope: existing OAuth/account persistence and readiness. No publishing, provider approval claims, schema or other projects. Status: IN_PROGRESS; no overlapping owner identified.

@@ -130,19 +130,19 @@ function reviveCredentialRow(
 export async function loadSocialConnectorCredential(input: {
   workspaceId: string;
   connectorId: string;
-}) {
-  if (shouldUseSupabaseGateway()) {
+}, scopedDatabase?: typeof db) {
+  if (!scopedDatabase && shouldUseSupabaseGateway()) {
     return loadSocialConnectorCredentialViaGateway(input);
   }
-  return loadSocialConnectorCredentialPrisma(input);
+  return loadSocialConnectorCredentialPrisma(input, scopedDatabase);
 }
 
 async function loadSocialConnectorCredentialPrisma(input: {
   workspaceId: string;
   connectorId: string;
-}) {
+}, database = db) {
   try {
-    const rows = await db.$queryRaw<ConnectorCredentialRow[]>(Prisma.sql`
+    const rows = await database.$queryRaw<ConnectorCredentialRow[]>(Prisma.sql`
       SELECT
         connector.id,
         connector.workspace_id AS "workspaceId",
@@ -284,7 +284,7 @@ export async function claimSocialConnectorCredentialRefresh(input: {
   workspaceId: string;
   connectorId: string;
   expectedCredentialRotatedAt: string | null;
-}) {
+}, database = db) {
   const claimId = randomUUID();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + REFRESH_CLAIM_TTL_MS);
@@ -298,7 +298,7 @@ export async function claimSocialConnectorCredentialRefresh(input: {
   });
 
   try {
-    const rows = await db.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    const rows = await database.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       UPDATE social_connectors connector
       SET
         safe_metadata = connector.safe_metadata || CAST(${claimMetadata} AS jsonb),
@@ -335,9 +335,9 @@ export async function releaseSocialConnectorCredentialRefreshClaim(input: {
   workspaceId: string;
   connectorId: string;
   claimId: string;
-}) {
+}, database = db) {
   try {
-    await db.$executeRaw(Prisma.sql`
+    await database.$executeRaw(Prisma.sql`
       UPDATE social_connectors
       SET
         safe_metadata = safe_metadata
@@ -370,7 +370,7 @@ export async function recordSocialConnectorLifecycle(input: {
     accountName: string | null;
     latencyMs: number;
   };
-}) {
+}, database = db) {
   const now = new Date();
   const metadata = {
     tokenLifecycle: input.lifecycle.lifecycle,
@@ -396,7 +396,7 @@ export async function recordSocialConnectorLifecycle(input: {
   const metadataJson = JSON.stringify(metadata);
 
   try {
-    return await db.$transaction(async (transaction) => {
+    return await database.$transaction(async (transaction) => {
       if (input.credential) {
         const encrypted = encryptSocialCredential(input.credential);
         const expiresAt = input.credential.expiresAt

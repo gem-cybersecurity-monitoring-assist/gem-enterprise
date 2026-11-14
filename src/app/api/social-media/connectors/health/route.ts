@@ -1,4 +1,4 @@
-import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -13,7 +13,7 @@ import {
 import {
   getSocialOAuthProviderConfig,
   isSocialBotTokenProvider,
-  validateSocialOAuthProviderConfig,
+  validateSocialOAuthConnectionConfig,
 } from "@/lib/social-media/oauth/config";
 import { refreshSocialAccessToken } from "@/lib/social-media/oauth/client";
 import { evaluateSocialCredentialLifecycle } from "@/lib/social-media/oauth/lifecycle";
@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
   let connectorId: string | undefined;
   let provider: string | undefined;
   let actorId: string | undefined;
+  let database: ReturnType<typeof tokMetricConnectorDatabase> | undefined;
   let refreshClaimId: string | undefined;
   let refreshAttempted = false;
   let refreshSucceeded = false;
@@ -77,17 +78,18 @@ export async function POST(request: NextRequest) {
 
   try {
     requireSameOrigin(request);
-    const session = await requireSocialConnectorSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    database = tokMetricConnectorDatabase(session);
     actorId = session.userId;
     const parsed = await parseJson(request, healthSchema);
     workspaceId = parsed.workspaceId!;
     connectorId = parsed.connectorId!;
-    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session, database);
     auditableWorkspaceId = workspaceId;
     requirePermission(membership, "manage", "connectors");
-    await enforceEmergencyLocks(workspaceId, "connector");
+    await enforceEmergencyLocks(workspaceId, "connector", database);
 
-    const stored = await loadSocialConnectorCredential({ workspaceId, connectorId });
+    const stored = await loadSocialConnectorCredential({ workspaceId, connectorId }, database);
     provider = stored.connector.provider;
     if (isSocialBotTokenProvider(stored.connector.provider)) {
       throw new TokMetricError(
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
         "This connector authenticates with a bot token, not OAuth. OAuth credential health, refresh, and probe checks do not apply.",
       );
     }
-    const { config, missing, ok } = validateSocialOAuthProviderConfig(stored.connector.provider);
+    const { config, missing, ok } = validateSocialOAuthConnectionConfig(stored.connector.provider);
     if (!ok) {
       throw new TokMetricError(
         503,
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
         workspaceId,
         connectorId,
         expectedCredentialRotatedAt: stored.credentialRotatedAt,
-      });
+      }, database);
       refreshClaimId = claim.claimId;
       refreshAttempted = true;
 
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
         lifecycle = evaluateSocialCredentialLifecycle(config, credential);
         refreshSucceeded = true;
       } catch (error) {
-        const latest = await loadSocialConnectorCredential({ workspaceId, connectorId });
+        const latest = await loadSocialConnectorCredential({ workspaceId, connectorId }, database);
         if (latest.credentialRotatedAt !== stored.credentialRotatedAt) {
           credential = latest.credential;
           lifecycle = evaluateSocialCredentialLifecycle(config, credential);
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
             refreshClaimId,
             refreshAttempted: true,
             refreshSucceeded: false,
-          });
+          }, database);
           throw error;
         } else if (isTransientRefreshFailure(error)) {
           const degraded = {
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
             refreshClaimId,
             refreshAttempted: true,
             refreshSucceeded: false,
-          });
+          }, database);
           throw error;
         } else {
           const closed = {
@@ -174,7 +176,7 @@ export async function POST(request: NextRequest) {
             refreshClaimId,
             refreshAttempted: true,
             refreshSucceeded: false,
-          });
+          }, database);
           throw error;
         }
       }
@@ -214,12 +216,12 @@ export async function POST(request: NextRequest) {
         refreshSucceeded,
         concurrentRotationObserved,
         liveProbe: liveProbeMetadata,
-      });
+      }, database);
     } catch (error) {
       if (!(error instanceof TokMetricError) || error.code !== "SOCIAL_CREDENTIAL_ROTATION_CONFLICT") {
         throw error;
       }
-      const latest = await loadSocialConnectorCredential({ workspaceId, connectorId });
+      const latest = await loadSocialConnectorCredential({ workspaceId, connectorId }, database);
       credential = latest.credential;
       lifecycle = evaluateSocialCredentialLifecycle(config, credential);
       refreshSucceeded = false;
@@ -233,10 +235,10 @@ export async function POST(request: NextRequest) {
         refreshSucceeded: false,
         concurrentRotationObserved: true,
         liveProbe: liveProbeMetadata,
-      });
+      }, database);
     }
 
-    const providerPaused = await isSocialProviderPaused(workspaceId, stored.connector.provider);
+    const providerPaused = await isSocialProviderPaused(workspaceId, stored.connector.provider, database);
 
     await emitTokMetricAudit({
       workspaceId,
@@ -259,7 +261,7 @@ export async function POST(request: NextRequest) {
         providerPaused,
         externalPublishingEnabled: false,
       },
-    });
+    }, database);
 
     return NextResponse.json(
       {
@@ -295,7 +297,7 @@ export async function POST(request: NextRequest) {
           failureCode: error instanceof TokMetricError ? error.code : "UNEXPECTED_ERROR",
           externalPublishingEnabled: false,
         },
-      }).catch(() => undefined);
+      }, database).catch(() => undefined);
     }
     const response = tokMetricErrorResponse(error, cid);
     response.headers.set("Cache-Control", "no-store");
@@ -306,7 +308,7 @@ export async function POST(request: NextRequest) {
         workspaceId: auditableWorkspaceId,
         connectorId,
         claimId: refreshClaimId,
-      }).catch(() => undefined);
+      }, database).catch(() => undefined);
     }
   }
 }

@@ -6,6 +6,7 @@ import {
   parseSocialOAuthProvider,
   socialOAuthProviders,
   validateSocialOAuthProviderConfig,
+  validateSocialOAuthConnectionConfig,
 } from "@/lib/social-media/oauth/config";
 import {
   createSocialPkcePair,
@@ -62,7 +63,7 @@ describe("cross-platform social OAuth foundation", () => {
     );
   });
 
-  it("requires YouTube API audit evidence before channel discovery and upload authorization", () => {
+  it("requires YouTube API audit evidence before publishing configuration is approved", () => {
     vi.stubEnv("YOUTUBE_SOCIAL_OAUTH_ENABLED", "true");
     vi.stubEnv("GOOGLE_SOCIAL_CLIENT_ID", "google-client");
     vi.stubEnv("GOOGLE_SOCIAL_CLIENT_SECRET", "google-secret");
@@ -80,6 +81,11 @@ describe("cross-platform social OAuth foundation", () => {
     expect(blocked.ok).toBe(false);
     expect(blocked.missing).toContain("YOUTUBE_DATA_API_AUDIT_APPROVED");
 
+    expect(validateSocialOAuthConnectionConfig("YOUTUBE").ok).toBe(true);
+    expect(getSafeSocialOAuthReadiness().find(p => p.provider === "YOUTUBE")).toMatchObject({ readyToAuthorize: true, platformApproval: "NEEDS_REVIEW", externalPublishingEnabled: false });
+    vi.stubEnv("YOUTUBE_SOCIAL_OAUTH_ENABLED", "false");
+    expect(validateSocialOAuthConnectionConfig("YOUTUBE").ok).toBe(false);
+    vi.stubEnv("YOUTUBE_SOCIAL_OAUTH_ENABLED", "true");
     vi.stubEnv("YOUTUBE_DATA_API_AUDIT_APPROVED", "true");
     expect(validateSocialOAuthProviderConfig("YOUTUBE").ok).toBe(true);
   });
@@ -185,15 +191,15 @@ describe("cross-platform social OAuth foundation", () => {
     const callback = source("src/app/api/social-media/oauth/[provider]/callback/route.ts");
     const connectors = source("src/app/api/social-media/connectors/route.ts");
     const store = source("src/lib/social-media/oauth/store.ts");
-    expect(start).toContain("await requireSocialConnectorSession(request)");
+    expect(start).toContain("await requireSocialConnectorSession(request, true)");
     expect(start).toContain('requirePermission(membership, "manage", "connectors")');
-    expect(start).toContain('enforceEmergencyLocks(params.workspaceId, "connector")');
+    expect(start).toContain('enforceEmergencyLocks(params.workspaceId, "connector", database)');
     expect(start).toContain("createSocialOAuthAuthorizationAttempt");
     expect(start).toContain('response.headers.set("Cache-Control", "no-store, max-age=0")');
-    expect(callback).toContain("await requireSocialConnectorSession(request)");
+    expect(callback).toContain("await requireSocialConnectorSession(request, true)");
     expect(callback).toContain("session.userId !== actorId");
     expect(callback).toContain('requirePermission(membership, "manage", "connectors")');
-    expect(callback).toContain('enforceEmergencyLocks(state.workspaceId, "connector")');
+    expect(callback).toContain('enforceEmergencyLocks(state.workspaceId, "connector", database)');
     expect(callback).toContain("consumeSocialOAuthAuthorizationAttempt");
     expect(callback).toContain('response.headers.set("Cache-Control", "no-store, max-age=0")');
     expect(callback).toContain("externalPublishingEnabled: false");
@@ -201,7 +207,7 @@ describe("cross-platform social OAuth foundation", () => {
     expect(connectors).toContain("requireSocialConnectorWorkspace");
     expect(connectors).toContain("requireSameOrigin(request)");
     expect(connectors).toContain("CROSS_ORIGIN_REQUEST_BLOCKED");
-    expect(connectors).toContain('enforceEmergencyLocks(body.workspaceId, "connector")');
+    expect(connectors).toContain('enforceEmergencyLocks(body.workspaceId, "connector", database)');
     expect(connectors).toContain("credentialDeleted: true");
         // The Telegram POST handler is the single legitimate accessToken use:
     // it passes the bot token as the credential's accessToken so the store

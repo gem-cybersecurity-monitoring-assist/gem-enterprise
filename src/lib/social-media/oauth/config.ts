@@ -175,7 +175,7 @@ export function getSocialOAuthProviderConfig(
   return configs[provider];
 }
 
-export function validateSocialOAuthProviderConfig(provider: SocialOAuthProvider) {
+function validateSocialOAuthConfig(provider: SocialOAuthProvider, publishingApprovalRequired: boolean) {
   const config = getSocialOAuthProviderConfig(provider);
   const missing: string[] = [];
 
@@ -211,7 +211,7 @@ export function validateSocialOAuthProviderConfig(provider: SocialOAuthProvider)
   if (provider === "TIKTOK" && !config.scopes.includes("user.info.basic")) {
     missing.push("TIKTOK_USER_INFO_SCOPE");
   }
-  if (config.platformAccessEnv && !enabled(config.platformAccessEnv)) {
+  if (publishingApprovalRequired && config.platformAccessEnv && !enabled(config.platformAccessEnv)) {
     missing.push(config.platformAccessEnv);
   }
   // The unified TikTok flow must use its own allow-listed callback URL; the
@@ -222,6 +222,16 @@ export function validateSocialOAuthProviderConfig(provider: SocialOAuthProvider)
   if (!value("SOCIAL_TOKEN_ENCRYPTION_KEY")) missing.push("SOCIAL_TOKEN_ENCRYPTION_KEY");
 
   return { config, missing, ok: missing.length === 0 };
+}
+
+/** The provider still enforces allowed users, assets and scopes during authorization. */
+export function validateSocialOAuthConnectionConfig(provider: SocialOAuthProvider) {
+  return validateSocialOAuthConfig(provider, false);
+}
+
+/** Publishing retains the separate platform approval requirement. */
+export function validateSocialOAuthProviderConfig(provider: SocialOAuthProvider) {
+  return validateSocialOAuthConfig(provider, true);
 }
 
 export function parseSocialOAuthProvider(input: string): SocialOAuthProvider {

@@ -1,4 +1,4 @@
-import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/lib/tokmetric/security";
 import {
   parseSocialOAuthProvider,
-  validateSocialOAuthProviderConfig,
+  validateSocialOAuthConnectionConfig,
 } from "@/lib/social-media/oauth/config";
 import { createSocialNonce, createSocialPkcePair } from "@/lib/social-media/oauth/crypto";
 import { buildSocialAuthorizationUrl } from "@/lib/social-media/oauth/client";
@@ -39,7 +39,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const cid = correlationId(request);
   try {
     requireTrustedNavigation(request);
-    const session = await requireSocialConnectorSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    const database = tokMetricConnectorDatabase(session);
     const { provider: rawProvider } = await context.params;
     const provider = parseSocialOAuthProvider(rawProvider);
     const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
@@ -51,11 +52,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
     const params = parsed.data;
-    const membership = await requireSocialConnectorWorkspace(params.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(params.workspaceId, session, database);
     requirePermission(membership, "manage", "connectors");
-    await enforceEmergencyLocks(params.workspaceId, "connector");
+    await enforceEmergencyLocks(params.workspaceId, "connector", database);
 
-    const { config, missing, ok } = validateSocialOAuthProviderConfig(provider);
+    const { config, missing, ok } = validateSocialOAuthConnectionConfig(provider);
     if (!ok) {
       throw new TokMetricError(
         503,
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       requestedScopes: config.scopes,
       redirectUri: config.redirectUri,
       redirectAfter: params.redirectAfter,
-    });
+    }, database);
     const state = encodeSocialOAuthState({
       nonce: attempt.nonce,
       workspaceId: params.workspaceId,
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         pkce: config.usePkce,
         externalActionTaken: false,
       },
-    });
+    }, database);
 
     const response = NextResponse.redirect(authorizationUrl);
     response.headers.set("Cache-Control", "no-store, max-age=0");

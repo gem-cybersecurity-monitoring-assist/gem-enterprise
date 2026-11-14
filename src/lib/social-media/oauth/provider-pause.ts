@@ -68,9 +68,10 @@ function normalizeReason(reason?: string) {
 
 export async function getPausedSocialProviders(
   workspaceId: string,
+  database = db,
 ): Promise<SocialPauseProvider[]> {
   try {
-    const rows = await db.$queryRaw<Array<{ provider: string }>>(Prisma.sql`
+    const rows = await database.$queryRaw<Array<{ provider: string }>>(Prisma.sql`
       SELECT provider
       FROM social_provider_pauses
       WHERE workspace_id = ${workspaceId}
@@ -85,19 +86,21 @@ export async function getPausedSocialProviders(
 export async function isSocialProviderPaused(
   workspaceId: string,
   provider: SocialPauseProvider,
+  scopedDatabase?: typeof db,
 ): Promise<boolean> {
-  if (shouldUseSupabaseGateway()) {
+  if (!scopedDatabase && shouldUseSupabaseGateway()) {
     return isSocialProviderPausedViaGateway(workspaceId, provider);
   }
-  return isSocialProviderPausedPrisma(workspaceId, provider);
+  return isSocialProviderPausedPrisma(workspaceId, provider, scopedDatabase);
 }
 
 async function isSocialProviderPausedPrisma(
   workspaceId: string,
   provider: SocialPauseProvider,
+  database = db,
 ): Promise<boolean> {
   try {
-    const rows = await db.$queryRaw<Array<{ one: number }>>(Prisma.sql`
+    const rows = await database.$queryRaw<Array<{ one: number }>>(Prisma.sql`
       SELECT 1 AS one
       FROM social_provider_pauses
       WHERE workspace_id = ${workspaceId}
