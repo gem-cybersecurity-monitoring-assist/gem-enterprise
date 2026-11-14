@@ -145,7 +145,7 @@ export function SocialConnectorPanel({
       const response = await fetch("/api/social-media/connectors/health", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId: effectiveWorkspaceId, connectorId: connector.id }),
+        body: JSON.stringify({ workspaceId: effectiveWorkspaceId, connectorId: connector.id, liveProbe: true }),
       });
       const payload = await response.json();
       if (!response.ok) {
@@ -279,6 +279,8 @@ export function SocialConnectorPanel({
                     const username = metadataText(connector, "username");
                     const expiresAt = metadataText(connector, "expiresAt");
                     const refreshTokenPresent = metadataBoolean(connector, "refreshTokenPresent");
+                    const liveProbeAt = metadataText(connector, "liveProbeAt");
+                    const liveProbeOk = metadataBoolean(connector, "liveProbeOk");
                     return (
                       <div
                         key={connector.id}
@@ -297,12 +299,22 @@ export function SocialConnectorPanel({
                             <p className="mt-2">Account ID: {connector.externalAccountId || "discovery incomplete"}</p>
                             {username ? <p className="mt-1">Username: {username}</p> : null}
                             <p className="mt-1">State: {label(connector.state)}</p>
+                            <p className="mt-1">
+                              Last live account check: {liveProbeAt && liveProbeOk !== undefined
+                                ? `${liveProbeOk ? "Passed" : "Failed"} · ${new Date(liveProbeAt).toLocaleString()}`
+                                : "Not recorded"}
+                            </p>
                             <p className={`mt-1 ${lifecycleTone(lifecycle)}`}>
                               Credential lifecycle: {lifecycle ? label(lifecycle) : "Not evaluated"}
                             </p>
                             <p className="mt-1">
                               Expires: {expiresAt ? new Date(expiresAt).toLocaleString() : "provider did not report expiry"}
                             </p>
+                            {lifecycle === "EXPIRY_UNKNOWN" ? (
+                              <p className="mt-1 text-amber-100">
+                                Token expiry is unknown. A passing live check confirms current access only.
+                              </p>
+                            ) : null}
                             <p className="mt-1">
                               Refresh credential: {refreshTokenPresent === true ? "stored encrypted" : "not available"}
                             </p>

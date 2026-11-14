@@ -191,7 +191,11 @@ export async function POST(request: NextRequest) {
       | { probeOk: boolean; probedAt: string; accountName: string | null; latencyMs: number }
       | undefined;
     if (parsed.liveProbe === true && liveProbeSignal.source !== "live") {
-      const probe = await probeSocialConnector({ config, credential });
+      const probe = await probeSocialConnector({
+        config, credential,
+        accountType: typeof stored.connector.safeMetadata.accountType === "string"
+          ? stored.connector.safeMetadata.accountType : undefined,
+      });
       liveProbeMetadata = {
         probeOk: probe.healthy,
         probedAt: probe.checkedAt,
