@@ -1,4 +1,4 @@
-import { hasSocialTransactionalAuthority } from "@/lib/social-media/transactional-authority";
+import { hasScopedSocialTransactionalAuthority } from "@/lib/social-media/transactional-authority";
 import Link from "next/link";
 import { oauthByDestination, socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
 import {
@@ -53,7 +53,7 @@ export default async function SocialMediaAccountsPage({
     ? params.workspace[0]?.trim() || null
     : params.workspace?.trim() || null;
   const usesGateway = gate.session.authSource === "supabase_gateway";
-  const connectorBackendAvailable = !usesGateway || hasSocialTransactionalAuthority();
+  const connectorBackendAvailable = !usesGateway || hasScopedSocialTransactionalAuthority();
   const gatewayToken =
     gate.session.authSource === "supabase_gateway"
       ? await getGatewaySessionToken()

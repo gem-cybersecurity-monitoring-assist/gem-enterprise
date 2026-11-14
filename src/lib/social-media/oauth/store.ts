@@ -98,7 +98,7 @@ export async function createSocialOAuthAuthorizationAttempt(input: {
   requestedScopes: string[];
   redirectUri: string;
   redirectAfter?: string;
-}) {
+}, database = db) {
   const id = randomUUID();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ATTEMPT_TTL_MS);
@@ -108,7 +108,7 @@ export async function createSocialOAuthAuthorizationAttempt(input: {
   const redirectAfter = normalizeRedirectAfter(input.redirectAfter);
 
   try {
-    const rows = await db.$queryRaw<SocialOAuthAttemptRecord[]>(Prisma.sql`
+    const rows = await database.$queryRaw<SocialOAuthAttemptRecord[]>(Prisma.sql`
       INSERT INTO social_oauth_authorization_attempts (
         id,
         nonce,
@@ -155,9 +155,9 @@ export async function createSocialOAuthAuthorizationAttempt(input: {
   }
 }
 
-export async function consumeSocialOAuthAuthorizationAttempt(state: SocialOAuthStatePayload) {
+export async function consumeSocialOAuthAuthorizationAttempt(state: SocialOAuthStatePayload, database = db) {
   try {
-    const rows = await db.$queryRaw<SocialOAuthAttemptRecord[]>(Prisma.sql`
+    const rows = await database.$queryRaw<SocialOAuthAttemptRecord[]>(Prisma.sql`
       UPDATE social_oauth_authorization_attempts
       SET consumed_at = CURRENT_TIMESTAMP
       WHERE nonce = ${state.nonce}
@@ -544,9 +544,9 @@ async function createSocialBotTokenConnectorViaGateway(input: {
   }
 }
 
-export async function listSocialConnectors(workspaceId: string) {
+export async function listSocialConnectors(workspaceId: string, database = db) {
   try {
-    return await db.$queryRaw<SocialConnectorRecord[]>(Prisma.sql`
+    return await database.$queryRaw<SocialConnectorRecord[]>(Prisma.sql`
       SELECT
         id,
         workspace_id AS "workspaceId",

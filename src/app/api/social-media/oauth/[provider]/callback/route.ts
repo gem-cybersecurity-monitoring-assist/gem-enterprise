@@ -1,4 +1,4 @@
-import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import type { SessionPayload } from "@/lib/auth";
 import {
@@ -12,7 +12,7 @@ import {
 import {
   getSocialOAuthProviderConfig,
   parseSocialOAuthProvider,
-  validateSocialOAuthProviderConfig,
+  validateSocialOAuthConnectionConfig,
 } from "@/lib/social-media/oauth/config";
 import { exchangeSocialAuthorizationCode } from "@/lib/social-media/oauth/client";
 import { discoverSocialAccounts } from "@/lib/social-media/oauth/discovery";
@@ -21,7 +21,7 @@ import { decodeSocialOAuthState } from "@/lib/social-media/oauth/state";
 import { consumeSocialOAuthAuthorizationAttempt } from "@/lib/social-media/oauth/store";
 
 async function sessionFromStateActor(request: NextRequest, actorId: string): Promise<SessionPayload> {
-  const session = await requireSocialConnectorSession(request);
+  const session = await requireSocialConnectorSession(request, true);
   if (session.userId !== actorId) {
     throw new TokMetricError(
       401,
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   let workspaceId: string | undefined;
   let actorId: string | undefined;
   let providerForAudit: string | undefined;
+  let auditDatabase: ReturnType<typeof tokMetricConnectorDatabase>;
 
   try {
     const { provider: rawProvider } = await context.params;
@@ -92,12 +93,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     workspaceId = state.workspaceId;
     actorId = state.actorId;
     const session = await sessionFromStateActor(request, state.actorId);
-    const membership = await requireSocialConnectorWorkspace(state.workspaceId, session);
+    const database = tokMetricConnectorDatabase(session);
+    auditDatabase = database;
+    const membership = await requireSocialConnectorWorkspace(state.workspaceId, session, database);
     requirePermission(membership, "manage", "connectors");
-    await enforceEmergencyLocks(state.workspaceId, "connector");
-    const consumed = await consumeSocialOAuthAuthorizationAttempt(state);
+    await enforceEmergencyLocks(state.workspaceId, "connector", database);
+    const consumed = await consumeSocialOAuthAuthorizationAttempt(state, database);
 
-    const { config, missing, ok } = validateSocialOAuthProviderConfig(provider);
+    const { config, missing, ok } = validateSocialOAuthConnectionConfig(provider);
     if (!ok || consumed.attempt.redirectUri !== config.redirectUri) {
       throw new TokMetricError(
         503,
@@ -121,7 +124,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       provider,
       config,
       accounts,
-    });
+    }, database);
 
     await emitTokMetricAudit({
       workspaceId: state.workspaceId,
@@ -140,7 +143,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         providerAccountDiscoveryPerformed: true,
         externalPublishingEnabled: false,
       },
-    });
+    }, database);
 
     const response = NextResponse.redirect(
       safeCallbackRedirect(
@@ -165,7 +168,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         outcome: "failure",
         sourceChannel: "website",
         metadata: { provider: providerForAudit, externalPublishingEnabled: false },
-      }).catch(() => undefined);
+      }, auditDatabase).catch(() => undefined);
     }
     return tokMetricErrorResponse(error, cid);
   }

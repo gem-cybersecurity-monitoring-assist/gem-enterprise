@@ -1,4 +1,4 @@
-import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import {
   correlationId,
@@ -10,7 +10,7 @@ import {
 import {
   getSocialOAuthProviderConfig,
   isSocialBotTokenProvider,
-  validateSocialOAuthProviderConfig,
+  validateSocialOAuthConnectionConfig,
 } from "@/lib/social-media/oauth/config";
 import { loadSocialConnectorCredential } from "@/lib/social-media/oauth/lifecycle-store";
 import { probeSocialConnector } from "@/lib/social-media/oauth/probes";
@@ -30,9 +30,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
   let connectorId: string | undefined;
   let provider: string | undefined;
   let actorId: string | undefined;
+  let database: ReturnType<typeof tokMetricConnectorDatabase> | undefined;
 
   try {
-    const session = await requireSocialConnectorSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    database = tokMetricConnectorDatabase(session);
     actorId = session.userId;
     const { id } = await context.params;
     connectorId = id?.trim();
@@ -43,10 +45,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!workspaceId) {
       throw new TokMetricError(400, "VALIDATION_ERROR", "workspaceId is required.");
     }
-    const membership = await requireSocialConnectorWorkspace(workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(workspaceId, session, database);
     requirePermission(membership, "manage", "connectors");
 
-    const stored = await loadSocialConnectorCredential({ workspaceId, connectorId });
+    const stored = await loadSocialConnectorCredential({ workspaceId, connectorId }, database);
     provider = stored.connector.provider;
     if (isSocialBotTokenProvider(stored.connector.provider)) {
       throw new TokMetricError(
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         "This connector authenticates with a bot token, not OAuth. OAuth configuration and probe checks do not apply.",
       );
     }
-    const { missing, ok } = validateSocialOAuthProviderConfig(stored.connector.provider);
+    const { missing, ok } = validateSocialOAuthConnectionConfig(stored.connector.provider);
     if (!ok) {
       throw new TokMetricError(
         503,
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         readOnlyProbe: true,
         externalPublishingEnabled: false,
       },
-    });
+    }, database);
 
     return NextResponse.json(
       {
@@ -122,7 +124,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           failureCode: error instanceof TokMetricError ? error.code : "UNEXPECTED_ERROR",
           externalPublishingEnabled: false,
         },
-      }).catch(() => undefined);
+      }, database).catch(() => undefined);
     }
     return tokMetricErrorResponse(error, cid);
   }

@@ -79,8 +79,9 @@ export async function persistDiscoveredSocialConnectors(input: {
   provider: SocialOAuthProvider;
   config: SocialOAuthProviderConfig;
   accounts: DiscoveredSocialAccount[];
-}) {
-  await enforceEmergencyLocks(input.workspaceId, "connector");
+}, scopedDatabase?: typeof db) {
+  const database = scopedDatabase ?? db;
+  await enforceEmergencyLocks(input.workspaceId, "connector", scopedDatabase);
   const accounts = expandExplicitMetaDestinations(
     input.provider,
     input.accounts,
@@ -95,7 +96,7 @@ export async function persistDiscoveredSocialConnectors(input: {
 
   const now = new Date();
   try {
-    return await db.$transaction(async (transaction) => {
+    return await database.$transaction(async (transaction) => {
       const persisted: SocialConnectorRecord[] = [];
       for (const account of accounts) {
         const connectorId = randomUUID();

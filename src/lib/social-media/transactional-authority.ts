@@ -26,3 +26,15 @@ export function hasSocialTransactionalAuthority(env: Readonly<Record<string, str
     return false;
   }
 }
+
+/** Validate the selected social connection without creating clients or changing global configuration. */
+export function hasScopedSocialTransactionalAuthority(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+  const supplied = env.GEM_SOCIAL_POSTGRES_PRISMA_URL?.trim();
+  if (!supplied) return hasSocialTransactionalAuthority(env);
+  try {
+    const connection = new URL(supplied);
+    if (!connection.searchParams.has("sslmode")) connection.searchParams.set("sslmode", "require");
+    if (!connection.searchParams.has("sslaccept")) connection.searchParams.set("sslaccept", "strict");
+    return hasSocialTransactionalAuthority(env, connection.toString());
+  } catch { return false; }
+}

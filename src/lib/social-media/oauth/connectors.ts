@@ -38,14 +38,15 @@ export interface SocialConnectorDisconnectResult {
 export async function disconnectSocialConnector(input: {
   workspaceId: string;
   connectorId: string;
-}): Promise<SocialConnectorDisconnectResult> {
+}, scopedDatabase?: typeof db): Promise<SocialConnectorDisconnectResult> {
+  const database = scopedDatabase ?? db;
   // Load the stored credential first so the provider grant can be revoked.
   // A missing credential must not block the local disconnect.
   let revocationInput:
     | { provider: ReturnType<typeof getSocialOAuthProviderConfig>["provider"]; credential: Awaited<ReturnType<typeof loadSocialConnectorCredential>>["credential"] }
     | undefined;
   try {
-    const loaded = await loadSocialConnectorCredential(input);
+    const loaded = await loadSocialConnectorCredential(input, scopedDatabase);
     // Bot-token providers have no OAuth grant to revoke: the token is
     // deleted with the local credential. Skipping provider-side
     // revocation keeps the disconnect working for them (there is no
@@ -72,7 +73,7 @@ export async function disconnectSocialConnector(input: {
 
   const metadataJson = JSON.stringify(revocationMetadata(revocation));
 
-  const disconnected = await db.$transaction(async (transaction) => {
+  const disconnected = await database.$transaction(async (transaction) => {
     const rows = await transaction.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       UPDATE social_connectors
       SET

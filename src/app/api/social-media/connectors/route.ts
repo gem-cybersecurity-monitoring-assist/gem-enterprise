@@ -1,4 +1,4 @@
-import { requireSocialConnectorSession, requireSocialConnectorWorkspace } from "@/lib/social-media/connector-authority";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -37,7 +37,8 @@ function requireSameOrigin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const cid = correlationId(request);
   try {
-    const session = await requireSocialConnectorSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    const database = tokMetricConnectorDatabase(session);
     const workspaceId = request.nextUrl.searchParams.get("workspaceId")?.trim();
     if (!workspaceId) {
       return NextResponse.json(
@@ -48,9 +49,9 @@ export async function GET(request: NextRequest) {
         { status: 400, headers: { "Cache-Control": "no-store" } },
       );
     }
-    await requireSocialConnectorWorkspace(workspaceId, session);
-    const connectors = await listSocialConnectors(workspaceId);
-    const pausedProviders = await getPausedSocialProviders(workspaceId);
+    await requireSocialConnectorWorkspace(workspaceId, session, database);
+    const connectors = await listSocialConnectors(workspaceId, database);
+    const pausedProviders = await getPausedSocialProviders(workspaceId, database);
     const paused = new Set(pausedProviders);
     const enriched = connectors.map((connector) => ({
       ...connector,
@@ -150,16 +151,17 @@ export async function DELETE(request: NextRequest) {
   const cid = correlationId(request);
   try {
     requireSameOrigin(request);
-    const session = await requireSocialConnectorSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    const database = tokMetricConnectorDatabase(session);
     const parsed = await parseJson(request, disconnectSchema);
     const body = {
       workspaceId: parsed.workspaceId!,
       connectorId: parsed.connectorId!,
     };
-    const membership = await requireSocialConnectorWorkspace(body.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(body.workspaceId, session, database);
     requirePermission(membership, "manage", "connectors");
-    await enforceEmergencyLocks(body.workspaceId, "connector");
-    const result = await disconnectSocialConnector(body);
+    await enforceEmergencyLocks(body.workspaceId, "connector", database);
+    const result = await disconnectSocialConnector(body, database);
     await emitTokMetricAudit({
       workspaceId: body.workspaceId,
       actorId: session.userId,
@@ -177,7 +179,7 @@ export async function DELETE(request: NextRequest) {
         externalRevocationError: result.externalRevocationError || null,
         externalPublishingEnabled: false,
       },
-    });
+    }, database);
     return NextResponse.json(
       { ok: true, correlationId: cid, ...result },
       { headers: { "Cache-Control": "no-store" } },

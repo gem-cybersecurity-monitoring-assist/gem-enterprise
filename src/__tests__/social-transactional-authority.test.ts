@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasSocialTransactionalAuthority } from "@/lib/social-media/transactional-authority";
+import { hasSocialTransactionalAuthority, hasScopedSocialTransactionalAuthority } from "@/lib/social-media/transactional-authority";
 
 const project = "slzdjoqpzbkwzuaexlkj";
 const tls = "sslmode=require&sslaccept=strict";
@@ -33,5 +33,22 @@ describe("social transaction authority", () => {
         DATABASE_URL: direct,
       })).toBe(false);
     }
+  });
+});
+
+
+describe("scoped social transaction authority", () => {
+  const enabled = { SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED: "true" };
+  it("selects the exact social binding ahead of the legacy database without mutating configuration", () => {
+    const env = Object.freeze({ ...enabled, POSTGRES_PRISMA_URL: "postgresql://legacy.invalid/other", GEM_SOCIAL_POSTGRES_PRISMA_URL: pooler.split("?")[0] });
+    expect(hasScopedSocialTransactionalAuthority(env)).toBe(true);
+    expect(env.GEM_SOCIAL_POSTGRES_PRISMA_URL).not.toContain("sslmode");
+    expect(hasScopedSocialTransactionalAuthority({ ...enabled, POSTGRES_PRISMA_URL: direct })).toBe(true);
+  });
+  it("rejects a supplied wrong project or insecure binding rather than falling back to a valid legacy URL", () => {
+    for (const supplied of ["invalid", pooler.replace(project, "aaaaaaaaaaaaaaaaaaaa"), pooler.replace("strict", "accept_invalid_certs")]) {
+      expect(hasScopedSocialTransactionalAuthority({ ...enabled, POSTGRES_PRISMA_URL: direct, GEM_SOCIAL_POSTGRES_PRISMA_URL: supplied })).toBe(false);
+    }
+    expect(hasScopedSocialTransactionalAuthority({ GEM_SOCIAL_POSTGRES_PRISMA_URL: pooler })).toBe(false);
   });
 });

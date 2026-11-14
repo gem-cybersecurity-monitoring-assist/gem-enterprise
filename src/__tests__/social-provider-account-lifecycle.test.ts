@@ -275,11 +275,11 @@ describe("social provider account discovery and credential lifecycle", () => {
     expect(callback).toContain("discoverSocialAccounts");
     expect(callback).toContain("persistDiscoveredSocialConnectors");
     expect(callback).toContain("providerAccountDiscoveryPerformed: true");
-    expect(accountStore).toContain("db.$transaction");
+    expect(accountStore).toContain("database.$transaction");
     expect(accountStore).toContain("externalPublishingEnabled: false");
     expect(health).toContain("requireSameOrigin(request)");
     expect(health).toContain('requirePermission(membership, "manage", "connectors")');
-    expect(health).toContain('enforceEmergencyLocks(workspaceId, "connector")');
+    expect(health).toContain('enforceEmergencyLocks(workspaceId, "connector", database)');
     expect(health).toContain("externalPublishingActionTaken: false");
     expect(panel).toContain("Check credential health");
     expect(panel).toContain("do not enable publishing");
