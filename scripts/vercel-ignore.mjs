@@ -1,4 +1,8 @@
-// Defense-in-depth: only the canonical GEM Vercel project may consume a build.
+import { readFileSync } from "node:fs";
+import { developmentBranch, developmentDeploymentError, developmentProjectId } from "./development-deployment-policy.mjs";
+
+// Canonical production stays unchanged. Development requires an explicit,
+// separately selected config, project, branch, and preview target.
 const canonicalProjectId = "prj_VDGqnA7wZt2E65LLvT94ZOpnYc2Z";
 const canonicalMarkers = [
   "support371-gem-enterprise",
@@ -29,6 +33,22 @@ function continueBuild(reason) {
 function ignoreBuild(reason) {
   console.log(`[vercel-ignore] Ignore build: ${reason}`);
   process.exit(0);
+}
+
+if (process.env.VERCEL_GIT_COMMIT_REF === developmentBranch && projectId !== developmentProjectId) {
+  ignoreBuild("development deployment branch cannot build in another project");
+}
+
+if (projectId === developmentProjectId || process.env.GEM_DEPLOYMENT_PROFILE === "development") {
+  let config;
+  try {
+    config = JSON.parse(readFileSync("vercel.json", "utf8"));
+  } catch {
+    ignoreBuild("development deployment config is unavailable");
+  }
+  const error = developmentDeploymentError(process.env, config);
+  if (error) ignoreBuild(error);
+  continueBuild("explicit isolated development project and config verified");
 }
 
 if (projectId) {

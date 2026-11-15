@@ -1,0 +1,83 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "ignoreCommand": "node scripts/vercel-ignore.mjs",
+  "buildCommand": "node scripts/vercel-development-build.mjs",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "regions": [
+    "sfo1"
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "deploy/gem-enterprise-development": true
+    }
+  },
+  "crons": [],
+  "env": {
+    "RUN_DB_MIGRATIONS": "false",
+    "AUTO_DB_PUSH": "false",
+    "AUTO_DB_SEED": "false",
+    "SEED_DEMO_DATA": "false",
+    "GEM_VERIFY_RETENTION_APPROVED": "false",
+    "GEM_VERIFY_EVIDENCE_APPROVED": "false",
+    "GEM_VERIFY_DOCUMENT_UPLOAD_ACTIVE": "false",
+    "TIKTOK_SELLER_ACCOUNT_CONNECTED": "false",
+    "GOOGLE_MERCHANT_ACCOUNT_CONNECTED": "false",
+    "TOKMETRIC_LIVE_PUBLISHING_ENABLED": "false",
+    "TOKMETRIC_SANDBOX_PUBLISHING_ENABLED": "false",
+    "SOCIAL_MEDIA_LIVE_PUBLISHING_ENABLED": "false",
+    "META_SOCIAL_PUBLISHING_ENABLED": "false",
+    "X_SOCIAL_PUBLISHING_ENABLED": "false",
+    "LINKEDIN_SOCIAL_PUBLISHING_ENABLED": "false",
+    "YOUTUBE_PUBLISHING_ENABLED": "false",
+    "NEXTDOOR_PUBLISHING_ENABLED": "false",
+    "SOCIAL_GATEWAY_PUBLISHING_ADAPTER_ENABLED": "false",
+    "SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED": "false",
+    "SOCIAL_AUTOPILOT_ENABLED": "false",
+    "SOCIAL_AUTOPILOT_AUTO_APPROVAL_ENABLED": "false",
+    "TELEGRAM_SOCIAL_PUBLISHING_ENABLED": "false",
+    "FACEBOOK_AUTOMATION_ENABLED": "false",
+    "META_SOCIAL_OAUTH_ENABLED": "false",
+    "X_SOCIAL_OAUTH_ENABLED": "false",
+    "YOUTUBE_SOCIAL_OAUTH_ENABLED": "false",
+    "TOKMETRIC_TIKTOK_OAUTH_ENABLED": "false",
+    "TIKTOK_SHOP_OAUTH_ENABLED": "false",
+    "GEM_AUTH_GATEWAY_ENABLED": "false",
+    "GEM_INTAKE_GATEWAY_ENABLED": "false",
+    "GEM_TOKMETRIC_GPT_GATEWAY_ENABLED": "false",
+    "GEM_TOKMETRIC_AGENT_GATEWAY_ENABLED": "false",
+    "GEM_AI_PROVIDER_ENABLED": "false",
+    "GEM_DEPLOYMENT_PROFILE": "development",
+    "NEXT_PUBLIC_APP_NAME": "GEM Enterprise Development",
+    "SUPABASE_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co",
+    "GEM_SUPABASE_GATEWAY_BASE_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co/functions/v1",
+    "GEM_INTAKE_GATEWAY_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co/functions/v1/gem-intake-gateway",
+    "GEM_TOKMETRIC_GPT_GATEWAY_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co/functions/v1/gem-tokmetric-gpt-gateway",
+    "GEM_TOKMETRIC_AGENT_GATEWAY_URL": "https://dusqdnebwkoycdtjkhyy.supabase.co/functions/v1/gem-tokmetric-agent-gateway",
+    "NEXT_PUBLIC_APP_URL": "https://gem-enterprise-development.vercel.app",
+    "GEM_PUBLIC_APP_URL": "https://gem-enterprise-development.vercel.app",
+    "GEM_PUBLIC_BASE_URL": "https://gem-enterprise-development.vercel.app",
+    "GEM_AGENT_API_BASE_URL": "https://gem-enterprise-development.vercel.app",
+    "GEM_VERIFY_SCANNER_URL": "https://gem-enterprise-development.vercel.app/api/verify/evidence/internal-scanner",
+    "GEM_VERIFY_PUBLIC_BASE_URL": "https://gem-enterprise-development.vercel.app",
+    "FACEBOOK_EMERGENCY_LOCK_ENABLED": "true",
+    "GEM_VERIFY_SCANNER_MODE": "first_party"
+  },
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "outputDirectory": ".next"
+}
