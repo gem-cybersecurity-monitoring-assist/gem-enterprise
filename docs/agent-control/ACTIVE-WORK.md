@@ -1,14 +1,19 @@
 # Active Work
 
+## TikTok connection verification — 2026-11-15
+Owner: ChatGPT Work. Issue #502; task: [TIKTOK-CONNECTION-VERIFICATION](tasks/TIKTOK-CONNECTION-VERIFICATION.md).
+Branch: `fix/tiktok-connection-verification`, base `8598474dd3cd0fd41fdbb0a27721891bedd2ae9c`.
+Scope: existing connector health authority, bounded read-only TikTok identity check, safe audit and mobile verification control. No credentials, refresh/revoke, scopes, schema or publishing activation. Status: IMPLEMENTED; 1,536 tests/224 files, lint/typecheck/claims/schema/build passed; independent review found no remaining blockers after UI consumer/race corrections. Exact-head hosted gates and live check pending.
+
 ## Social gateway configuration failures — 2026-11-15
 Owner: ChatGPT Work. Issue #500; task: [SOCIAL-GATEWAY-CONFIGURATION](tasks/SOCIAL-GATEWAY-CONFIGURATION.md).
 Branch: `fix/social-gateway-configuration`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
-Scope: fail-closed gateway startup/request errors, redacted logging and direct handler tests. No credentials, schema, deployments or publishing activation. Separate from PR #497 and merged PR #499. Status: IMPLEMENTED; original 1,486 local tests, website build and hosted gates passed; reconciled with main after #499; combined 1,501 tests pass; refreshed hosted gates and edge-runtime activation pending.
+Scope: fail-closed gateway startup/request errors, redacted logging and direct handler tests. No credentials, schema, deployments or publishing activation. Separate from PR #497 and merged PR #499. Status: MERGED (#501) at 8598474dd3cd0fd41fdbb0a27721891bedd2ae9c after independent review and exact-head hosted gates; 1,501 tests passed. Original-project edge source deployed and reloaded-source matched; live POST now returns controlled 503 setup-required, GET405/OPTIONS200. Matching secret and authenticated health remain outstanding; no publishing activation.
 
 ## Social workspace navigation — 2026-11-15
 Owner: ChatGPT Work. Issue #498; task: [SOCIAL-WORKSPACE-NAVIGATION](tasks/SOCIAL-WORKSPACE-NAVIGATION.md).
 Branch: `fix/social-workspace-navigation`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
-Scope: preserve explicit social workspace links and expose existing authorized workspace choices. Prior overlapping PRs #492/#494 are merged. No auth, database, credentials, provider grants or publishing changes. Status: MERGED as 650a5c784df5b10e93be19ccc91a1ee6a40adbfd (#499); local and hosted gates passed, independent review complete; Git-owned production dpl_2jk7v1gT83TfMCBGAtujCP9K6LzT READY; live UI verification pending.
+Scope: preserve explicit social workspace links and expose existing authorized workspace choices. Prior overlapping PRs #492/#494 are merged. No auth, database, credentials, provider grants or publishing changes. Status: MERGED as 650a5c784df5b10e93be19ccc91a1ee6a40adbfd (#499); local and hosted gates passed, independent review complete; Git-owned production dpl_2jk7v1gT83TfMCBGAtujCP9K6LzT READY; authenticated production chooser, workspace-scoped Facebook navigation and Settings return-link checks passed.
 
 Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 

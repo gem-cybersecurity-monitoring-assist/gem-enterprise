@@ -130,3 +130,21 @@ Remove any app access granted to the old ChatGPT-hosted site or Base44 apps:
 | Google / YouTube | https://myaccount.google.com/permissions |
 | TikTok | Settings → Security → Manage app permissions |
 | Nextdoor | Settings → Connected apps |
+
+### Existing TokMetric TikTok identity verification
+
+The existing `/tokmetric/accounts` page offers **Verify TikTok** for saved Content
+Posting accounts. This POST uses the same pinned-project account/workspace
+reconciliation as connector OAuth and requires manage/connectors permission.
+It makes a bounded read-only call to TikTok's
+`https://open.tiktokapis.com/v2/user/info/?fields=open_id` using the existing
+encrypted credential and matches the returned identity. Reference:
+https://developers.tiktok.com/doc/tiktok-api-v2-get-user-info .
+
+Saved authorization timestamps are not fresh provider evidence. Live results
+are dated and scoped to the current view; reloading clears them. Safe audit
+records persist the check outcome. An empty list, expired/disabled/malformed
+credential, provider failure or identity mismatch never becomes verified.
+The check does not refresh/revoke tokens, rewrite connector state, add scopes,
+create posts, or prove app review/publishing readiness. Reconnect through the
+existing owner OAuth flow when authorization is expired. YouTube remains paused.
