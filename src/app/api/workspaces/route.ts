@@ -25,8 +25,10 @@ function verifiedGatewayWorkspaces(value: unknown): AccessibleWorkspace[] | null
       && !!organization && typeof organization.id === "string"
       && typeof organization.name === "string"
       && !!role && typeof role.name === "string"
-      && !!counts && ["members", "connectors", "approvalRecords"].every((key) =>
-        Number.isSafeInteger(counts[key]) && (counts[key] as number) >= 0)
+      && !!counts && ["members", "connectors", "approvalRecords"].every((key) => {
+        const count = counts[key];
+        return typeof count === "number" && Number.isSafeInteger(count) && count >= 0;
+      })
       && !!controls
       && ["globalEmergencyLock", "publishingDisabled", "advertisingDisabled",
           "shopWriteDisabled", "connectorDisabled"].every((key) => typeof controls[key] === "boolean");
