@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 // The existing project-bound Workspace Gateway is authoritative for gateway
 // sessions. Reject malformed readbacks instead of displaying invented,
 // cross-tenant or incomplete workspace records.
-type WorkspaceSummary = Pick<AccessibleWorkspace, "id" | "name" | "counts" | "controls"> & {
+type WorkspaceSummary = Pick<AccessibleWorkspace, "id" | "name" | "controls"> & {
   organization: Pick<AccessibleWorkspace["organization"], "id" | "name">;
   role: Pick<AccessibleWorkspace["role"], "name">;
+  counts: { members: number | null; connectors: number | null; approvalRecords: number | null };
 };
 
 function verifiedGatewayWorkspaces(value: unknown): WorkspaceSummary[] | null {
@@ -46,11 +47,10 @@ function verifiedGatewayWorkspaces(value: unknown): WorkspaceSummary[] | null {
     name: row.name,
     organization: { id: row.organization.id, name: row.organization.name },
     role: { name: row.role.name },
-    counts: {
-      members: row.counts.members,
-      connectors: row.counts.connectors,
-      approvalRecords: row.counts.approvalRecords,
-    },
+    // Current gem-workspace-gateway/access emits hardcoded 0 for these
+    // three aggregates. Do not present those placeholders as verified data.
+    // Keep direct-Prisma membership counts intact on the separate local path.
+    counts: { members: null, connectors: null, approvalRecords: null },
     controls: {
       globalEmergencyLock: row.controls.globalEmergencyLock,
       publishingDisabled: row.controls.publishingDisabled,
