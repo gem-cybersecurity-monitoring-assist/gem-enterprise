@@ -10,7 +10,12 @@ export const dynamic = "force-dynamic";
 // The existing project-bound Workspace Gateway is authoritative for gateway
 // sessions. Reject malformed readbacks instead of displaying invented,
 // cross-tenant or incomplete workspace records.
-function verifiedGatewayWorkspaces(value: unknown): AccessibleWorkspace[] | null {
+type WorkspaceSummary = Pick<AccessibleWorkspace, "id" | "name" | "counts" | "controls"> & {
+  organization: Pick<AccessibleWorkspace["organization"], "id" | "name">;
+  role: Pick<AccessibleWorkspace["role"], "name">;
+};
+
+function verifiedGatewayWorkspaces(value: unknown): WorkspaceSummary[] | null {
   if (!value || typeof value !== "object") return null;
   const rows = (value as { workspaces?: unknown }).workspaces;
   if (!Array.isArray(rows) || !rows.every((row) => {
@@ -33,11 +38,30 @@ function verifiedGatewayWorkspaces(value: unknown): AccessibleWorkspace[] | null
       && ["globalEmergencyLock", "publishingDisabled", "advertisingDisabled",
           "shopWriteDisabled", "connectorDisabled"].every((key) => typeof controls[key] === "boolean");
   })) return null;
-  const ids = rows.map((row: AccessibleWorkspace) => row.id);
-  return new Set(ids).size === ids.length ? rows as AccessibleWorkspace[] : null;
+  const ids = rows.map((row: { id: string }) => row.id);
+  if (new Set(ids).size !== ids.length) return null;
+  // Never return gateway-owned extra properties or credential-like fields.
+  return rows.map((row: WorkspaceSummary) => ({
+    id: row.id,
+    name: row.name,
+    organization: { id: row.organization.id, name: row.organization.name },
+    role: { name: row.role.name },
+    counts: {
+      members: row.counts.members,
+      connectors: row.counts.connectors,
+      approvalRecords: row.counts.approvalRecords,
+    },
+    controls: {
+      globalEmergencyLock: row.controls.globalEmergencyLock,
+      publishingDisabled: row.controls.publishingDisabled,
+      advertisingDisabled: row.controls.advertisingDisabled,
+      shopWriteDisabled: row.controls.shopWriteDisabled,
+      connectorDisabled: row.controls.connectorDisabled,
+    },
+  }));
 }
 
-function workspaceResponse(workspaces: AccessibleWorkspace[], requestedWorkspaceId: string | null) {
+function workspaceResponse(workspaces: WorkspaceSummary[], requestedWorkspaceId: string | null) {
   const selected = requestedWorkspaceId
     ? workspaces.find((workspace) => workspace.id === requestedWorkspaceId) ?? null
     : workspaces[0] ?? null;
