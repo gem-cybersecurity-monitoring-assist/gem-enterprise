@@ -127,6 +127,8 @@ const workspace = {
     connectorDisabled: false,
   },
 };
+const gatewayCounts = { members: null, connectors: null, approvalRecords: null };
+const gatewayWorkspace = { ...workspace, counts: gatewayCounts };
 const gatewaySession = () => {
   mocks.session.mockResolvedValue({
     ok: true, accountStatus: "active",
@@ -144,13 +146,24 @@ describe("project-bound gateway workspace access without generic Prisma", () => 
     expect(result.status).toBe(200);
     expect(result.headers.get("cache-control")).toBe("no-store");
     expect(await result.json()).toMatchObject({
-      workspaces: [workspace],
+      workspaces: [gatewayWorkspace],
       selectedWorkspaceId: "workspace-a",
     });
     expect(mocks.gateway).toHaveBeenCalledOnce();
     expect(mocks.gateway).toHaveBeenCalledWith("access", "signed-in-session-token");
     expect(mocks.resolve).not.toHaveBeenCalled();
     expect(databaseMethods().every(fn => fn.mock.calls.length === 0)).toBe(true);
+  });
+
+  it("never treats the legacy gateway's hardcoded zero counters as measured", async () => {
+    gatewaySession();
+    mocks.gateway.mockResolvedValue({
+      workspaces: [{ ...workspace, counts: { members: 0, connectors: 0, approvalRecords: 0 } }],
+    });
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(200);
+    const body = await result.json();
+    expect(body.workspaces[0].counts).toEqual(gatewayCounts);
   });
 
   it("denies selecting a workspace not returned by the authoritative gateway", async () => {
@@ -217,7 +230,7 @@ describe("project-bound gateway workspace access without generic Prisma", () => 
     expect(result.status).toBe(200);
     const payload = await result.json();
     expect(JSON.stringify(payload)).not.toContain("private-");
-    expect(payload.workspaces[0]).toEqual(workspace);
+    expect(payload.workspaces[0]).toEqual(gatewayWorkspace);
     expect(mocks.resolve).not.toHaveBeenCalled();
   });
 
