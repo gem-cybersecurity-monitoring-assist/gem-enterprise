@@ -1,5 +1,11 @@
 # Active Work
 
+## Public new-client entry and SaaS activation journey — 2026-11-15
+Owner: ChatGPT Work. Issue #510; task [CLIENT-ENTRY-510](tasks/CLIENT-ENTRY-510.md).
+Branch: `fix/new-client-intake-entry-510`, base `de79e803a917ae75c755b93092951e22b36d3047`.
+Scope: route enterprise applicants to their dedicated intake; repair the legacy Community access form's retired endpoint; remove unverified Community response promises; show existing invite-based account activation stages on the SaaS dashboard. No schema, credentials, provider publishing, paid work or unrelated projects. Status: IMPLEMENTED ON BRANCH; exact-head hosted verification, independent review and production acceptance pending.
+
+
 ## Core Prisma fail-closed readiness — 2026-11-15
 Owner: ChatGPT Work. Issue #508; branch `fix/core-prisma-readiness-508`, task [CORE-PRISMA-READINESS](tasks/CORE-PRISMA-READINESS.md).
 Scope: reuse the existing signed-in, membership-scoped Workspace Gateway for gateway sessions; validate and whitelist response fields, preserve local Prisma when configured, and fail closed for unavailable core Command Center aggregates. No secrets, migrations, publishing or production changes. Status: PR #509 DRAFT; hosted exact-head gates rechecking after final sanitization.
