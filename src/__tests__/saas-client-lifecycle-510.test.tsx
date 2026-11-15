@@ -33,7 +33,7 @@ describe("SaaS new client onboarding dashboard", () => {
   it("is visible on the existing SaaS management page without displacing existing tools", () => {
     const html = renderToStaticMarkup(<SaaSControlPlanePage />);
     expect(html).toContain("Application to operating workspace");
-    expect(html).toContain("SaaS management home");
+    expect(html).toContain("Your business. One workspace.");
     expect(html).toContain("Open backend completion center");
   });
 });
