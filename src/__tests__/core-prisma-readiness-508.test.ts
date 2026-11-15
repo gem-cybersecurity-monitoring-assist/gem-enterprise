@@ -147,7 +147,8 @@ describe("project-bound gateway workspace access without generic Prisma", () => 
       workspaces: [workspace],
       selectedWorkspaceId: "workspace-a",
     });
-    expect(mocks.gateway).toHaveBeenCalledExactlyOnceWith("access", "signed-in-session-token");
+    expect(mocks.gateway).toHaveBeenCalledOnce();
+    expect(mocks.gateway).toHaveBeenCalledWith("access", "signed-in-session-token");
     expect(mocks.resolve).not.toHaveBeenCalled();
     expect(databaseMethods().every(fn => fn.mock.calls.length === 0)).toBe(true);
   });
