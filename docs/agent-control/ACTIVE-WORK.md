@@ -1,5 +1,9 @@
 # Active Work
 
+## Core Prisma fail-closed readiness — 2026-11-15
+Owner: ChatGPT Work. Issue #508; branch `fix/core-prisma-readiness-508`, task [CORE-PRISMA-READINESS](tasks/CORE-PRISMA-READINESS.md).
+Scope: short-circuit missing generic Prisma configuration for authorized workspace and Command Center read requests, retaining namespaced social isolation; no secrets, migrations, publishing, or project changes. Status: draft implementation, hosted gates pending.
+
 ## Owner gateway diagnostics — 2026-11-15
 Owner: ChatGPT Work. Issue #506; task: [SOCIAL-GATEWAY-OWNER-DIAGNOSTICS](tasks/SOCIAL-GATEWAY-OWNER-DIAGNOSTICS.md).
 Branch: `fix/social-gateway-owner-diagnostics`, base `e279a96d892e37ea9835f16b2e8cf1e5a1651454`.
