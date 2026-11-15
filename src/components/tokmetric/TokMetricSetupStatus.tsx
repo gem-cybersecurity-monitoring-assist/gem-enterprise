@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import type { TikTokConnectionCheck } from "@/lib/tokmetric/oauth/health";
+
 const WORKSPACE_ID = "ws_60488340ded94dcfab3b875ef9ae591c";
 const CALLBACK_URL = "https://gemcybersecurityassist.com/api/tokmetric/oauth/callback";
 const REVIEW_URL = "https://gemcybersecurityassist.com/tokmetric/app-review";
@@ -132,6 +134,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [healthRunning, setHealthRunning] = useState(false);
+  const [checks, setChecks] = useState<TikTokConnectionCheck[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -162,6 +165,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
 
   async function loadConnectionState(runHealth = false) {
     setError(null);
+    setChecks([]);
     if (runHealth) setHealthRunning(true);
     else setLoading(true);
     try {
@@ -174,6 +178,9 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
         if (!healthResponse.ok) {
           throw new Error(healthPayload.error?.message || healthPayload.error || "Connector health verification failed.");
         }
+        setChecks(healthPayload.checks ?? []);
+        if (!healthPayload.checks?.length) setError("No saved TikTok Content Posting accounts were available to verify.");
+        return;
       }
 
       const [connectorResponse, readinessResponse] = await Promise.all([
@@ -187,6 +194,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
       if (!connectorResponse.ok) {
         throw new Error(connectorPayload.error?.message || connectorPayload.error || "Unable to load connector state.");
       }
+      setConnectors(connectorPayload.connectors ?? []);
       if (!readinessResponse.ok) {
         throw new Error(readinessPayload.error?.message || readinessPayload.error || "Unable to load readiness state.");
       }
@@ -211,8 +219,9 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
   const requiredScopes = postingConnector?.requiredScopes ?? ["user.info.basic", "video.publish"];
   const grantedScopes = connectedAccount?.grantedScopes ?? [];
   const scopesReady = requiredScopes.every((scope) => grantedScopes.includes(scope));
-  const connectionReady = postingConnector?.state === "CONNECTED" && Boolean(connectedAccount) && scopesReady;
   const missingConfiguration = postingConnector?.configurationMissing ?? [];
+  const latestCheck = checks.find(check => check.connectorId === connectedAccount?.id);
+  const connectionReady = postingConnector?.state === "CONNECTED" && Boolean(connectedAccount) && scopesReady && missingConfiguration.length === 0 && latestCheck?.status === "verified";
 
   return (
     <div className="min-h-screen bg-[#081019] text-white">
@@ -239,7 +248,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
                 <AlertTriangle className="h-4 w-4" />
                 Activation boundary
               </div>
-              Manual checklist progress is operator-confirmed. Connected and published states are shown only when verified by the GEM backend and TikTok.
+              Manual checklist progress is operator-confirmed. Saved OAuth state and live TikTok identity verification are separate. Publishing requires its own approval and evidence.
             </aside>
           </div>
         </div>
@@ -333,7 +342,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
             <section className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Verified backend state</p>
-                <p className="mt-2 text-sm leading-6 text-white/55">Refresh reads protected GEM records. Health verification checks stored credential presence and expiration without exposing any token.</p>
+                <p className="mt-2 text-sm leading-6 text-white/55">Refresh reads saved GEM records. Verify checks the saved TikTok account identity through a read-only provider request. It does not confirm publishing readiness.</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
@@ -366,6 +375,16 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
               </section>
             )}
 
+            <section aria-live="polite" className="space-y-3">
+              {checks.map(check => (
+                <article key={check.connectorId} className="rounded-2xl border border-white/10 p-5 text-sm">
+                  <p className={check.status === "verified" ? "text-emerald-200" : "text-amber-100"}>Live TikTok identity: {titleCase(check.status)}</p>
+                  <p className="mt-2">{check.message}</p>
+                  <p className="mt-2 text-xs text-white/45">Checked: {new Date(check.checkedAt).toLocaleString()}</p>
+                </article>
+              ))}
+            </section>
+
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
                 <p className="text-xs uppercase tracking-[0.14em] text-white/35">Managed configuration</p>
@@ -373,8 +392,8 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
                 <p className="mt-3 text-xs leading-5 text-white/40">{missingConfiguration.length ? missingConfiguration.join(", ") : "No required variable names reported missing."}</p>
               </article>
               <article className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-                <p className="text-xs uppercase tracking-[0.14em] text-white/35">OAuth connector</p>
-                <div className="mt-4"><StatePill value={postingConnector?.state ?? "NOT_CONFIGURED"} verified /></div>
+                <p className="text-xs uppercase tracking-[0.14em] text-white/35">Saved OAuth authorization</p>
+                <div className="mt-4"><StatePill value={postingConnector?.state ?? "NOT_CONFIGURED"} /></div>
                 <p className="mt-3 text-xs leading-5 text-white/40">Environment: {postingConnector?.environment ?? "unknown"}</p>
               </article>
               <article className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
@@ -396,7 +415,7 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
                   <h2 className="mt-2 text-2xl font-bold">{postingConnector?.displayName ?? "Connector definition not loaded"}</h2>
                   <p className="mt-2 text-sm text-white/45">Workspace: <span className="font-mono text-xs">{WORKSPACE_ID}</span></p>
                 </div>
-                <StatePill value={connectionReady ? "READY" : postingConnector?.state ?? "NOT_CONFIGURED"} verified />
+                <StatePill value={latestCheck?.status ?? "NOT_CHECKED"} verified={latestCheck?.status === "verified"} />
               </div>
 
               {connectedAccount ? (
@@ -457,10 +476,10 @@ export function TokMetricSetupStatus({ initialTab = "submission" }: { initialTab
               <div className="flex items-start gap-3">
                 {connectionReady ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-200" /> : <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-200" />}
                 <div>
-                  <h2 className="font-bold">{connectionReady ? "Sandbox connection prerequisites verified" : "BLOCKED — TIKTOK CONNECTION NOT FULLY ACTIVATED"}</h2>
+                  <h2 className="font-bold">{connectionReady ? "TikTok account identity verified" : "BLOCKED — TIKTOK CONNECTION NOT FULLY ACTIVATED"}</h2>
                   <p className="mt-2 text-sm leading-6 text-white/55">
                     {connectionReady
-                      ? "The connected account and required scopes are present. Keep production publishing disabled while completing the private SELF_ONLY test and TikTok review."
+                      ? "TikTok confirmed the saved account identity and the saved scopes are present. Keep publishing disabled until separate approval, review and publishing checks are complete."
                       : "Finish the portal checklist, ensure managed configuration is complete, and authorize the TikTok Sandbox account through official OAuth. No connected or published state is simulated."}
                   </p>
                 </div>

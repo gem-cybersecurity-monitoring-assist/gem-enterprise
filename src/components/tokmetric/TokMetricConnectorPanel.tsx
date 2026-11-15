@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import type { TikTokConnectionCheck } from "@/lib/tokmetric/oauth/health";
 
 const REVIEW_WORKSPACE_ID = "ws_60488340ded94dcfab3b875ef9ae591c";
 
@@ -36,6 +38,10 @@ function healthLabel(value: string | null) {
 export function TokMetricConnectorPanel() {
   const [workspaceId, setWorkspaceId] = useState(REVIEW_WORKSPACE_ID);
   const [reloadKey, setReloadKey] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const [checks, setChecks] = useState<TikTokConnectionCheck[]>([]);
+  const [checkError, setCheckError] = useState<string>();
+  const checkController = useRef<AbortController | null>(null);
   const [state, setState] = useState<{
     loading: boolean;
     error?: string;
@@ -44,6 +50,10 @@ export function TokMetricConnectorPanel() {
   const canLoad = useMemo(() => workspaceId.trim().length > 0, [workspaceId]);
 
   useEffect(() => {
+    checkController.current?.abort();
+    setChecking(false);
+    setChecks([]);
+    setCheckError(undefined);
     if (!canLoad) return;
     const controller = new AbortController();
     setState({ loading: true, connectors: [] });
@@ -56,15 +66,39 @@ export function TokMetricConnectorPanel() {
         if (!response.ok) {
           throw new Error(payload.error?.message || payload.error || "Unable to load connectors.");
         }
-        setState({ loading: false, connectors: payload.connectors ?? [] });
+        if (!controller.signal.aborted) setState({ loading: false, connectors: payload.connectors ?? [] });
       })
       .catch((error) => {
-        if (error.name !== "AbortError") {
+        if (!controller.signal.aborted && error.name !== "AbortError") {
           setState({ loading: false, connectors: [], error: error.message });
         }
       });
-    return () => controller.abort();
+    return () => { controller.abort(); checkController.current?.abort(); };
   }, [canLoad, reloadKey, workspaceId]);
+
+  async function verifyConnection() {
+    const controller = new AbortController();
+    checkController.current?.abort();
+    checkController.current = controller;
+    setChecking(true);
+    setChecks([]);
+    setCheckError(undefined);
+    try {
+      const response = await fetch(`/api/tokmetric/connectors/health?workspaceId=${encodeURIComponent(workspaceId.trim())}`, {
+        method: "POST", cache: "no-store", signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || "Unable to verify TikTok.");
+      if (!controller.signal.aborted) {
+        setChecks(payload.checks ?? []);
+        if (!payload.checks?.length) setCheckError("No saved TikTok Content Posting accounts were available to verify.");
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) setCheckError(error instanceof Error ? error.message : "Unable to verify TikTok.");
+    } finally {
+      if (!controller.signal.aborted) setChecking(false);
+    }
+  }
 
   const oauthHref = `/api/tokmetric/oauth/start?workspaceId=${encodeURIComponent(
     workspaceId.trim(),
@@ -75,44 +109,57 @@ export function TokMetricConnectorPanel() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-            Live connector state
+            Saved authorization and live verification
           </p>
           <h2 className="mt-2 text-xl font-bold">Workspace TikTok connectors</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
-            The authorized review workspace is preselected so a signed-in reviewer can load real database-backed connector records without knowing an internal identifier. Tokens and client secrets are never returned to the browser.
+            Saved authorization is shown below. Verify TikTok checks the existing Content Posting account identity with a read-only request. It does not publish content or confirm posting approval.
           </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-[minmax(260px,1fr)_auto_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_auto_auto_auto_auto]">
           <input
             aria-label="TokMetric workspace ID"
+            disabled={checking}
             value={workspaceId}
             onChange={(event) => setWorkspaceId(event.target.value)}
             placeholder="workspace ID"
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-white/30"
+            className="min-h-11 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-white/30"
           />
           <button
             type="button"
             onClick={() => setReloadKey((value) => value + 1)}
-            disabled={!canLoad || state.loading}
-            className="rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!canLoad || state.loading || checking}
+            className="min-h-11 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Refresh
+            Reload saved accounts
+          </button>
+          <button
+            type="button"
+            disabled={!canLoad || state.loading || checking || Boolean(state.error)}
+            onClick={verifyConnection}
+            className="min-h-11 rounded-xl border border-cyan-300/25 bg-cyan-300/[0.07] px-4 py-2 text-sm font-semibold text-cyan-200 disabled:opacity-50"
+          >
+            {checking ? "Verifying TikTok…" : "Verify TikTok"}
           </button>
           <a
             href="/tokmetric/setup-status"
-            className="rounded-xl border border-cyan-300/25 bg-cyan-300/[0.07] px-4 py-2 text-center text-sm font-semibold text-cyan-200 transition hover:bg-cyan-300/[0.12]"
+            className="min-h-11 rounded-xl border border-cyan-300/25 bg-cyan-300/[0.07] px-4 py-2 text-center text-sm font-semibold text-cyan-200 transition hover:bg-cyan-300/[0.12]"
           >
             Setup status
           </a>
           <a
             href={oauthHref}
-            className="rounded-xl bg-cyan-300 px-4 py-2 text-center text-sm font-bold text-[#06111b] transition hover:bg-cyan-200"
+            className="min-h-11 rounded-xl bg-cyan-300 px-4 py-2 text-center text-sm font-bold text-[#06111b] transition hover:bg-cyan-200"
           >
             Connect TikTok
           </a>
         </div>
       </div>
 
+      <div aria-live="polite">
+        {checking && <p className="mt-4 text-sm text-cyan-100">Checking saved TikTok account identity. No content is posted.</p>}
+        {checkError && <p className="mt-4 text-sm text-amber-100">{checkError}</p>}
+      </div>
       {!canLoad && (
         <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/55">
           No workspace selected. Connector state is not fabricated.
@@ -138,7 +185,7 @@ export function TokMetricConnectorPanel() {
           {state.connectors.map((connector) => (
             <article
               key={connector.provider}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
+              className="min-h-11 rounded-xl border border-white/10 bg-white/[0.03] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -182,7 +229,14 @@ export function TokMetricConnectorPanel() {
                         <p className="font-semibold uppercase tracking-[0.12em] text-white/70">
                           {label(account.state)}
                         </p>
-                        <p className="mt-1">Health: {healthLabel(account.lastHealthAt)}</p>
+                        <p className="mt-1">Saved authorization check: {healthLabel(account.lastHealthAt)}</p>
+                        {checks.find(check => check.connectorId === account.id) ? checks.filter(check => check.connectorId === account.id).map(check => (
+                          <div key={check.connectorId} className="mt-2 max-w-sm text-sm" role="status">
+                            <p className={check.status === "verified" ? "text-emerald-200" : "text-amber-100"}>Live identity: {label(check.status)}</p>
+                            <p className="mt-1">{check.message}</p>
+                            <p className="mt-1 text-xs">Checked: {healthLabel(check.checkedAt)}</p>
+                          </div>
+                        )) : <p className="mt-2">Live identity: Not checked in this view</p>}
                       </div>
                     </div>
                   ))}
