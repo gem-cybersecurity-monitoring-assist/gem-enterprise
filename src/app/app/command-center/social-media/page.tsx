@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSession } from "@/lib/auth";
+import { SocialGatewayDiagnostics } from "@/components/social-media/SocialGatewayDiagnostics";
 import {
   AlertTriangle,
   BriefcaseBusiness,
@@ -40,7 +42,8 @@ function StatusBadge({ state }: { state: SocialMediaReadinessState }) {
   );
 }
 
-export default function SocialMediaCommandCenterPage() {
+export default async function SocialMediaCommandCenterPage() {
+  const session = await getSession();
   const providers = getSocialMediaProviderReadiness();
   const configuredCount = providers.filter((provider) => provider.configurationReady).length;
   const approvalCount = providers.filter(
@@ -107,6 +110,8 @@ export default function SocialMediaCommandCenterPage() {
           <p className="mt-2 text-sm text-slate-400">Providers blocked from external writes</p>
         </article>
       </section>
+
+      {session?.role === "super_admin" && <SocialGatewayDiagnostics />}
 
       <section aria-label="Social connections" className="rounded-2xl border border-white/10 bg-card/75 p-5">
         <h2 className="text-lg font-semibold text-white">Social connections</h2>

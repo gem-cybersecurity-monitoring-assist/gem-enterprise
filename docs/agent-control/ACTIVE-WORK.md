@@ -1,9 +1,14 @@
 # Active Work
 
+## Owner gateway diagnostics — 2026-11-15
+Owner: ChatGPT Work. Issue #506; task: [SOCIAL-GATEWAY-OWNER-DIAGNOSTICS](tasks/SOCIAL-GATEWAY-OWNER-DIAGNOSTICS.md).
+Branch: `fix/social-gateway-owner-diagnostics`, base `e279a96d892e37ea9835f16b2e8cf1e5a1651454`.
+Scope: fixed owner-only health transport and existing Command Center control; no activation, credentials, database writes or publishing gate changes. Status: IMPLEMENTED; independent review clear; schema/claims/lint/typecheck/1,574 tests/227 files/build passed. Hosted gates and live diagnostic smoke pending.
+
 ## TikTok account status clarity — 2026-11-15
 Owner: ChatGPT Work. Issue #504; task: [TIKTOK-ACCOUNT-STATUS-CLARITY](tasks/TIKTOK-ACCOUNT-STATUS-CLARITY.md).
 Branch: `fix/tiktok-account-status-clarity`, base `62c942ab81f0c1c70d933eb7938b799ed504bdb7`.
-Scope: remove static account-state contradiction from existing accounts view; no backend/credential/publishing changes. Status: IMPLEMENTED; independent review clear; schema/claims/lint/typecheck/1,537 tests/225 files/build passed. Exact-head hosted gates and release pending.
+Scope: remove static account-state contradiction from existing accounts view; no backend/credential/publishing changes. Status: MERGED (#505) as e279a96d892e37ea9835f16b2e8cf1e5a1651454; local/hosted gates passed, canonical production READY and health database ok; live UI cleanup verified. TikTok live identity check repeated successfully at16:55 UTC. Owner-private Operations Site refreshed and published with dated evidence; secret installation remains required.
 
 ## TikTok connection verification — 2026-11-15
 Owner: ChatGPT Work. Issue #502; task: [TIKTOK-CONNECTION-VERIFICATION](tasks/TIKTOK-CONNECTION-VERIFICATION.md).
