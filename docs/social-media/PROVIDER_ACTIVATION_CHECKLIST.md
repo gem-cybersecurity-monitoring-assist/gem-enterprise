@@ -148,3 +148,15 @@ credential, provider failure or identity mismatch never becomes verified.
 The check does not refresh/revoke tokens, rewrite connector state, add scopes,
 create posts, or prove app review/publishing readiness. Reconnect through the
 existing owner OAuth flow when authorization is expired. YouTube remains paused.
+
+### Owner health check before activation
+
+In `/app/command-center/social-media`, the platform owner can use **Check gateway
+connection**. The protected POST `/api/social-media/gateway-health` calls only
+`health` with the existing server credential, even while adapter/live flags are
+off. It rejects any base URL outside the original GEM Supabase function target,
+checks `ok === true` and an integer RPC inventory of at least 14, and returns only
+redacted diagnostic states. No secret is returned or entered by this control.
+A healthy response does not enable the adapter or authorize a post. The existing
+publishing probe still requires its flag and successful health; all other gates
+are preserved. Missing secrets must still be entered in approved secret stores.
