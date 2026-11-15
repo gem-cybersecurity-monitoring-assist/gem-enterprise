@@ -5,6 +5,7 @@ import { SaaSOperationalSnapshot } from "@/components/command-center/SaaSOperati
 import { SaaSManagementWorkspace } from "@/components/command-center/SaaSManagementWorkspace";
 import { SaaSAssignedWorkspaces } from "@/components/command-center/SaaSAssignedWorkspaces";
 import { SaaSArchitectureDeck } from "@/components/command-center/SaaSArchitectureDeck";
+import { SaaSClientActivationJourney } from "@/components/command-center/SaaSClientActivationJourney";
 
 export const metadata: Metadata = {
   title: "SaaS Management Center | GEM Enterprise",
@@ -56,6 +57,8 @@ export default function SaaSControlPlanePage() {
         </div>
         <Link href="/app/command-center/saas/readiness" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-6 py-3 text-sm font-bold text-amber-100 hover:bg-amber-300/20">Open backend completion center <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
       </section>
+
+      <SaaSClientActivationJourney />
 
       <SaaSArchitectureDeck />
 
