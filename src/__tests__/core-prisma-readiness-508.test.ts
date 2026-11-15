@@ -202,6 +202,25 @@ describe("project-bound gateway workspace access without generic Prisma", () => 
     },
   );
 
+  it("returns only allowlisted workspace display fields, never additional gateway data", async () => {
+    gatewaySession();
+    mocks.gateway.mockResolvedValue({
+      workspaces: [{
+        ...workspace,
+        internalToken: "private-token-must-not-leak",
+        organization: { ...workspace.organization, privateCustomerRecord: "private-organization-must-not-leak" },
+        role: { ...workspace.role, internalCredential: "private-role-must-not-leak" },
+        controls: { ...workspace.controls, unpublishedSecret: "private-control-must-not-leak" },
+      }],
+    });
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(200);
+    const payload = await result.json();
+    expect(JSON.stringify(payload)).not.toContain("private-");
+    expect(payload.workspaces[0]).toEqual(workspace);
+    expect(mocks.resolve).not.toHaveBeenCalled();
+  });
+
   it("handles remote gateway failure without fallback to other tenant datasource", async () => {
     gatewaySession();
     mocks.gateway.mockRejectedValue(new Error("private provider details"));
