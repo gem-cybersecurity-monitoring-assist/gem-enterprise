@@ -1,10 +1,26 @@
 import { RequestStatus, TicketStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { hasCorePrismaRuntimeConfig } from "@/lib/core-prisma-readiness";
 import { getCommandCenterOperatingLayerSnapshot } from "@/lib/commandCenterOperatingLayer";
 import type { CommandCenterSnapshot } from "@/lib/commandCenterSnapshot";
 
 export async function buildCommandCenterSnapshot(): Promise<CommandCenterSnapshot> {
   const generatedAt = new Date().toISOString();
+  // Do not touch the generic Prisma client in gateway-only deployments.
+  // The social connector datasource is scoped and is not a substitute.
+  if (!hasCorePrismaRuntimeConfig()) {
+    return {
+      source: "unavailable",
+      generatedAt,
+      metrics: null,
+      operatingLayer: {
+        source: "unavailable",
+        metrics: null,
+        message: "An authorized core database connection is required to inspect the operating layer.",
+      },
+      message: "Core database aggregates are not configured. No live counts were verified.",
+    };
+  }
   const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const operatingLayerPromise = getCommandCenterOperatingLayerSnapshot();
 
