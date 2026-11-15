@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { forbidden, requireSession, serverError } from "@/lib/api/auth-helpers";
+import { forbidden, requireSession, serverError, serviceUnavailable } from "@/lib/api/auth-helpers";
+import { hasCorePrismaRuntimeConfig } from "@/lib/core-prisma-readiness";
 import { resolveWorkspaceAccess } from "@/lib/workspaceAccess";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,12 @@ export async function GET(request: NextRequest) {
   if (!gate.ok) return gate.response;
   if (gate.accountStatus !== "active") {
     return forbidden("An active account is required for workspace access.");
+  }
+
+  // A gateway bootstrap health check is not a transactional workspace store.
+  // Fail closed rather than invoking Prisma without an authorized core URL.
+  if (!hasCorePrismaRuntimeConfig()) {
+    return serviceUnavailable("Workspace data backend is not configured.");
   }
 
   const requestedWorkspaceId = request.nextUrl.searchParams.get("workspaceId");
