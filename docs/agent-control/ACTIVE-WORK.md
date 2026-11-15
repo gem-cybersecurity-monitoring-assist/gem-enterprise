@@ -1,5 +1,10 @@
 # Active Work
 
+## Isolated development deployment — 2026-11-15
+Owner: ChatGPT Work. Issue #496; task: [DEVELOPMENT-DEPLOYMENT-496](tasks/DEVELOPMENT-DEPLOYMENT-496.md).
+Branch: `fix/development-deployment-496`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
+Scope: explicit development deployment policy, isolated config/build preflight and tests. No production/provider/database mutation. Status: IN_PROGRESS.
+
 Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 
 ## Unified Client Workspace OS

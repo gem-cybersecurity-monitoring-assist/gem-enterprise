@@ -74,6 +74,8 @@ const POOLER_URL =
   "postgresql://postgres.slzdjoqpzbkwzuaexlkj@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require&sslaccept=strict";
 
 function configureTransactionalAuthority() {
+  // Bind both sides of this mocked fixture; never inherit the deployment's database target.
+  vi.stubEnv("GEM_SUPABASE_GATEWAY_BASE_URL", "https://slzdjoqpzbkwzuaexlkj.supabase.co/functions/v1");
   vi.stubEnv("SOCIAL_GATEWAY_DIRECT_TRANSACTIONS_ENABLED", "true");
   vi.stubEnv("POSTGRES_PRISMA_URL", POOLER_URL);
 }
