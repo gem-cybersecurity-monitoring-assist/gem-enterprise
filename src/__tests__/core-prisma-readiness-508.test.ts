@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { hasCorePrismaRuntimeConfig } from "@/lib/core-prisma-readiness";
 
 const mocks = vi.hoisted(() => ({
-  session: vi.fn(), resolve: vi.fn(),
+  session: vi.fn(), resolve: vi.fn(), token: vi.fn(), gateway: vi.fn(),
   userCount: vi.fn(), userFindMany: vi.fn(),
   productCount: vi.fn(), entitlementCount: vi.fn(),
   ticketCount: vi.fn(), requestCount: vi.fn(),
@@ -19,6 +19,8 @@ vi.mock("@/lib/api/auth-helpers", () => ({
   serverError: (message: string) => Response.json({ error: message }, { status: 500 }),
 }));
 vi.mock("@/lib/workspaceAccess", () => ({ resolveWorkspaceAccess: mocks.resolve }));
+vi.mock("@/lib/auth", () => ({ getGatewaySessionToken: mocks.token }));
+vi.mock("@/lib/supabase-gateway", () => ({ workspaceGateway: mocks.gateway }));
 vi.mock("@/lib/db", () => ({
   db: {
     user: { count: mocks.userCount, findMany: mocks.userFindMany },
@@ -55,6 +57,7 @@ beforeEach(() => {
     accountStatus: "active",
     session: { userId: "user-1", role: "client" },
   });
+  mocks.token.mockResolvedValue(null);
   mocks.resolve.mockResolvedValue({
     workspaces: [], selected: null, requestedDenied: false,
   });
@@ -106,6 +109,114 @@ describe("existing workspace API authorization and unavailable core backend", ()
     expect(result.status).toBe(200);
     expect(mocks.resolve).toHaveBeenCalledWith("user-1", null);
     expect((await result.json()).workspaces).toEqual([]);
+  });
+});
+
+
+const workspace = {
+  id: "workspace-a",
+  name: "Authorized workspace",
+  organization: { id: "org-1", name: "Authorized organization" },
+  role: { name: "Member" },
+  counts: { members: 2, connectors: 1, approvalRecords: 0 },
+  controls: {
+    globalEmergencyLock: false,
+    publishingDisabled: true,
+    advertisingDisabled: true,
+    shopWriteDisabled: true,
+    connectorDisabled: false,
+  },
+};
+const gatewaySession = () => {
+  mocks.session.mockResolvedValue({
+    ok: true, accountStatus: "active",
+    session: { userId: "user-1", role: "client", authSource: "supabase_gateway" },
+  });
+  mocks.token.mockResolvedValue("signed-in-session-token");
+  mocks.gateway.mockResolvedValue({ workspaces: [workspace] });
+};
+
+describe("project-bound gateway workspace access without generic Prisma", () => {
+  it("returns actual assigned workspaces from existing gateway and no Prisma access", async () => {
+    gatewaySession();
+    vi.stubEnv("GEM_SOCIAL_POSTGRES_PRISMA_URL", "postgresql://example.invalid/social");
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(200);
+    expect(result.headers.get("cache-control")).toBe("no-store");
+    expect(await result.json()).toMatchObject({
+      workspaces: [workspace],
+      selectedWorkspaceId: "workspace-a",
+    });
+    expect(mocks.gateway).toHaveBeenCalledExactlyOnceWith("access", "signed-in-session-token");
+    expect(mocks.resolve).not.toHaveBeenCalled();
+    expect(databaseMethods().every(fn => fn.mock.calls.length === 0)).toBe(true);
+  });
+
+  it("denies selecting a workspace not returned by the authoritative gateway", async () => {
+    gatewaySession();
+    const result = await workspacesGet(new NextRequest("https://example.test/api/workspaces?workspaceId=another-tenant"));
+    expect(result.status).toBe(403);
+    expect(await result.json()).toMatchObject({ code: "WORKSPACE_ACCESS_DENIED" });
+    expect(mocks.resolve).not.toHaveBeenCalled();
+  });
+
+  it("does not call the gateway for unauthenticated or inactive sessions", async () => {
+    gatewaySession();
+    mocks.session.mockResolvedValue({ ok: false, response: Response.json({ error: "Unauthorized" }, { status: 401 }) });
+    expect((await workspacesGet(request())).status).toBe(401);
+    mocks.session.mockResolvedValue({
+      ok: true, accountStatus: "suspended",
+      session: { authSource: "supabase_gateway", userId: "user-1" },
+    });
+    expect((await workspacesGet(request())).status).toBe(403);
+    expect(mocks.gateway).not.toHaveBeenCalled();
+    expect(mocks.token).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the verified session token is unavailable", async () => {
+    gatewaySession();
+    mocks.token.mockResolvedValue(null);
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(503);
+    expect(mocks.gateway).not.toHaveBeenCalled();
+    expect(mocks.resolve).not.toHaveBeenCalled();
+  });
+
+  it.each(["missing", "malformed", "duplicate", "invalid-count", "incomplete-control"])(
+    "rejects %s gateway membership readbacks without disclosing workspace records", async failure => {
+      gatewaySession();
+      if (failure === "missing") mocks.gateway.mockResolvedValue({});
+      if (failure === "malformed") mocks.gateway.mockResolvedValue({ workspaces: [{ id: "someone-else" }] });
+      if (failure === "duplicate") mocks.gateway.mockResolvedValue({ workspaces: [workspace, workspace] });
+      if (failure === "invalid-count") mocks.gateway.mockResolvedValue({
+        workspaces: [{ ...workspace, counts: { members: -1, connectors: 1, approvalRecords: 0 } }],
+      });
+      if (failure === "incomplete-control") mocks.gateway.mockResolvedValue({
+        workspaces: [{ ...workspace, controls: { publishingDisabled: true } }],
+      });
+      const result = await workspacesGet(request());
+      expect(result.status).toBe(503);
+      expect(JSON.stringify(await result.json())).not.toContain("Authorized organization");
+      expect(mocks.resolve).not.toHaveBeenCalled();
+    },
+  );
+
+  it("handles remote gateway failure without fallback to other tenant datasource", async () => {
+    gatewaySession();
+    mocks.gateway.mockRejectedValue(new Error("private provider details"));
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(503);
+    expect(JSON.stringify(await result.json())).not.toContain("private provider details");
+    expect(mocks.resolve).not.toHaveBeenCalled();
+    expect(databaseMethods().every(fn => fn.mock.calls.length === 0)).toBe(true);
+  });
+
+  it("honors an empty authoritative membership set without fabricating membership", async () => {
+    gatewaySession();
+    mocks.gateway.mockResolvedValue({ workspaces: [] });
+    const result = await workspacesGet(request());
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ workspaces: [], selectedWorkspaceId: null });
   });
 });
 
