@@ -20,14 +20,14 @@ const onboardingSteps = [
     icon: CheckCircle2,
   },
   {
-    title: "Submit access request",
-    description: "Enter the public access request lifecycle with traceable intake and reviewer context.",
-    href: "/request-access",
+    title: "Submit enterprise application",
+    description: "Send a business or individual service request to the dedicated enterprise qualification queue for human review.",
+    href: "/enterprise/apply",
     icon: FileCheck2,
   },
   {
-    title: "Sign in or continue KYC",
-    description: "Authenticated users continue through KYC, decision review, entitlement approval, and portal activation.",
+    title: "Activate approved access or sign in",
+    description: "After an approved review, a Platform Owner provides a one-time organization invitation. Existing clients can sign in and complete assigned verification.",
     href: "/client-login",
     icon: LockKeyhole,
   },
@@ -56,7 +56,7 @@ export default function GetStartedPage() {
             Start with one controlled path into GEM Enterprise.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Validate eligibility, submit an access request, complete KYC, and move into the right protected service lane through a single institutional onboarding flow.
+            Review eligibility and submit a dedicated enterprise application. Human review and a secure owner-issued invitation precede account creation and workspace access.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -105,7 +105,7 @@ export default function GetStartedPage() {
                 Built for gated, regulated access.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                GEM Enterprise moves applicants from request to verification, compliance review, entitlement approval, and protected portal operations without breaking the current platform model.
+                GEM Enterprise records service applications for review. A submitted application does not create credentials, an approved account, paid access, a contract, or an active workspace. Account setup follows a separate authorized invitation.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
