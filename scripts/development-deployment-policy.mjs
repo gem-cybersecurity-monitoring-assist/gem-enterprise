@@ -46,8 +46,10 @@ export function developmentCredentialError(env) {
     if (!env[key]) return `Missing development-only ${key}`;
     try {
       const url = new URL(env[key]);
-      const direct = url.hostname === `db.${developmentDatabaseRef}.supabase.co`;
-      const pooled = url.hostname.endsWith(".pooler.supabase.com") && decodeURIComponent(url.username) === `postgres.${developmentDatabaseRef}`;
+      const runtimeUsers = ["postgres", "gem_dev_runtime"];
+      const username = decodeURIComponent(url.username);
+      const direct = url.hostname === `db.${developmentDatabaseRef}.supabase.co` && runtimeUsers.includes(username);
+      const pooled = url.hostname.endsWith(".pooler.supabase.com") && runtimeUsers.some((role) => username === `${role}.${developmentDatabaseRef}`);
       if (!["postgres:", "postgresql:"].includes(url.protocol) || (!direct && !pooled) || !url.password || url.searchParams.getAll("sslmode").join(",") !== "require" || url.searchParams.getAll("sslaccept").join(",") !== "strict") return `Invalid development-only ${key}: exact database target and strict TLS required`;
     } catch { return `Invalid development-only ${key}`; }
   }

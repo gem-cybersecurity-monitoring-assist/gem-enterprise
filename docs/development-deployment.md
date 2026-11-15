@@ -14,7 +14,15 @@ The normal `vercel.json` is unchanged. The development project cannot build `mai
 
 ## Private configuration
 
-Configure development-only `POSTGRES_PRISMA_URL` (pooled), `POSTGRES_URL_NON_POOLING` (direct/session), and an independent `JWT_SECRET` of at least 32 characters in the development project's Preview environment. Do not enter values into GitHub or chat. Database URLs must identify `dusqdnebwkoycdtjkhyy`, use `sslmode=require&sslaccept=strict`, and contain the owner's database password. Missing/foreign-project configuration fails before running the build; no placeholder database credentials are installed in Vercel.
+Configure development-only `POSTGRES_PRISMA_URL` (pooled), `POSTGRES_URL_NON_POOLING` (direct/session), and an independent `JWT_SECRET` of at least 32 characters in the development project's Preview environment. Do not enter values into GitHub or chat. Database URLs must identify `dusqdnebwkoycdtjkhyy`, use `sslmode=require&sslaccept=strict`, and use either `postgres` or the explicit `gem_dev_runtime` login. Missing/foreign-project configuration fails before running the build; no placeholder database credentials are installed in Vercel.
+
+### Dedicated development runtime checkpoint
+
+An independent `JWT_SECRET` and the runtime role's direct `POSTGRES_URL_NON_POOLING` were generated and saved as Preview-only Vercel Secrets without displaying values. The database password is encrypted under `gem-development-runtime-dusqdnebwkoycdtjkhyy` in Supabase Vault. The runtime cannot read Vault. Never expose values through logs or GitHub.
+
+Development-only SQL plans are in `scripts/database/development-runtime-access.sql` and `scripts/database/development-runtime-password.sql`. They are intentionally outside the automatic Prisma/Supabase migration directories and must never be replayed into production. The server role can perform ordinary application DML and bypasses RLS only for its private backend connection, following Supabase's Prisma pattern. It cannot create schema objects, databases, roles, replicate, inherit privileged roles, or call the `service_role`-only social RPCs. API-role grants and all table RLS remain unchanged.
+
+The role remains **NOLOGIN** until the exact shared pooler host is verified from this project's Connect panel (do not guess a regional host). Then privately transfer the same Vault-held runtime password into pooled (6543) and session (5432) URLs using username `gem_dev_runtime.dusqdnebwkoycdtjkhyy`; set both Preview Secrets, verify the URI target/TLS privately, enable this runtime login through the pinned development Supabase connection, and test real connectivity. The six-connection role limit requires small Prisma connection pools. No owner database password needs to be copied.
 
 The development build invokes the existing full preview verification (schema generation, claims, lint, typecheck, tests, Next build). It performs no migrations, seeding, provider calls, or account copying. A successful build is not proof of working database authentication: separately smoke-test database health, login, workspace authorization and read-only connectors. The new database has no copied production users or social connections.
 

@@ -70,10 +70,15 @@ function credentials(env: Record<string, string>) {
 }
 describe("development credential target validation", () => {
   it("accepts exact development direct/pooler targets with strict TLS", () => expect(credentials({})).toBe("OK"));
+  it("accepts only the explicit dedicated runtime role on the same development database", () => {
+    expect(credentials({ POSTGRES_PRISMA_URL: pooler.replace("postgres.", "gem_dev_runtime."), POSTGRES_URL_NON_POOLING: direct.replace("//postgres:", "//gem_dev_runtime:") })).toBe("OK");
+  });
   it.each([
     { POSTGRES_PRISMA_URL: "" }, { POSTGRES_URL_NON_POOLING: "" }, { JWT_SECRET: "" },
     { POSTGRES_PRISMA_URL: direct.replace("dusqdnebwkoycdtjkhyy", "slzdjoqpzbkwzuaexlkj") },
     { POSTGRES_PRISMA_URL: pooler.replace("postgres.dusqdnebwkoycdtjkhyy", "postgres.otherproject") },
+    { POSTGRES_PRISMA_URL: pooler.replace("postgres.", "unapproved_role.") },
+    { POSTGRES_URL_NON_POOLING: direct.replace("//postgres:", "//unapproved_role:") },
     { POSTGRES_PRISMA_URL: pooler.replace("pooler.supabase.com", "pooler.supabase.com.example.org") },
     { POSTGRES_PRISMA_URL: direct.replace("sslaccept=strict", "sslaccept=accept_invalid_certs") },
     { POSTGRES_PRISMA_URL: direct + "&sslmode=disable&sslaccept=accept_invalid_certs" },
