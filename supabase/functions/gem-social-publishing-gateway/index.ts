@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.49.8";
 
 // Gateway transactional adapter: social publishing edge function.
 //
@@ -28,13 +28,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ADAPTER_SECRET = Deno.env.get("SOCIAL_GATEWAY_ADAPTER_SECRET") ?? "";
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ADAPTER_SECRET) {
-  throw new Error("Missing Supabase runtime configuration");
-}
-
-const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+let db: SupabaseClient | undefined;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "https://www.gemcybersecurityassist.com",
@@ -50,6 +44,32 @@ class GatewayError extends Error {
     message: string,
   ) {
     super(message);
+  }
+}
+
+function configurationError() {
+  return new GatewayError(
+    503,
+    "SOCIAL_PUBLISHING_GATEWAY_NOT_CONFIGURED",
+    "The social publishing gateway requires administrator setup.",
+  );
+}
+
+// Register the handler even when setup is incomplete. Create a privileged
+// client only after machine authentication and only for an actual RPC action.
+function database() {
+  if (db) return db;
+  if (!SUPABASE_URL.trim() || !SERVICE_ROLE_KEY.trim() || !ADAPTER_SECRET.trim()) {
+    throw configurationError();
+  }
+  try {
+    db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    return db;
+  } catch {
+    console.error("social publishing gateway client initialization failed");
+    throw configurationError();
   }
 }
 
@@ -79,6 +99,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 function requireAdapterSecret(request: Request) {
+  if (!ADAPTER_SECRET.trim()) throw configurationError();
   const header = request.headers.get("authorization") ?? "";
   if (!header.startsWith("Bearer ")) {
     throw new GatewayError(401, "UNAUTHORIZED", "Adapter authentication required");
@@ -131,7 +152,7 @@ function rpcFailure(error: RpcError): never {
       "The governed social publishing queue has not been provisioned.",
     );
   }
-  console.error("social publishing gateway RPC failed", error);
+  console.error("social publishing gateway RPC failed");
   throw new GatewayError(
     503,
     "SOCIAL_PUBLISHING_GATEWAY_RPC_FAILED",
@@ -207,7 +228,7 @@ function jsonParam(body: JsonRecord, name: string): unknown {
 }
 
 async function claimJobs(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_claim_jobs", {
+  const { data, error } = await database().rpc("gem_social_claim_jobs", {
     p_now: stringParam(body, "now"),
     p_slot_end: optionalStringParam(body, "slotEnd"),
     p_claim_id: stringParam(body, "claimId"),
@@ -221,7 +242,7 @@ async function claimJobs(body: JsonRecord) {
 }
 
 async function loadCredential(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_load_connector_credential", {
+  const { data, error } = await database().rpc("gem_social_load_connector_credential", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_connector_id: stringParam(body, "connectorId"),
   });
@@ -238,7 +259,7 @@ async function loadCredential(body: JsonRecord) {
 }
 
 async function governanceEvidence(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_governance_evidence", {
+  const { data, error } = await database().rpc("gem_social_governance_evidence", {
     p_approval_id: stringParam(body, "approvalId"),
     p_workspace_id: stringParam(body, "workspaceId"),
     p_approved_version_hash: stringParam(body, "approvedVersionHash"),
@@ -249,7 +270,7 @@ async function governanceEvidence(body: JsonRecord) {
 }
 
 async function workspaceLocks(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_workspace_locks", {
+  const { data, error } = await database().rpc("gem_social_workspace_locks", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_action: stringParam(body, "action"),
   });
@@ -259,7 +280,7 @@ async function workspaceLocks(body: JsonRecord) {
 }
 
 async function pauseState(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_pause_state", {
+  const { data, error } = await database().rpc("gem_social_pause_state", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_provider: stringParam(body, "provider"),
   });
@@ -268,7 +289,7 @@ async function pauseState(body: JsonRecord) {
 }
 
 async function markPublished(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_mark_published", {
+  const { data, error } = await database().rpc("gem_social_mark_published", {
     p_job_id: stringParam(body, "jobId"),
     p_claim_id: stringParam(body, "claimId"),
     p_external_post_id: stringParam(body, "externalPostId"),
@@ -290,7 +311,7 @@ async function markPublished(body: JsonRecord) {
 }
 
 async function markBlocked(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_mark_blocked", {
+  const { data, error } = await database().rpc("gem_social_mark_blocked", {
     p_job_id: stringParam(body, "jobId"),
     p_claim_id: stringParam(body, "claimId"),
     p_error_code: stringParam(body, "errorCode"),
@@ -311,7 +332,7 @@ async function markBlocked(body: JsonRecord) {
 }
 
 async function markFailed(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_mark_failed", {
+  const { data, error } = await database().rpc("gem_social_mark_failed", {
     p_job_id: stringParam(body, "jobId"),
     p_claim_id: stringParam(body, "claimId"),
     p_state: stringParam(body, "state"),
@@ -337,7 +358,7 @@ async function markFailed(body: JsonRecord) {
 }
 
 async function markReauthorization(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_mark_reauthorization", {
+  const { data, error } = await database().rpc("gem_social_mark_reauthorization", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_connector_id: stringParam(body, "connectorId"),
     p_metadata: jsonParam(body, "metadata") ?? {},
@@ -347,7 +368,7 @@ async function markReauthorization(body: JsonRecord) {
 }
 
 async function auditEvent(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_audit_event", {
+  const { data, error } = await database().rpc("gem_social_audit_event", {
     p_workspace_id: optionalStringParam(body, "workspaceId"),
     p_actor_id: optionalStringParam(body, "actorId"),
     p_action: stringParam(body, "action"),
@@ -363,7 +384,7 @@ async function auditEvent(body: JsonRecord) {
 }
 
 async function createJob(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_create_job", {
+  const { data, error } = await database().rpc("gem_social_create_job", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_provider: stringParam(body, "provider"),
     p_connector_id: stringParam(body, "connectorId"),
@@ -388,7 +409,7 @@ async function createJob(body: JsonRecord) {
 }
 
 async function createConnector(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_create_connector", {
+  const { data, error } = await database().rpc("gem_social_create_connector", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_provider: stringParam(body, "provider"),
     p_display_name: stringParam(body, "displayName"),
@@ -405,7 +426,7 @@ async function createConnector(body: JsonRecord) {
 }
 
 async function listJobs(body: JsonRecord) {
-  const { data, error } = await db.rpc("gem_social_list_jobs", {
+  const { data, error } = await database().rpc("gem_social_list_jobs", {
     p_workspace_id: stringParam(body, "workspaceId"),
     p_limit: optionalNumberParam(body, "limit") ?? 50,
   });
@@ -414,7 +435,7 @@ async function listJobs(body: JsonRecord) {
 }
 
 async function health() {
-  const { data, error } = await db.rpc("gem_social_health", {});
+  const { data, error } = await database().rpc("gem_social_health", {});
   if (error) rpcFailure(error);
   return requireRecord(data);
 }
@@ -435,6 +456,7 @@ Deno.serve(async (req) => {
     return json({ error: "Method not allowed" }, 405);
   }
   try {
+    requireAdapterSecret(req);
     let body: JsonRecord;
     try {
       body = (await req.json()) as JsonRecord;
@@ -444,7 +466,6 @@ Deno.serve(async (req) => {
     if (!isRecord(body)) {
       throw new GatewayError(400, "INVALID_JSON", "Request body must be a JSON object.");
     }
-    requireAdapterSecret(req);
     const action = typeof body.action === "string" ? body.action : "";
     if (action === "health") return json(await health());
     if (action === "claim_jobs") return json(await claimJobs(body));
@@ -474,7 +495,7 @@ Deno.serve(async (req) => {
     if (error instanceof GatewayError) {
       return json({ error: error.message, code: error.code }, error.status);
     }
-    console.error(error);
+    console.error("social publishing gateway request failed");
     return json({ error: "Internal gateway error", code: "INTERNAL_ERROR" }, 500);
   }
 });

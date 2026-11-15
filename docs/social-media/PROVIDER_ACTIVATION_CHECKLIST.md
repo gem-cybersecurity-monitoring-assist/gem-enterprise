@@ -2,7 +2,24 @@
 
 How to connect each social account to the enterprise site. Variable names come from `src/lib/social-media/oauth/config.ts`, `src/lib/tokmetric/oauth/config.ts` and `.env.example`.
 
-**Status on 2026-10-20:** no social or TikTok connector exists in production (0 rows in `social_connectors` and `tokmetric_connectors`). Accounts connected on outside builder sites (ChatGPT Sites, Base44) are not connected here and must be connected again through the routes below.
+**Historical snapshot, 2026-10-20:** both connector tables were empty at that time. This is not current connection evidence. Read the selected workspace's saved connectors and run its live account checks before deciding whether reauthorization is needed; do not create duplicate connections from this historical snapshot.
+
+## Publishing gateway configuration diagnostics
+
+`SOCIAL_GATEWAY_ADAPTER_SECRET` must match between the website's server environment
+and the original Supabase project's Edge Function secrets. It is a machine
+credential, not a public API key. Never put its value in a URL or this runbook.
+
+The source repair in Issue #500 keeps the handler running with missing setup and
+returns HTTP 503 `SOCIAL_PUBLISHING_GATEWAY_NOT_CONFIGURED`. It must be deployed
+before that behavior exists on a hosted function. An older function may still
+return HTTP 500 `WORKER_ERROR`; do not interpret either response as healthy.
+
+With complete setup, a POST `{ "action": "health" }` without the bearer credential
+must return HTTP 401 `UNAUTHORIZED`. The authenticated health request must reach
+`gem_social_health()` and return the actual RPC inventory. Neither an HTTP 401 nor
+a successful database health check proves provider posting permissions or enables
+publishing. Keep all publishing gates unchanged during diagnostics.
 
 ## Rules for every provider
 

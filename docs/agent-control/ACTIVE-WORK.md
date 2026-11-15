@@ -1,5 +1,10 @@
 # Active Work
 
+## Social gateway configuration failures — 2026-11-15
+Owner: ChatGPT Work. Issue #500; task: [SOCIAL-GATEWAY-CONFIGURATION](tasks/SOCIAL-GATEWAY-CONFIGURATION.md).
+Branch: `fix/social-gateway-configuration`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
+Scope: fail-closed gateway startup/request errors, redacted logging and direct handler tests. No credentials, schema, deployments or publishing activation. Separate from PRs #497/#499. Status: IMPLEMENTED; 1,486 local tests and website build passed; hosted gates and edge-runtime activation pending.
+
 Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 
 ## Unified Client Workspace OS
