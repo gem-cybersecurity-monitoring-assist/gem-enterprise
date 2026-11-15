@@ -43,7 +43,7 @@ const pageMeta: Record<TokMetricPageKind, { title: string; eyebrow: string; summ
     title: "Connected accounts",
     eyebrow: "OAuth and connector readiness",
     summary:
-      "Prepare authorized connections for TikTok Organic, TikTok Shop, TikTok Business, advertiser accounts, and developer applications.",
+      "Review saved TikTok authorizations, verify account identity, and inspect the separate Shop and Business connection requirements.",
   },
   content: {
     title: "Content Studio",
@@ -120,14 +120,6 @@ const summaryCards = [
   { label: "External publishing", value: "Locked", status: "BLOCKED", icon: LockKeyhole },
 ];
 
-const accountRows = [
-  ["TikTok Organic", "Login Kit + Content Posting API", "AUTHORIZATION_REQUIRED"],
-  ["TikTok Shop Seller", "Products, inventory, orders", "NOT_CONFIGURED"],
-  ["TikTok Shop Creator", "Affiliate and creator workflows", "NOT_CONFIGURED"],
-  ["TikTok Business", "Ads, creatives, reporting", "NOT_CONFIGURED"],
-  ["Developer application", "Scopes, callback, review status", "PENDING"],
-];
-
 const contentRows = [
   ["TokMetric product explainer", "Video", "DRAFT", "NOT_REVIEWED"],
   ["Cybersecurity awareness clip", "Script", "APPROVAL_REQUIRED", "PASS"],
@@ -188,7 +180,7 @@ function Table({ rows, headers }: { headers: string[]; rows: string[][] }) {
 }
 
 function PageBody({ kind }: { kind: TokMetricPageKind }) {
-  if (kind === "accounts") return <Table headers={["Connector", "Purpose", "State"]} rows={accountRows} />;
+  if (kind === "accounts") return null;
   if (kind === "content") return <Table headers={["Asset", "Type", "State", "Compliance"]} rows={contentRows} />;
   if (kind === "compliance") return <Table headers={["Finding", "Risk", "Status"]} rows={complianceRows} />;
   if (kind === "approvals") return <Table headers={["Object", "Required role", "Status"]} rows={approvalRows} />;
@@ -220,6 +212,12 @@ const nextSteps = [
 
 export function TokMetricWorkspacePage({ kind }: { kind: TokMetricPageKind }) {
   const meta = pageMeta[kind];
+  const accountSteps = [
+    "Reload saved accounts to read the current authorized workspace records.",
+    "Use Verify TikTok to check the saved Content Posting account identity.",
+    "Review the dated live result separately from saved scopes and authorization.",
+    "Keep publishing disabled until app review, content approval and publishing prerequisites are complete.",
+  ];
   return (
     <div className="min-h-screen bg-[#091019] text-white">
       <header className="border-b border-white/[0.08] bg-[#0b121d]">
@@ -237,9 +235,11 @@ export function TokMetricWorkspacePage({ kind }: { kind: TokMetricPageKind }) {
             <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm text-amber-50/70">
               <div className="mb-2 flex items-center gap-2 font-semibold text-amber-100">
                 <AlertTriangle className="h-4 w-4" />
-                Pre-connection state
+                {kind === "accounts" ? "Publishing safeguards" : "Pre-connection state"}
               </div>
-              External TikTok actions remain blocked until OAuth, scopes, and platform confirmation exist.
+              {kind === "accounts"
+                ? "Account identity verification is read-only. Publishing requires separate scopes, platform approval and exact-content approval."
+                : "External TikTok actions remain blocked until OAuth, scopes, and platform confirmation exist."}
             </div>
           </div>
         </div>
@@ -288,10 +288,10 @@ export function TokMetricWorkspacePage({ kind }: { kind: TokMetricPageKind }) {
             <article className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
               <div className="mb-5 flex items-center gap-3">
                 <History className="h-5 w-5 text-cyan-300" />
-                <h2 className="text-xl font-bold">Next build steps</h2>
+                <h2 className="text-xl font-bold">{kind === "accounts" ? "Connection review steps" : "Next build steps"}</h2>
               </div>
               <ul className="space-y-3 text-sm leading-6 text-white/55">
-                {nextSteps.map((step) => <li key={step}>• {step}</li>)}
+                {(kind === "accounts" ? accountSteps : nextSteps).map((step) => <li key={step}>• {step}</li>)}
               </ul>
             </article>
           </div>

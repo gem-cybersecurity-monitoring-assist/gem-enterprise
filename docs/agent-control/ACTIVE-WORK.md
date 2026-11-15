@@ -1,9 +1,14 @@
 # Active Work
 
+## TikTok account status clarity — 2026-11-15
+Owner: ChatGPT Work. Issue #504; task: [TIKTOK-ACCOUNT-STATUS-CLARITY](tasks/TIKTOK-ACCOUNT-STATUS-CLARITY.md).
+Branch: `fix/tiktok-account-status-clarity`, base `62c942ab81f0c1c70d933eb7938b799ed504bdb7`.
+Scope: remove static account-state contradiction from existing accounts view; no backend/credential/publishing changes. Status: IMPLEMENTED; independent review clear; schema/claims/lint/typecheck/1,537 tests/225 files/build passed. Exact-head hosted gates and release pending.
+
 ## TikTok connection verification — 2026-11-15
 Owner: ChatGPT Work. Issue #502; task: [TIKTOK-CONNECTION-VERIFICATION](tasks/TIKTOK-CONNECTION-VERIFICATION.md).
 Branch: `fix/tiktok-connection-verification`, base `8598474dd3cd0fd41fdbb0a27721891bedd2ae9c`.
-Scope: existing connector health authority, bounded read-only TikTok identity check, safe audit and mobile verification control. No credentials, refresh/revoke, scopes, schema or publishing activation. Status: IMPLEMENTED; 1,536 tests/224 files, lint/typecheck/claims/schema/build passed; independent review found no remaining blockers after UI consumer/race corrections. Exact-head hosted gates and live check pending.
+Scope: existing connector health authority, bounded read-only TikTok identity check, safe audit and mobile verification control. No credentials, refresh/revoke, scopes, schema or publishing activation. Status: MERGED (#503) at 62c942ab81f0c1c70d933eb7938b799ed504bdb7; 1,536 tests/224 files and all hosted gates passed; production READY. Existing TikTok Content Posting account passed actual live identity verification at 2026-11-15 16:40:36 UTC. Both Facebook Pages, Instagram and X also passed fresh existing live checks. Posting remains disabled; gateway secret and Meta/X publishing permissions still required.
 
 ## Social gateway configuration failures — 2026-11-15
 Owner: ChatGPT Work. Issue #500; task: [SOCIAL-GATEWAY-CONFIGURATION](tasks/SOCIAL-GATEWAY-CONFIGURATION.md).
