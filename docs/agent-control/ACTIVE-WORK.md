@@ -1,5 +1,10 @@
 # Active Work
 
+## Social workspace navigation — 2026-11-15
+Owner: ChatGPT Work. Issue #498; task: [SOCIAL-WORKSPACE-NAVIGATION](tasks/SOCIAL-WORKSPACE-NAVIGATION.md).
+Branch: `fix/social-workspace-navigation`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
+Scope: preserve explicit social workspace links and expose existing authorized workspace choices. Prior overlapping PRs #492/#494 are merged. No auth, database, credentials, provider grants, deployment or publishing changes. Status: IMPLEMENTED; 1,484 local tests and build pass, independent review complete; hosted gates pending.
+
 Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 
 ## Unified Client Workspace OS

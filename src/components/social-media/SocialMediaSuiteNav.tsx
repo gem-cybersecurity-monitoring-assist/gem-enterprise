@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   CalendarDays,
@@ -18,7 +18,7 @@ import {
   Settings2,
   Video,
 } from "lucide-react";
-import { socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
+import { socialAccountsHref, socialChannels, socialSuiteHref } from "@/lib/social-media/channel-routes";
 import { cn } from "@/lib/utils";
 
 const suiteItems = [
@@ -115,6 +115,7 @@ function isActive(pathname: string, href: string) {
 
 export function SocialMediaSuiteNav() {
   const pathname = usePathname();
+  const workspaceId = useSearchParams().get("workspace")?.trim() || null;
 
   return (
     <nav aria-label="Social Media Suite" className="rounded-2xl border border-white/10 bg-card/70 p-2">
@@ -124,7 +125,7 @@ export function SocialMediaSuiteNav() {
           return (
             <Link
               key={href}
-              href={href}
+              href={socialSuiteHref(href, workspaceId)}
               title={description}
               className={cn(
                 "group min-w-[132px] rounded-xl border px-3 py-3 transition",
@@ -149,7 +150,7 @@ export function SocialMediaSuiteNav() {
       </div>
       <div className="flex flex-wrap gap-2 border-t border-white/10 px-2 pt-2">
         {socialChannels.map(({ id, label }) => (
-          <Link key={id} href={socialAccountsHref(id)} className="rounded-lg px-3 py-2 text-sm text-cyan-200 hover:bg-white/10">
+          <Link key={id} href={socialAccountsHref(id, workspaceId)} className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-cyan-200 hover:bg-white/10">
             {label}
           </Link>
         ))}

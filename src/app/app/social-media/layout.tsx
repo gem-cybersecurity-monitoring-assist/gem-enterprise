@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Sparkles, UsersRound } from "lucide-react";
 import { SocialMediaSuiteNav } from "@/components/social-media/SocialMediaSuiteNav";
 
@@ -41,7 +42,9 @@ export default function SocialMediaSuiteLayout({ children }: { children: React.R
         </div>
       </section>
 
-      <SocialMediaSuiteNav />
+      <Suspense fallback={<p role="status">Loading social navigation…</p>}>
+        <SocialMediaSuiteNav />
+      </Suspense>
       {children}
     </div>
   );

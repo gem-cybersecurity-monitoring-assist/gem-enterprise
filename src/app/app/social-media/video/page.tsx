@@ -1,3 +1,4 @@
+import { socialSuiteHref, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import Link from "next/link";
 import { ArrowRight, Film, HardDriveUpload, ShieldCheck, WandSparkles } from "lucide-react";
 import { GovernedVideoPreviewPanel } from "@/components/social-media/GovernedVideoPreviewPanel";
@@ -10,7 +11,8 @@ const stages = [
   ["4", "Reapprove", "Create a new exact content version and return the finished video to compliance and human approval."],
 ] as const;
 
-export default function SocialMediaVideoPage() {
+export default async function SocialMediaVideoPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   return (
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -47,7 +49,7 @@ export default function SocialMediaVideoPage() {
             its governance evidence after the trusted worker completes the upload.
           </p>
           <Link
-            href="/app/social-media/content"
+            href={socialSuiteHref("/app/social-media/content", workspaceId)}
             className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 hover:text-cyan-100"
           >
             Open content production <ArrowRight className="h-4 w-4" />

@@ -1,3 +1,4 @@
+import { socialSuiteHref, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -117,7 +118,8 @@ const workflow = [
   ["5", "Measure", "Use source-labeled analytics to improve the next plan without inventing results."],
 ] as const;
 
-export default function SocialMediaSuiteOverviewPage() {
+export default async function SocialMediaSuiteOverviewPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   const providers = getSocialMediaProviderReadiness();
   const configured = providers.filter((provider) => provider.configurationReady).length;
   const approved = providers.filter(
@@ -154,7 +156,7 @@ export default function SocialMediaSuiteOverviewPage() {
         {modules.map(({ href, label, description, icon: Icon, accent, surface }) => (
           <Link
             key={href}
-            href={href}
+            href={socialSuiteHref(href, workspaceId)}
             className="group rounded-2xl border border-white/10 bg-card/75 p-5 transition hover:-translate-y-0.5 hover:border-cyan-500/25 hover:bg-white/[0.04]"
           >
             <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${surface}`}>
@@ -201,7 +203,7 @@ export default function SocialMediaSuiteOverviewPage() {
             the applicable production gates.
           </p>
           <Link
-            href="/app/social-media/accounts"
+            href={socialSuiteHref("/app/social-media/accounts", workspaceId)}
             className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-amber-200 hover:text-amber-100"
           >
             Review account readiness <ArrowRight className="h-4 w-4" />
