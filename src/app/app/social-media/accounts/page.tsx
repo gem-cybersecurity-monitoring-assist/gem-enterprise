@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
+import { SocialWorkspaceChooser } from "@/components/social-media/SocialWorkspaceChooser";
 import { db } from "@/lib/db";
 import { getGatewaySessionToken } from "@/lib/auth";
 import { isAdminRole, requireSession } from "@/lib/api/auth-helpers";
@@ -133,9 +134,17 @@ export default async function SocialMediaAccountsPage({
   );
   const configured = providers.filter((provider) => provider.configurationReady).length;
   const connectedForWrites = providers.filter((provider) => provider.externalWriteAllowed).length;
+  const accessibleWorkspaces = "workspaces" in membershipResolution
+    ? membershipResolution.workspaces
+    : [];
 
   return (
     <div className="space-y-6">
+      <SocialWorkspaceChooser
+        workspaces={accessibleWorkspaces}
+        selectedId={publishingWorkspace?.id ?? null}
+        destination={destination?.id}
+      />
       <nav aria-label="Social account destinations" className="flex flex-wrap gap-2">
         <Link href={socialAccountsHref(undefined, requestedWorkspaceId)} aria-current={!destination ? "page" : undefined} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">All accounts</Link>
         {socialChannels.map(({ id, label }) => (
