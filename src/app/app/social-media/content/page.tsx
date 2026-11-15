@@ -1,3 +1,4 @@
+import { socialSuiteHref, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Link from "next/link";
@@ -12,7 +13,8 @@ const productionOutputs = [
   ["Governance evidence", "Unsupported claims, security-sensitive details, regulatory wording, and approval flags."],
 ] as const;
 
-export default function SocialMediaContentPage() {
+export default async function SocialMediaContentPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   const campaign = JSON.parse(
     readFileSync(join(process.cwd(), "public/market-launch/founding-first-20.json"), "utf8"),
   );
@@ -57,7 +59,7 @@ export default function SocialMediaContentPage() {
             regulatory statements, customer references, and unlicensed media remain blocked or routed to a human reviewer.
           </p>
           <Link
-            href="/app/social-media/approvals"
+            href={socialSuiteHref("/app/social-media/approvals", workspaceId)}
             className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-200 hover:text-emerald-100"
           >
             Review the approval workflow <ArrowRight className="h-4 w-4" />

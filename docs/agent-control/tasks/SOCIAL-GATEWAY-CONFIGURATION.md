@@ -36,3 +36,9 @@ code review found no concrete blockers. Deno import resolution/typecheck and
 hosted edge deployment are not verified by the Node VM test harness. A fresh
 live unauthenticated health POST still returns 500 WORKER_ERROR, as expected
 for the unchanged hosted source; no runtime fix or secret installation claimed.
+
+Reconciliation: main advanced only through reviewed workspace-navigation PR #499
+(650a5c784df5b10e93be19ccc91a1ee6a40adbfd). Merged that exact base into this
+branch; only ACTIVE-WORK had a documentation conflict, resolved by preserving
+both lanes. Gateway implementation is unchanged. Combined full suite: 1,501 tests across
+222 files passed. Reconciled-head hosted gates pending.

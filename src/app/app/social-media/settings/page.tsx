@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Settings2, ShieldCheck } from "lucide-react";
-import { socialAccountsHref } from "@/lib/social-media/channel-routes";
+import { socialAccountsHref, socialSuiteHref, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import { getSocialMediaProviderReadiness } from "@/lib/social-media/providers";
 import { shouldUseSupabaseGateway } from "@/lib/supabase-gateway";
 import { getSocialBackendReadiness } from "@/lib/social-media/backend-readiness";
 
-export default function SocialMediaSettingsPage() {
+export default async function SocialMediaSettingsPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   const providers = getSocialMediaProviderReadiness();
   const backend = getSocialBackendReadiness(shouldUseSupabaseGateway());
   const configured = providers.filter((provider) => provider.configurationReady).length;
@@ -40,7 +41,7 @@ export default function SocialMediaSettingsPage() {
         <p className="mt-2 text-sm text-amber-100/80">Provider configuration and sign-in do not certify live posting. Nothing is published from this status check.</p>
       </section>
 
-      <Link href={socialAccountsHref()} className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/25 px-4 py-2 text-sm font-semibold text-cyan-200">
+      <Link href={socialAccountsHref(undefined, workspaceId)} className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/25 px-4 py-2 text-sm font-semibold text-cyan-200">
         Manage social accounts <ArrowRight className="h-4 w-4" />
       </Link>
 
@@ -48,7 +49,7 @@ export default function SocialMediaSettingsPage() {
         <p className="text-sm leading-6 text-amber-100/80">
           Secret management, provider certification, emergency locks, and production activation remain administrator controls.
         </p>
-        <Link href="/app/command-center/social-media" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-amber-200 hover:text-amber-100">
+        <Link href={socialSuiteHref("/app/command-center/social-media", workspaceId)} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-amber-200 hover:text-amber-100">
           Open administrator Command Center <ArrowRight className="h-4 w-4" />
         </Link>
       </section>

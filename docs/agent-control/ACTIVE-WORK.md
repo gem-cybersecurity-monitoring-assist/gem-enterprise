@@ -3,7 +3,12 @@
 ## Social gateway configuration failures — 2026-11-15
 Owner: ChatGPT Work. Issue #500; task: [SOCIAL-GATEWAY-CONFIGURATION](tasks/SOCIAL-GATEWAY-CONFIGURATION.md).
 Branch: `fix/social-gateway-configuration`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
-Scope: fail-closed gateway startup/request errors, redacted logging and direct handler tests. No credentials, schema, deployments or publishing activation. Separate from PRs #497/#499. Status: IMPLEMENTED; 1,486 local tests and website build passed; hosted gates and edge-runtime activation pending.
+Scope: fail-closed gateway startup/request errors, redacted logging and direct handler tests. No credentials, schema, deployments or publishing activation. Separate from PR #497 and merged PR #499. Status: IMPLEMENTED; original 1,486 local tests, website build and hosted gates passed; reconciled with main after #499; combined 1,501 tests pass; refreshed hosted gates and edge-runtime activation pending.
+
+## Social workspace navigation — 2026-11-15
+Owner: ChatGPT Work. Issue #498; task: [SOCIAL-WORKSPACE-NAVIGATION](tasks/SOCIAL-WORKSPACE-NAVIGATION.md).
+Branch: `fix/social-workspace-navigation`, base `7c6ef0e5defac773ca86e00d256ab62caada866b`.
+Scope: preserve explicit social workspace links and expose existing authorized workspace choices. Prior overlapping PRs #492/#494 are merged. No auth, database, credentials, provider grants or publishing changes. Status: MERGED as 650a5c784df5b10e93be19ccc91a1ee6a40adbfd (#499); local and hosted gates passed, independent review complete; Git-owned production dpl_2jk7v1gT83TfMCBGAtujCP9K6LzT READY; live UI verification pending.
 
 Snapshot: 2026-09-25 UTC. Refresh live GitHub state before mutation.
 

@@ -1,3 +1,4 @@
+import { socialSuiteHref, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,7 +20,8 @@ const schedulingRules = [
   "Indeed remains limited to a genuine vacancy or approved employer update.",
 ] as const;
 
-export default function SocialMediaCalendarPage() {
+export default async function SocialMediaCalendarPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   const providers = getSocialMediaProviderReadiness();
   const readyForExternalWrite = providers.filter((provider) => provider.externalWriteAllowed);
 
@@ -38,13 +40,13 @@ export default function SocialMediaCalendarPage() {
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/app/social-media/content"
+              href={socialSuiteHref("/app/social-media/content", workspaceId)}
               className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-black hover:bg-cyan-300"
             >
               Prepare content <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/app/social-media/approvals"
+              href={socialSuiteHref("/app/social-media/approvals", workspaceId)}
               className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/[0.05]"
             >
               Review approvals

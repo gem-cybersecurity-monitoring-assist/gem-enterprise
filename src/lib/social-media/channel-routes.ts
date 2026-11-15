@@ -26,6 +26,13 @@ export function socialAccountsHref(provider?: SocialMediaProviderId, workspaceId
   return `/app/social-media/accounts${params.size ? `?${params}` : ""}`;
 }
 
+/** Carry only workspace context, never callback codes or transient OAuth state. */
+export function socialSuiteHref(pathname: string, workspaceId?: string | null) {
+  const params = new URLSearchParams();
+  if (workspaceId?.trim()) params.set("workspace", workspaceId.trim());
+  return `${pathname}${params.size ? `?${params}` : ""}`;
+}
+
 export function matchesSocialDestination(
   provider: string,
   metadata: Record<string, unknown>,
@@ -36,4 +43,11 @@ export function matchesSocialDestination(
   if (destination === "FACEBOOK_PAGE") return metadata.accountType === "META_PAGE";
   if (destination === "INSTAGRAM_PROFESSIONAL") return metadata.accountType === "INSTAGRAM_PROFESSIONAL";
   return true;
+}
+
+export type SocialWorkspaceSearchParams = { workspace?: string | string[] };
+
+export function socialWorkspaceId(params: SocialWorkspaceSearchParams) {
+  const value = Array.isArray(params.workspace) ? params.workspace[0] : params.workspace;
+  return value?.trim() || null;
 }
