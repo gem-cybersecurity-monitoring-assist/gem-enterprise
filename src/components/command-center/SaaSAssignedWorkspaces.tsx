@@ -8,7 +8,7 @@ type Workspace = {
   name: string;
   organization: { id: string; name: string };
   role: { name: string };
-  counts: { members: number; connectors: number; approvalRecords: number };
+  counts: { members: number | null; connectors: number | null; approvalRecords: number | null };
   controls: {
     globalEmergencyLock: boolean;
     connectorDisabled: boolean;
@@ -31,8 +31,10 @@ function validWorkspace(value: unknown): value is Workspace {
   const controls = w.controls as Record<string, unknown> | undefined;
   return typeof w.id === "string" && typeof w.name === "string"
     && !!o && typeof o.name === "string" && !!role && typeof role.name === "string"
-    && !!counts && typeof counts.members === "number" && typeof counts.connectors === "number"
-    && typeof counts.approvalRecords === "number"
+    && !!counts && ["members", "connectors", "approvalRecords"].every((key) => {
+      const count = counts[key];
+      return count === null || (typeof count === "number" && Number.isSafeInteger(count) && count >= 0);
+    })
     && !!controls && typeof controls.globalEmergencyLock === "boolean"
     && typeof controls.connectorDisabled === "boolean";
 }
@@ -104,10 +106,13 @@ export function SaaSAssignedWorkspaces() {
                     ].map(([label, value]) => (
                       <div key={label} className="rounded-lg border border-slate-800 p-2">
                         <dt className="text-[11px] text-slate-400">{label}</dt>
-                        <dd className="mt-1 font-semibold tabular-nums">{value}</dd>
+                        <dd className="mt-1 font-semibold tabular-nums" title={value === null ? "Count not verified by the current gateway" : undefined}>{value === null ? "—" : value}</dd>
                       </div>
                     ))}
                   </dl>
+                  {[workspace.counts.members, workspace.counts.connectors, workspace.counts.approvalRecords].some((value) => value === null) && (
+                    <p className="mt-2 text-xs text-slate-400">— means this count is not yet verified by the workspace gateway.</p>
+                  )}
                   {restrictions.length > 0 && <p className="mt-3 text-xs leading-5 text-amber-200">{restrictions.join(" · ")}</p>}
                   <Link href={`/app/workspace?workspace=${encodeURIComponent(workspace.id)}`} className="mt-4 inline-flex rounded-lg bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/25">
                     Open assigned workspace
