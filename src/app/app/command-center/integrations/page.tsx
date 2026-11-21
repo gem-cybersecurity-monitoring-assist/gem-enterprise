@@ -1,3 +1,4 @@
+import { requirePlatformOwner } from "@/lib/api/auth-helpers";
 import { socialAccountsHref, oauthByDestination } from "@/lib/social-media/channel-routes";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -30,6 +31,7 @@ export default async function IntegrationsCommandCenterPage({
 }: {
   searchParams: Promise<{ workspace?: string | string[]; project?: string | string[] }>;
 }) {
+  const ownerAccess = await requirePlatformOwner();
   const socialProviders = getSocialMediaProviderReadiness();
   const configured = socialProviders.filter((provider) => provider.configurationReady).length;
   const params = await searchParams;
@@ -193,6 +195,7 @@ export default async function IntegrationsCommandCenterPage({
         </div>
       </section>
 
+      {ownerAccess.ok && (
       <section aria-labelledby="rwa-access-title" className="rounded-2xl border border-white/10 bg-card/75 p-5">
         <h2 id="rwa-access-title" className="font-semibold text-white">0x Real-World Assets</h2>
         <dl className="mt-3 grid gap-4 text-sm sm:grid-cols-2">
@@ -204,6 +207,8 @@ export default async function IntegrationsCommandCenterPage({
         <p className="mt-4 text-sm text-slate-400">Evidence from the GEM team’s 0x dashboard screenshot at acceptance.</p>
         <a href="https://dashboard.0x.org" className="mt-2 inline-block text-sm font-semibold text-cyan-300 hover:underline">Review current access in the 0x dashboard</a>
       </section>
+
+      )}
 
       <WorkspaceIntegrationCatalog items={integrationCards} workspaceId={workspaceId} projectId={projectId} />
 
