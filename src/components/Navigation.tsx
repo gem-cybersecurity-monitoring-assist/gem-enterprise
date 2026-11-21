@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { accessPortalEntries } from "@/lib/accessPortals";
+// Account links intentionally load a fresh document for the separate portal layout.
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 type NavItem = {
   label: string;
@@ -231,23 +232,9 @@ function NavigationContent() {
           <Link href="/whatsapp" className="rounded-md px-3 py-2 text-sm font-medium text-emerald-300/80 transition-colors hover:bg-emerald-400/10 hover:text-emerald-200">
             WhatsApp
           </Link>
-          <div className="group relative">
-            <Button variant="ghost" size="sm" className="border border-white/10 bg-transparent text-white/70 hover:border-white/20 hover:bg-white/5 hover:text-white" aria-haspopup="menu">
-              Sign in <ChevronDown className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
-            </Button>
-            <div className="invisible absolute right-0 top-full z-50 w-64 translate-y-1 pt-2 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              <div className="rounded-2xl border border-white/10 bg-[#101722] p-2 shadow-2xl" role="menu">
-                {accessPortalEntries.map((item) => (
-                  <Link key={item.id} href={item.href} role="menuitem" className="block rounded-xl px-3 py-3 hover:bg-white/5">
-                    <span className="block text-sm font-semibold text-white/80">{item.shortLabel}</span>
-                    <span className="mt-0.5 block text-xs text-white/40">{item.description}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Button asChild variant="ghost" size="sm"><a href="/login">Sign in</a></Button>
           <Button asChild size="sm" className="bg-[hsl(185,100%,45%)] font-semibold text-[#131a26] shadow-[0_0_20px_hsl(185,100%,45%,0.35)] transition-all hover:bg-[hsl(185,100%,50%)] hover:shadow-[0_0_28px_hsl(185,100%,45%,0.5)]">
-            <Link href="/get-started">Get Started</Link>
+            <a href="/request-access">Sign up</a>
           </Button>
         </div>
 
@@ -329,19 +316,9 @@ function NavigationContent() {
               <Button asChild variant="outline" className="h-14 justify-center border-emerald-400/30 bg-emerald-400/5 text-base font-semibold text-emerald-200 hover:border-emerald-300/50 hover:bg-emerald-400/10 hover:text-emerald-100">
                 <Link href="/whatsapp" onClick={closeMobile}>WhatsApp Business</Link>
               </Button>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-2">
-                <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-[0.2em] text-white/35">Choose your sign-in</p>
-                <div className="grid gap-1 sm:grid-cols-2">
-                  {accessPortalEntries.map((item) => (
-                    <Link key={item.id} href={item.href} onClick={closeMobile} className="rounded-xl px-3 py-3 transition-colors hover:bg-white/5">
-                      <span className="block text-sm font-semibold text-white/75">{item.shortLabel}</span>
-                      <span className="mt-0.5 block text-xs text-white/35">{item.description}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <Button asChild variant="outline" className="h-14"><a href="/login">Sign in</a></Button>
               <Button asChild className="h-14 bg-[hsl(185,100%,45%)] text-base font-bold text-[#131a26] shadow-[0_0_25px_hsl(185,100%,45%,0.35)] hover:bg-[hsl(185,100%,50%)]">
-                <Link href="/get-started" onClick={closeMobile}>Get Started</Link>
+                <a href="/request-access">Sign up</a>
               </Button>
               <p className="px-1 pt-2 text-xs leading-relaxed text-white/30">
                 Qualified client access only. KYC verification and compliance approval are required.
