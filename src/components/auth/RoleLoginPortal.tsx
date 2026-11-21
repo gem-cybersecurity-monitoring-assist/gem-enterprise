@@ -90,7 +90,7 @@ export function RoleLoginPortal({ portal }: { portal: LoginPortalKind }) {
         </section>
 
         <section className="mx-auto w-full max-w-md">
-          <nav className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Choose sign-in portal">{portalLinks.map((item) => <Link key={item.kind} href={item.href} aria-current={item.kind === portal ? "page" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${item.kind === portal ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-200" : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"}`}>{item.label}</Link>)}</nav>
+          <nav className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Choose sign-in portal">{portalLinks.filter(({ kind }) => (kind === "admin" || kind === "super_admin") === (portal === "admin" || portal === "super_admin")).map((item) => <Link key={item.kind} href={item.href} aria-current={item.kind === portal ? "page" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${item.kind === portal ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-200" : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"}`}>{item.label}</Link>)}</nav>
           <div className="glass-panel rounded-3xl border border-white/10 p-6 shadow-2xl sm:p-8">
             <div className="mb-7">
               <span className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${config.iconClass}`}><Icon className="h-6 w-6" aria-hidden="true" /></span>
