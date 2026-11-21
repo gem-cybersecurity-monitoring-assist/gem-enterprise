@@ -13,10 +13,14 @@ export default function LoginDirectoryPage() {
           </Link>
           <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-cyan-300">
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            Secure access directory
+            Email and password access
           </span>
         </div>
       </header>
+      <nav aria-label="Account help" className="mx-auto flex max-w-7xl flex-wrap gap-6 px-6 pt-6 text-sm text-cyan-300">
+        <Link href="/forgot-password">Reset your GEM password</Link>
+        <Link href="/request-access">Request access</Link>
+      </nav>
       <PlatformAccessDirectory exclude="login" compact headingLevel={1} />
     </div>
   );
