@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 export const ORIGINAL_PROJECT_REF = 'slzdjoqpzbkwzuaexlkj';
 export const MINIMUM_RPC_COUNT = 14;
-const HOST = \`\${ORIGINAL_PROJECT_REF}.supabase.co\`;
+const HOST = `${ORIGINAL_PROJECT_REF}.supabase.co`;
 const ACTION = JSON.stringify({ action: 'health' });
 
 function exactOriginalUrl(baseUrl) {
@@ -17,7 +17,7 @@ function exactOriginalUrl(baseUrl) {
     url.protocol !== 'https:' || url.hostname !== HOST || url.port ||
     url.username || url.password || url.pathname !== '/' || url.search || url.hash
   ) return null;
-  return \`\${url.origin}/functions/v1/gem-social-publishing-gateway\`;
+  return `${url.origin}/functions/v1/gem-social-publishing-gateway`;
 }
 
 function result(code, fields = {}) {
@@ -26,7 +26,7 @@ function result(code, fields = {}) {
 
 /** Read-only probes only. No body or secret values are returned or logged. */
 export async function certifySocialGateway({
-  baseUrl = \`https://\${HOST}\`,
+  baseUrl = `https://${HOST}`,
   anonKey,
   adapterSecret,
   fetchImpl = fetch,
@@ -42,7 +42,7 @@ export async function certifySocialGateway({
     headers: {
       'Content-Type': 'application/json',
       apikey: anonKey,
-      ...(authorization ? { Authorization: \`Bearer \${adapterSecret}\` } : {}),
+      ...(authorization ? { Authorization: `Bearer ${adapterSecret}` } : {}),
     },
     body: ACTION,
     signal: AbortSignal.timeout(timeoutMs),
