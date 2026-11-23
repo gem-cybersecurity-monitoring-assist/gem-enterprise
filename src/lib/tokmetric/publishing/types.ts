@@ -23,6 +23,7 @@ export type TikTokApprovedVideoAsset = {
   fileSize: number;
   checksum: string;
   storageRef: string;
+  aiGeneratedContent?: boolean;
 };
 
 export type TikTokCreatorInfo = {
