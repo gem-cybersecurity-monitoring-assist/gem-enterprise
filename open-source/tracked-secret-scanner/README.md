@@ -13,6 +13,10 @@ python3 -m unittest discover -s open-source/tracked-secret-scanner -p 'test_*.py
 
 The scanner is not a comprehensive secret scanner: it inspects tracked working-tree content, not commit history or untracked files, and only detects the documented patterns. Deleted or non-regular files may be skipped. Never test with real credentials. Rotate exposed credentials and remove them from affected history where appropriate.
 
+## Security reporting
+
+Report suspected scanner vulnerabilities privately to [GEM Security Operations](mailto:security@gemcybersecurityassist.com), the security contact listed on the [GEM contact page](https://www.gemcybersecurityassist.com/contact). Include a sanitized reproduction and affected version; do not send credentials, sensitive records, or real secret values, and do not post vulnerability details in public issues. Until checkout containment is hardened, scan only trusted checkouts in an isolated workspace without unrelated readable secrets. No guaranteed response time is implied.
+
 ## License scope
 
 Apache-2.0 applies only to scan_tracked_secrets.py, test_scanner.py and this README in this directory. See LICENSE. The rest of GEM Enterprise remains proprietary, including the original production scanner outside this directory; no enterprise, customer, trademark or branding rights are granted by this component license.
