@@ -367,6 +367,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section aria-labelledby="github-sponsors-heading" className="container mx-auto max-w-3xl px-6 py-16 text-center">
+        <h2 id="github-sponsors-heading" className="mb-4 text-3xl font-bold text-white">
+          Support open-source development
+        </h2>
+        <p className="mb-6 text-slate-400">
+          Sponsor support371 on GitHub to support open-source work. Sponsorship is voluntary and is not a purchase of GEM services.
+        </p>
+        <div className="mx-auto flex w-full flex-col items-center gap-4">
+          <iframe
+            src="https://github.com/sponsors/support371/button"
+            title="Sponsor support371"
+            height={32}
+            width={114}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="rounded-md border-0"
+          />
+          <iframe
+            src="https://github.com/sponsors/support371/card"
+            title="GitHub Sponsors profile for support371"
+            height={225}
+            width={600}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="w-full max-w-[600px] border-0"
+          />
+          <a
+            href="https://github.com/sponsors/support371"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-cyan-400 underline underline-offset-4"
+          >
+            Open the GitHub Sponsors page
+          </a>
+        </div>
+      </section>
+
       <section className="container mx-auto px-6 py-24 text-center">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-6 text-5xl font-black text-white">Start with a paid review, then expand what proves useful</h2>
