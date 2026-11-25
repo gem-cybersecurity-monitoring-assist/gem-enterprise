@@ -9,7 +9,9 @@ artifacts are scanned rather than silently skipped.
 
 from __future__ import annotations
 
+import os
 import re
+import stat
 import subprocess
 from pathlib import Path
 
@@ -41,11 +43,26 @@ def is_runtime_env_file(path: Path) -> bool:
 
 def inspect_file(path: Path) -> list[tuple[int, str]]:
     findings: list[tuple[int, str]] = []
-    if not path.is_file():
-        return findings
-
+    # Reject symlinks at every path component, including substituted directories.
+    # Descriptor-relative opens prevent a symlink swap between checking and opening.
+    if not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
+        return [(0, "unsupported-safe-file-access")]
+    if path.is_absolute() or not path.parts or ".." in path.parts:
+        return [(0, "unsafe-tracked-path")]
+    directory = None
+    fd = None
     try:
-        with path.open("r", encoding="utf-8", errors="ignore") as handle:
+        directory = os.open(".", os.O_RDONLY | os.O_DIRECTORY)
+        for part in path.parts[:-1]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return [(0, "unsafe-tracked-file-type")]
+        handle = os.fdopen(fd, "r", encoding="utf-8", errors="ignore")
+        fd = None
+        with handle:
             for line_number, line in enumerate(handle, start=1):
                 if PUBLIC_TELEGRAM_SECRET_NAME.search(line):
                     findings.append((line_number, "public-telegram-secret-variable"))
@@ -57,6 +74,11 @@ def inspect_file(path: Path) -> list[tuple[int, str]]:
     except OSError:
         # A tracked file that cannot be inspected is not treated as clean.
         findings.append((0, "tracked-file-read-error"))
+    finally:
+        if fd is not None:
+            os.close(fd)
+        if directory is not None:
+            os.close(directory)
 
     return findings
 

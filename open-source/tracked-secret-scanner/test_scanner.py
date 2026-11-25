@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Standalone tests using only synthetic inputs and disposable Git repositories."""
+import os
 import subprocess
 import sys
 import tempfile
@@ -67,6 +68,31 @@ class ScannerTests(unittest.TestCase):
         result = self.scan()
         self.assertEqual(result.returncode, 1)
         self.assertIn("large.txt:2", result.stdout)
+
+    @unittest.skipUnless(hasattr(os, "O_NOFOLLOW"), "requires safe POSIX opens")
+    def test_external_symlink_not_read(self):
+        with tempfile.TemporaryDirectory() as outside:
+            target = Path(outside) / "outside.txt"
+            target.write_text("123456789" + ":" + "Z" * 35, encoding="utf-8")
+            (self.root / "link.txt").symlink_to(target)
+            subprocess.run(["git", "add", "--", "link.txt"], cwd=self.root, check=True)
+            result = self.scan()
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("link.txt [tracked-file-read-error]", result.stdout)
+            self.assertNotIn("telegram-bot-token", result.stdout)
+
+    @unittest.skipUnless(hasattr(os, "O_NOFOLLOW"), "requires safe POSIX opens")
+    def test_symlink_parent_not_read(self):
+        self.track("nested/file.txt", "clean")
+        (self.root / "nested/file.txt").unlink()
+        (self.root / "nested").rmdir()
+        with tempfile.TemporaryDirectory() as outside:
+            (Path(outside) / "file.txt").write_text("123456789" + ":" + "Z" * 35, encoding="utf-8")
+            (self.root / "nested").symlink_to(outside, target_is_directory=True)
+            result = self.scan()
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("nested/file.txt [tracked-file-read-error]", result.stdout)
+            self.assertNotIn("telegram-bot-token", result.stdout)
 
 
 if __name__ == "__main__":

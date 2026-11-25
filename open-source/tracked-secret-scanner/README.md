@@ -4,18 +4,18 @@ A small, dependency-free Python tool that checks tracked Git files for runtime e
 
 ## Usage
 
-Requires Python 3.10+ and Git. Copy scan_tracked_secrets.py into your own checkout or run it by absolute path with your target repository root as the working directory.
+Requires Python 3.10+ and Git on POSIX systems supporting descriptor-relative opens and O_NOFOLLOW (such as Linux and macOS). Copy scan_tracked_secrets.py into your own checkout or run it by absolute path with your target repository root as the working directory.
 
 ```sh
 python3 /path/to/scan_tracked_secrets.py
 python3 -m unittest discover -s open-source/tracked-secret-scanner -p 'test_*.py'
 ```
 
-The scanner is not a comprehensive secret scanner: it inspects tracked working-tree content, not commit history or untracked files, and only detects the documented patterns. Deleted or non-regular files may be skipped. Never test with real credentials. Rotate exposed credentials and remove them from affected history where appropriate.
+The scanner is not a comprehensive secret scanner: it inspects tracked working-tree content, not commit history or untracked files, and only detects the documented patterns. Missing, unreadable, symbolic-link and non-regular tracked paths fail the scan; unsupported safe-open platforms also fail closed. Never test with real credentials. Rotate exposed credentials and remove them from affected history where appropriate.
 
 ## Security reporting
 
-Report suspected scanner vulnerabilities privately to [GEM Security Operations](mailto:security@gemcybersecurityassist.com), the security contact listed on the [GEM contact page](https://www.gemcybersecurityassist.com/contact). Include a sanitized reproduction and affected version; do not send credentials, sensitive records, or real secret values, and do not post vulnerability details in public issues. Until checkout containment is hardened, scan only trusted checkouts in an isolated workspace without unrelated readable secrets. No guaranteed response time is implied.
+Report suspected scanner vulnerabilities privately to [GEM Security Operations](mailto:security@gemcybersecurityassist.com), the security contact listed on the [GEM contact page](https://www.gemcybersecurityassist.com/contact). Include a sanitized reproduction and affected version; do not send credentials, sensitive records, or real secret values, and do not post vulnerability details in public issues. For untrusted checkouts, use an isolated workspace without unrelated readable secrets; safe opens reject symbolic links in every path component but do not provide a full filesystem sandbox. No guaranteed response time is implied.
 
 ## License scope
 
