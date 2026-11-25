@@ -219,4 +219,6 @@ See:
 
 ## License
 
-Proprietary. All rights reserved.
+Proprietary. All rights reserved, except the expressly licensed files in [open-source/tracked-secret-scanner](open-source/tracked-secret-scanner/README.md), which are available under Apache-2.0. No other platform code is relicensed.
+
+Support the standalone open-source scanner through [GitHub Sponsors](https://github.com/sponsors/support371).
