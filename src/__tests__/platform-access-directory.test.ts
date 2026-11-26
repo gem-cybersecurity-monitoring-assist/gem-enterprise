@@ -6,20 +6,16 @@ import { canonicalRoutes, legacyRedirects } from "@/lib/siteRoutes";
 const source = (path: string) => readFileSync(path, "utf8");
 
 describe("GEM platform access directory", () => {
-  it("defines a stable public doorway for every platform role", () => {
+  it("defines public entry points for clients and team members", () => {
     expect(accessPortalEntries.map((portal) => portal.id)).toEqual([
       "login",
       "client",
       "team",
-      "admin",
-      "super_admin",
     ]);
     expect(accessPortalEntries.map((portal) => portal.href)).toEqual([
       "/login",
       "/client-login?next=%2Fapp%2Fworkspace",
       "/team-login?next=%2Fapp%2Fworkspace",
-      "/admin-login?next=%2Fapp%2Fadmin",
-      "/super-admin-login?next=%2Fapp%2Fadmin",
     ]);
   });
 

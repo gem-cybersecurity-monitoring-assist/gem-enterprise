@@ -10,7 +10,7 @@ export interface AccessPortalEntry {
   accent: "cyan" | "emerald" | "amber" | "violet";
 }
 
-export const accessPortalEntries: readonly AccessPortalEntry[] = [
+const allPortalEntries: readonly AccessPortalEntry[] = [
   {
     id: "login",
     label: "Secure sign-in directory",
@@ -63,6 +63,8 @@ export const accessPortalEntries: readonly AccessPortalEntry[] = [
   },
 ] as const;
 
+export const accessPortalEntries = allPortalEntries.filter(({ id }) => id === "login" || id === "client" || id === "team");
+
 export function accessPortalById(id: AccessPortalId) {
-  return accessPortalEntries.find((portal) => portal.id === id);
+  return allPortalEntries.find((portal) => portal.id === id);
 }

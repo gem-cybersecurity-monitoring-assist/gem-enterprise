@@ -35,6 +35,16 @@ export function PlatformAccessDirectory({
   compact?: boolean;
   headingLevel?: 1 | 2;
 }) {
+  if (!exclude) {
+    return (
+      <section id="platform-access" aria-label="Account access" className="container mx-auto flex flex-wrap gap-6 px-6 py-10">
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/login" className="font-semibold text-cyan-300">Sign in</a>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/request-access" className="font-semibold text-cyan-300">Sign up</a>
+      </section>
+    );
+  }
   const portals = accessPortalEntries.filter((portal) => portal.id !== exclude);
   const Heading = headingLevel === 1 ? "h1" : "h2";
   const CardHeading = headingLevel === 1 ? "h2" : "h3";

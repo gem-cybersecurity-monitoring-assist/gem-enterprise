@@ -122,6 +122,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const authRoute = isAuthRoute(pathname);
+  if (["/request-access", "/forgot-password", "/reset-password", "/workspace-invitation"].includes(pathname)) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-is-portal", "1");
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
   if (ALWAYS_PUBLIC.includes(pathname) && !authRoute) return NextResponse.next();
 
   let session = null;
