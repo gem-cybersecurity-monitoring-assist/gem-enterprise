@@ -372,8 +372,33 @@ export default function HomePage() {
           Support open-source development
         </h2>
         <p className="mb-6 text-slate-400">
-          Sponsor support371 on GitHub to support open-source work. Sponsorship is voluntary and is not a purchase of GEM services.
+          Help maintain the GEM tracked-secret scanner, an independently usable Apache-2.0 Python utility for checking selected credential exposure patterns in Git-tracked files.
         </p>
+        <div className="mb-6 grid gap-3 text-left sm:grid-cols-3">
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="font-semibold text-white">Detection and testing</h3>
+            <p className="mt-2 text-sm text-slate-400">Support maintenance of detection rules and synthetic regression tests.</p>
+          </div>
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="font-semibold text-white">Developer adoption</h3>
+            <p className="mt-2 text-sm text-slate-400">Help improve installation guides, CI integration and reproducible examples.</p>
+          </div>
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="font-semibold text-white">Open development</h3>
+            <p className="mt-2 text-sm text-slate-400">Support transparent maintenance, release notes and community feedback.</p>
+          </div>
+        </div>
+        <p className="mb-6 text-sm leading-relaxed text-slate-400">
+          Sponsorship is voluntary and does not purchase GEM services, ownership, exclusivity or guaranteed security outcomes. The scanner is a supplemental check, not a comprehensive security solution.
+        </p>
+        <a
+          href="https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise/tree/main/open-source/tracked-secret-scanner"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-6 inline-block text-sm font-semibold text-cyan-400 underline underline-offset-4"
+        >
+          Explore the scanner, usage instructions and maintenance roadmap
+        </a>
         <div className="mx-auto flex w-full flex-col items-center gap-4">
           <iframe
             src="https://github.com/sponsors/support371/button"

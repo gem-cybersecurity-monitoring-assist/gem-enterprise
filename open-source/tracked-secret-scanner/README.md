@@ -54,17 +54,19 @@ Use a reviewed immutable commit, not a floating branch. Use isolated runners and
 Set `SCANNER` to an absolute path to the reviewed script. Use a disposable checkout and synthetic data only:
 
 ```sh
-demo="$(mktemp -d)"
+demo="$(mktemp -d)" || exit 2
 (
-  cd "$demo" || exit 2
+  set -eu
+  cd "$demo"
   git init -q
   printf 'EXAMPLE=placeholder\n' > clean.txt
   git add clean.txt
-  python3 "$SCANNER" || exit 2
+  python3 "$SCANNER"
   printf 'EXAMPLE=placeholder\n' > .env.local
   git add -f .env.local
-  python3 "$SCANNER"
-  test "$?" -eq 1
+  code=0
+  python3 "$SCANNER" || code=$?
+  test "$code" -eq 1
 )
 status=$?
 rm -rf -- "$demo"
@@ -79,7 +81,7 @@ Report suspected scanner vulnerabilities privately to [GEM Security Operations](
 
 ## License scope
 
-Apache-2.0 applies only to scan_tracked_secrets.py, test_scanner.py and this README in this directory. See LICENSE. The rest of GEM Enterprise remains proprietary, including the original production scanner outside this directory; no enterprise, customer, trademark or branding rights are granted by this component license.
+Apache-2.0 applies only to scan_tracked_secrets.py, test_scanner.py, README.md and SPONSORSHIP.md in this directory. See LICENSE. The rest of GEM Enterprise remains proprietary, including the original production scanner outside this directory; no enterprise, customer, trademark or branding rights are granted by this component license.
 
 Source provenance: GEM Enterprise PR #292 introduced the scanner under the support371 account. This copy is based on the current main source blob 15238bca6bc99ec4f4d60da08799e512fc212777 at commit de79e803a917ae75c755b93092951e22b36d3047. The implementation uses Python standard-library modules and the external Git executable; no third-party source is bundled. The new tests are original synthetic fixtures.
 
@@ -97,6 +99,12 @@ Funding priorities (proposed roadmap, not promised deliverables):
 - Publish dated release notes, regression evidence and transparent limitations.
 
 Corporate supporters can choose voluntary one-time or recurring sponsorship through GitHub. Public acknowledgement may be arranged with the sponsor's consent; no logo usage without permission. Sponsorship does not purchase enterprise services, equity, IP assignment, exclusivity, private data, administrative access, or guaranteed outcomes. The Apache-2.0 terms apply equally to sponsors and nonsponsors. Any paid services or special obligations require a separate agreement.
+
+### Suggested voluntary contributions
+
+Suggested corporate contribution amounts are $250, $500 or $1,000 monthly, or a one-time amount agreed by the sponsor. These are illustrative requests, not a claim that these exact tiers have been enabled on GitHub. Use the actual published GitHub Sponsors options. Recognition is opt-in and subject to consent; no sponsor receives preferential security decisions, control of the roadmap, or a commercial service commitment solely by sponsoring.
+
+See [maintenance and release evidence](SPONSORSHIP.md) for the proposed work and how progress will be measured.
 
 ### Community evidence
 
