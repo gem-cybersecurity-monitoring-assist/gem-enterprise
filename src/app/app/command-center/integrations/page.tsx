@@ -1,3 +1,4 @@
+import { requirePlatformOwner } from "@/lib/api/auth-helpers";
 import { socialAccountsHref, oauthByDestination } from "@/lib/social-media/channel-routes";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -30,6 +31,7 @@ export default async function IntegrationsCommandCenterPage({
 }: {
   searchParams: Promise<{ workspace?: string | string[]; project?: string | string[] }>;
 }) {
+  const ownerAccess = await requirePlatformOwner();
   const socialProviders = getSocialMediaProviderReadiness();
   const configured = socialProviders.filter((provider) => provider.configurationReady).length;
   const params = await searchParams;
@@ -192,6 +194,21 @@ export default async function IntegrationsCommandCenterPage({
           </div>
         </div>
       </section>
+
+      {ownerAccess.ok && (
+      <section aria-labelledby="rwa-access-title" className="rounded-2xl border border-white/10 bg-card/75 p-5">
+        <h2 id="rwa-access-title" className="font-semibold text-white">0x Real-World Assets</h2>
+        <dl className="mt-3 grid gap-4 text-sm sm:grid-cols-2">
+          <div><dt className="text-slate-400">GEM team access at acceptance</dt><dd className="text-emerald-300">Enabled · subject to 0x review</dd></div>
+          <div><dt className="text-slate-400">GEM API connection</dt><dd className="text-amber-300">Unverified</dd></div>
+          <div><dt className="text-slate-400">Terms accepted</dt><dd><time dateTime="2026-11-21T16:32:00Z">21 Nov 2026, 16:32 UTC</time></dd></div>
+          <div><dt className="text-slate-400">Terms version</dt><dd>rda-2026-09-04</dd></div>
+        </dl>
+        <p className="mt-4 text-sm text-slate-400">Evidence from the GEM team’s 0x dashboard screenshot at acceptance.</p>
+        <a href="https://dashboard.0x.org" className="mt-2 inline-block text-sm font-semibold text-cyan-300 hover:underline">Review current access in the 0x dashboard</a>
+      </section>
+
+      )}
 
       <WorkspaceIntegrationCatalog items={integrationCards} workspaceId={workspaceId} projectId={projectId} />
 
