@@ -1,0 +1,20 @@
+name: GEM tracked-secret scanner
+description: Supplemental scan of Git-tracked working-tree content
+inputs:
+  repository:
+    description: Path to the checked-out Git repository root
+    required: false
+    default: "."
+runs:
+  using: composite
+  steps:
+    - name: Run supplemental tracked-secret scanner
+      shell: bash
+      env:
+        SCANNER_ACTION_PATH: ${{ github.action_path }}
+        TARGET_REPOSITORY: ${{ inputs.repository }}
+      run: |
+        set -eu
+        cd -- "$GITHUB_WORKSPACE"
+        cd -- "$TARGET_REPOSITORY"
+        python3 "$SCANNER_ACTION_PATH/scan_tracked_secrets.py"

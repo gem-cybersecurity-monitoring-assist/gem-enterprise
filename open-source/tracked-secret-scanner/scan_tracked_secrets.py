@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Fail closed when tracked files contain Telegram credentials or runtime env files.
+"""Fail closed on supported credential patterns or unsafe tracked files.
 
 This scanner intentionally prints only file paths, line numbers, and rule names. It
 never prints matched secret values. Tracked files are streamed line-by-line so large
@@ -9,6 +9,8 @@ artifacts are scanned rather than silently skipped.
 
 from __future__ import annotations
 
+import argparse
+import json
 import os
 import re
 import stat
@@ -19,6 +21,15 @@ TELEGRAM_TOKEN = re.compile(r"(?<![A-Za-z0-9_])\d{6,12}:[A-Za-z0-9_-]{30,}(?![A-
 TELEGRAM_URL_TOKEN = re.compile(r"api\.telegram\.org/bot\d{6,12}:[A-Za-z0-9_-]{30,}", re.IGNORECASE)
 PUBLIC_TELEGRAM_SECRET_NAME = re.compile(
     r"(?i)\bNEXT_PUBLIC_[A-Z0-9_]*(?:TELEGRAM|BOT)[A-Z0-9_]*(?:TOKEN|SECRET|KEY)\b"
+)
+
+VERSION = "0.2.0"
+# Deliberately narrow shapes; identifiers and headers are not proof of live secrets.
+EXTRA_RULES = (
+    ("github-classic-token", re.compile(r"(?<![A-Za-z0-9_])gh[pousr]_[A-Za-z0-9]{36}(?![A-Za-z0-9_])")),
+    ("github-fine-grained-token", re.compile(r"(?<![A-Za-z0-9_])github_pat_[A-Za-z0-9_]{82}(?![A-Za-z0-9_])")),
+    ("aws-access-key-id", re.compile(r"(?<![A-Za-z0-9_])(?:AKIA|ASIA)[A-Z0-9]{16}(?![A-Za-z0-9_])")),
+    ("private-key-header", re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----")),
 )
 
 SAFE_ENV_EXAMPLES = {".env.example", ".env.sample", ".env.template"}
@@ -68,9 +79,11 @@ def inspect_file(path: Path) -> list[tuple[int, str]]:
                     findings.append((line_number, "public-telegram-secret-variable"))
                 if TELEGRAM_URL_TOKEN.search(line):
                     findings.append((line_number, "telegram-token-in-api-url"))
-                    continue
-                if TELEGRAM_TOKEN.search(line):
+                elif TELEGRAM_TOKEN.search(line):
                     findings.append((line_number, "telegram-bot-token"))
+                for rule, pattern in EXTRA_RULES:
+                    if pattern.search(line):
+                        findings.append((line_number, rule))
     except OSError:
         # A tracked file that cannot be inspected is not treated as clean.
         findings.append((0, "tracked-file-read-error"))
@@ -84,9 +97,29 @@ def inspect_file(path: Path) -> list[tuple[int, str]]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Scan Git-tracked working-tree files from the repository root.")
+    parser.add_argument("--version", action="version", version=VERSION)
+    parser.parse_args()
     findings: list[tuple[str, int, str]] = []
 
-    for filename in tracked_files():
+    try:
+        prefix = subprocess.run(
+            ["git", "rev-parse", "--show-prefix"], check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        ).stdout.strip()
+        inside = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"], check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        ).stdout.strip()
+        if prefix or inside != b"true":
+            print("Scan unavailable: run from the root of a Git working tree.")
+            return 2
+        filenames = tracked_files()
+    except (OSError, subprocess.CalledProcessError, UnicodeError):
+        print("Scan unavailable: Git tracked files could not be enumerated safely.")
+        return 2
+
+    for filename in filenames:
         path = Path(filename)
 
         if is_runtime_env_file(path):
@@ -98,12 +131,14 @@ def main() -> int:
     if findings:
         print("Tracked secret scan failed. Sensitive or unsafe tracked material was found:")
         for filename, line_number, rule in findings:
-            location = f"{filename}:{line_number}" if line_number else filename
+            # Escape control characters in tracked paths so filenames cannot inject log lines.
+            safe_name = json.dumps(filename, ensure_ascii=True)[1:-1]
+            location = f"{safe_name}:{line_number}" if line_number else safe_name
             print(f"- {location} [{rule}]")
         print("Secret values are intentionally not printed. Remove tracked runtime env files and rotate exposed credentials before release.")
         return 1
 
-    print("Tracked secret scan passed: no tracked runtime env files or Telegram credential patterns detected.")
+    print("Tracked secret scan passed: no supported findings detected.")
     return 0
 
 

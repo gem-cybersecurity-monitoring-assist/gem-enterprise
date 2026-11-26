@@ -1,0 +1,60 @@
+name: Standalone Scanner Verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'open-source/tracked-secret-scanner/**'
+      - '.github/workflows/standalone-scanner.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'open-source/tracked-secret-scanner/**'
+      - '.github/workflows/standalone-scanner.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Run standalone synthetic tests
+        run: python3 -m unittest discover -s open-source/tracked-secret-scanner -p 'test_*.py'
+      - name: Build and install local distribution
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/gem-venv"
+          "$RUNNER_TEMP/gem-venv/bin/python" -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/gem-wheels" ./open-source/tracked-secret-scanner
+          "$RUNNER_TEMP/gem-venv/bin/python" -m pip install --no-deps --no-index "$RUNNER_TEMP/gem-wheels/"*.whl
+          test "$("$RUNNER_TEMP/gem-venv/bin/gem-tracked-secret-scanner" --version)" = "0.2.0"
+      - name: Create disposable clean Git fixture
+        id: fixture
+        shell: bash
+        run: |
+          fixture="$(mktemp -d)"
+          git -C "$fixture" init -q
+          printf 'EXAMPLE=placeholder\n' > "$fixture/clean.txt"
+          git -C "$fixture" add clean.txt
+          echo "path=$fixture" >> "$GITHUB_OUTPUT"
+          (cd "$fixture" && "$RUNNER_TEMP/gem-venv/bin/gem-tracked-secret-scanner")
+      - name: Verify reusable action against clean fixture
+        uses: ./open-source/tracked-secret-scanner
+        with:
+          repository: ${{ steps.fixture.outputs.path }}
+      - name: Verify installed CLI fails on synthetic environment file
+        shell: bash
+        env:
+          FIXTURE: ${{ steps.fixture.outputs.path }}
+        run: |
+          cd -- "$FIXTURE"
+          printf 'EXAMPLE=placeholder\n' > .env.local
+          git add -f .env.local
+          code=0
+          "$RUNNER_TEMP/gem-venv/bin/gem-tracked-secret-scanner" || code=$?
+          test "$code" -eq 1

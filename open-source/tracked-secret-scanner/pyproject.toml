@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gem-tracked-secret-scanner"
+version = "0.2.0"
+description = "Supplemental Git-tracked credential pattern scanner"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.scripts]
+gem-tracked-secret-scanner = "scan_tracked_secrets:main"
+
+[project.urls]
+Repository = "https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise/tree/main/open-source/tracked-secret-scanner"
+Sponsor = "https://github.com/sponsors/support371"
+
+[tool.setuptools]
+py-modules = ["scan_tracked_secrets"]

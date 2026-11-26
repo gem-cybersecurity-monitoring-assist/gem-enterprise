@@ -94,6 +94,66 @@ class ScannerTests(unittest.TestCase):
             self.assertIn("nested/file.txt [tracked-file-read-error]", result.stdout)
             self.assertNotIn("telegram-bot-token", result.stdout)
 
+    def test_additional_patterns_redacted(self):
+        fixtures = {
+            "github-classic-token": "gh" + "p_" + "A" * 36,
+            "github-fine-grained-token": "github_" + "pat_" + "B" * 82,
+            "aws-access-key-id": "AK" + "IA" + "C" * 16,
+            "private-key-header": "-----BEGIN " + "PRIVATE " + "KEY-----",
+        }
+        for index, (rule, value) in enumerate(fixtures.items(), 1):
+            self.track(f"example-{index}.txt", "before\n" + value + "\n")
+        result = self.scan()
+        self.assertEqual(result.returncode, 1)
+        for rule, value in fixtures.items():
+            self.assertIn("[" + rule + "]", result.stdout)
+            self.assertNotIn(value, result.stdout + result.stderr)
+
+    def test_pattern_boundaries_and_placeholders(self):
+        values = ["gh" + "p_" + "A" * 35,
+                  "xgh" + "p_" + "A" * 36,
+                  "AK" + "IA" + "C" * 17,
+                  "github_" + "pat_" + "PLACEHOLDER",
+                  "-----BEGIN PUBLIC " + "KEY-----"]
+        self.track("clean.txt", "\n".join(values))
+        result = self.scan()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_multiple_rules_on_one_line(self):
+        self.track("fixture.txt", "https://api.telegram.org/bot" +
+                   "123456789" + ":" + "X" * 35 + " " +
+                   "gh" + "p_" + "A" * 36)
+        result = self.scan()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("telegram-token-in-api-url", result.stdout)
+        self.assertIn("github-classic-token", result.stdout)
+
+    def test_missing_tracked_file_is_not_clean(self):
+        self.track("missing.txt", "clean")
+        (self.root / "missing.txt").unlink()
+        result = self.scan()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("tracked-file-read-error", result.stdout)
+
+    def test_subdirectory_cannot_silently_skip_files(self):
+        self.track("nested/file.txt", "clean")
+        result = subprocess.run([sys.executable, str(SCANNER)], cwd=self.root / "nested",
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 2)
+
+    def test_outside_repository_is_error(self):
+        with tempfile.TemporaryDirectory() as outside:
+            result = subprocess.run([sys.executable, str(SCANNER)], cwd=outside,
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Scan unavailable", result.stdout)
+
+    def test_version(self):
+        result = subprocess.run([sys.executable, str(SCANNER), "--version"],
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), "0.2.0")
+
 
 if __name__ == "__main__":
     unittest.main()
