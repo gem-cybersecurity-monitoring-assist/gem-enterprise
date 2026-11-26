@@ -399,7 +399,22 @@ export default function HomePage() {
         >
           Explore the scanner, usage instructions and maintenance roadmap
         </a>
+        <div className="mb-8 rounded-xl border border-white/10 p-5">
+          <h3 className="mb-2 text-xl font-semibold text-white">Corporate and organization sponsorship</h3>
+          <p className="mb-4 text-sm leading-relaxed text-slate-400">
+            Support GEM&apos;s open-source maintenance through the organization&apos;s GitHub Sponsors profile. Choose an available sponsorship option directly on GitHub.
+          </p>
+          <a
+            href="https://github.com/sponsors/gem-cybersecurity-monitoring-assist"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-full bg-cyan-400 px-6 py-3 font-semibold text-black hover:bg-cyan-500"
+          >
+            Sponsor the GEM organization
+          </a>
+        </div>
         <div className="mx-auto flex w-full flex-col items-center gap-4">
+          <h3 className="text-lg font-semibold text-white">Individual maintainer sponsorship</h3>
           <iframe
             src="https://github.com/sponsors/support371/button"
             title="Sponsor support371"
@@ -424,7 +439,7 @@ export default function HomePage() {
             rel="noopener noreferrer"
             className="text-sm font-semibold text-cyan-400 underline underline-offset-4"
           >
-            Open the GitHub Sponsors page
+            Open the individual maintainer&apos;s GitHub Sponsors page
           </a>
         </div>
       </section>

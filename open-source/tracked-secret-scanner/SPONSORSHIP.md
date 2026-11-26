@@ -29,4 +29,4 @@ Use only genuine, publicly shareable evidence: release/commit links, workflow re
 
 ## Funding
 
-[GitHub Sponsors](https://github.com/sponsors/support371) is the existing voluntary contribution channel. No funding amount is guaranteed. The project does not give sponsors equity, exclusive rights, ownership of GEM Enterprise, private access or guaranteed security outcomes. Public acknowledgements require consent. Any special contractual obligations are separate from sponsorship.
+[GEM organization sponsorship](https://github.com/sponsors/gem-cybersecurity-monitoring-assist) is the preferred corporate contribution channel. [Individual maintainer sponsorship](https://github.com/sponsors/support371) remains available. Both use GitHub Sponsors; choose the published option on the intended recipient's profile. No funding amount is guaranteed. The project does not give sponsors equity, exclusive rights, ownership of GEM Enterprise, private access or guaranteed security outcomes. Public acknowledgements require consent. Any special contractual obligations are separate from sponsorship.

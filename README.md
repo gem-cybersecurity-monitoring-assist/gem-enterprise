@@ -221,4 +221,4 @@ See:
 
 Proprietary. All rights reserved, except the expressly licensed files in [open-source/tracked-secret-scanner](open-source/tracked-secret-scanner/README.md), which are available under Apache-2.0. No other platform code is relicensed.
 
-Support the standalone open-source scanner through [GitHub Sponsors](https://github.com/sponsors/support371).
+Support the standalone open-source scanner through [GEM organization sponsorship](https://github.com/sponsors/gem-cybersecurity-monitoring-assist) or [individual maintainer sponsorship](https://github.com/sponsors/support371).

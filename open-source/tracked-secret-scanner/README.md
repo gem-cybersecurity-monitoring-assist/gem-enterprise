@@ -89,7 +89,7 @@ Source provenance: GEM Enterprise PR #292 introduced the scanner under the suppo
 
 The goal is to help developers catch selected credential exposures before deployment. This component is independently usable; it does not require GEM Enterprise access or a hosted scanning service.
 
-[Sponsor ongoing open-source maintenance](https://github.com/sponsors/support371).
+[Sponsor GEM's organization-level open-source maintenance](https://github.com/sponsors/gem-cybersecurity-monitoring-assist) or [support the individual maintainer](https://github.com/sponsors/support371). Corporate supporters are encouraged to use the organization profile; both are voluntary contribution channels.
 
 Funding priorities (proposed roadmap, not promised deliverables):
 

@@ -17,7 +17,8 @@ gem-tracked-secret-scanner = "scan_tracked_secrets:main"
 
 [project.urls]
 Repository = "https://github.com/gem-cybersecurity-monitoring-assist/gem-enterprise/tree/main/open-source/tracked-secret-scanner"
-Sponsor = "https://github.com/sponsors/support371"
+"Organization sponsor" = "https://github.com/sponsors/gem-cybersecurity-monitoring-assist"
+"Maintainer sponsor" = "https://github.com/sponsors/support371"
 
 [tool.setuptools]
 py-modules = ["scan_tracked_secrets"]
