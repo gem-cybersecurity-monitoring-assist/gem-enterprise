@@ -71,7 +71,7 @@ const applicantTracks = [
 ];
 
 const workflow = [
-  { label: "Access Request", body: "Applicant submits the public request-access or eligibility flow." },
+  { label: "Access Request", body: "Applicant submits a dedicated enterprise qualification application, distinct from future Community membership." },
   { label: "Eligibility Screen", body: "GEM reviews category, jurisdiction, entity type, and baseline qualification." },
   { label: "KYC Intake", body: "Qualified applicants move into identity, entity, and documentation verification." },
   { label: "Compliance Review", body: "Compliance validates records, consent, source-of-funds, and risk indicators." },
@@ -96,8 +96,8 @@ export default function EligibilityStatusPage() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="gap-2 glow-cyan">
-              <Link href="/request-access">
-                Start Access Request <ArrowRight className="h-4 w-4" />
+              <Link href="/enterprise/apply">
+                Apply for Enterprise Services <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="gap-2">

@@ -11,29 +11,29 @@ import {
   Fingerprint,
   FileCheck,
 } from "lucide-react";
-import { RequestAccessForm } from "@/components/hub/RequestAccessForm";
+import { PublicIntakeForm } from "@/components/intake/PublicIntakeForm";
 
 export const metadata: Metadata = {
-  title: "Request Access — GEM Community Hub",
+  title: "Community Application — GEM Enterprise",
   description:
-    "Apply for access to the GEM Community Hub — a vetted, invitation-only network of operators, investors, and advisors.",
+    "Apply for future GEM Community qualification. Human review does not grant automatic membership or access.",
 };
 
 const principles = [
   {
     icon: Fingerprint,
-    title: "Vetted Membership",
-    body: "Every applicant is reviewed for relevance, reputation, and fit. We protect the signal-to-noise ratio so introductions stay meaningful.",
+    title: "Application review",
+    body: "Applications are submitted for human consideration. Approval and a future membership service are not guaranteed.",
   },
   {
     icon: Lock,
     title: "Discretion by Default",
-    body: "Your application, profile, and activity are private. Nothing is indexed publicly, and member lists are never shared with third parties.",
+    body: "Applications follow the published privacy process. This page does not represent a currently active membership network.",
   },
   {
     icon: FileCheck,
     title: "Clear Standards",
-    body: "We evaluate against published criteria. If accepted, onboarding is guided. If declined, you will receive a respectful notice within 10 business days.",
+    body: "Applications enter a separate Community review queue. Submission does not create a client account, entitlement, membership or guaranteed decision date.",
   },
 ];
 
@@ -63,14 +63,14 @@ export default function RequestAccessPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background pointer-events-none" />
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center">
           <Badge className="mb-6 border border-primary/30 bg-primary/10 text-primary font-mono text-xs tracking-widest uppercase">
-            Community Hub · Invitation-Only
+            Community qualification · Future membership
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-balance">
-            Request Access to the <span className="text-gradient-primary">GEM Community</span>
+            Apply for the Future <span className="text-gradient-primary">GEM Community</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed text-pretty">
-            A vetted network of operators, investors, and advisors. Applications are reviewed
-            individually. We respond to every submission.
+            A future network for operators, investors, and advisors. Apply for human qualification;
+            submission does not grant membership, an account, or a guaranteed response time.
           </p>
         </div>
       </section>
@@ -103,7 +103,7 @@ export default function RequestAccessPage() {
       {/* Form */}
       <section className="py-16 md:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
-          <RequestAccessForm />
+          <PublicIntakeForm kind="COMMUNITY" />
         </div>
       </section>
 
@@ -138,9 +138,9 @@ export default function RequestAccessPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Prefer a direct conversation before applying?
             </p>
-            <Link href="/contact">
+            <Link href="/enterprise/apply">
               <Button variant="outline" className="gap-2">
-                Contact Us First <ArrowRight className="h-4 w-4" />
+                Submit Enterprise Application <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
