@@ -1,10 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import {
+  dispatchTokMetricCommand,
+  TokMetricCommandError,
+} from "./tokmetric-command.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const TOKMETRIC_WORKSPACE_ID = "ws_60488340ded94dcfab3b875ef9ae591c";
 const MAX_ACTIVE_TOKMETRIC_CREDENTIALS = 5;
+const ADMIN_ROLES = ["admin", "super_admin", "internal"] as const;
+
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Missing Supabase runtime configuration");
 }
@@ -14,7 +20,6 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-const ADMIN_ROLES = ["admin", "super_admin", "internal"] as const;
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "https://www.gemcybersecurityassist.com",
   "Access-Control-Allow-Headers":
@@ -40,6 +45,7 @@ function json(body: unknown, status = 200) {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }
@@ -61,6 +67,10 @@ async function signingKey() {
   );
 }
 
+function validSessionVersion(value: unknown): value is number {
+  return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
 async function requireAdmin(token: unknown) {
   if (typeof token !== "string") {
     throw new GatewayError(401, "UNAUTHORIZED", "Authentication required");
@@ -79,12 +89,24 @@ async function requireAdmin(token: unknown) {
   if (!valid) {
     throw new GatewayError(401, "INVALID_SESSION", "Invalid session token");
   }
-  const payload = JSON.parse(
-    decoder.decode(decodeB64url(parts[1])),
-  ) as Record<string, unknown>;
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(
+      decoder.decode(decodeB64url(parts[1])),
+    ) as Record<string, unknown>;
+  } catch {
+    throw new GatewayError(401, "INVALID_SESSION", "Invalid session token");
+  }
+
   const userId = typeof payload.sub === "string" ? payload.sub : "";
   const exp = typeof payload.exp === "number" ? payload.exp : 0;
-  if (!userId || exp <= Math.floor(Date.now() / 1000)) {
+  const sessionVersion = payload.sessionVersion;
+  if (
+    !userId ||
+    exp <= Math.floor(Date.now() / 1000) ||
+    !validSessionVersion(sessionVersion)
+  ) {
     throw new GatewayError(401, "SESSION_EXPIRED", "Session expired");
   }
   if (
@@ -96,7 +118,9 @@ async function requireAdmin(token: unknown) {
 
   const { data: user, error } = await db
     .from("users")
-    .select("id,email,role,status,isActive,isEmailVerified")
+    .select(
+      "id,email,role,status,isActive,isEmailVerified,sessionVersion",
+    )
     .eq("id", userId)
     .maybeSingle();
   if (error) {
@@ -108,10 +132,28 @@ async function requireAdmin(token: unknown) {
   if (!user.isActive || user.status !== "active") {
     throw new GatewayError(403, "ACCOUNT_DISABLED", "Account is not active");
   }
+  if (!validSessionVersion(user.sessionVersion)) {
+    throw new GatewayError(
+      503,
+      "INVALID_SESSION_VERSION",
+      "Session authority unavailable",
+    );
+  }
+  if (user.sessionVersion !== sessionVersion) {
+    throw new GatewayError(401, "SESSION_REVOKED", "Session revoked");
+  }
   if (!ADMIN_ROLES.includes(user.role as (typeof ADMIN_ROLES)[number])) {
     throw new GatewayError(403, "FORBIDDEN", "Administrator access required");
   }
-  return user;
+  return user as {
+    id: string;
+    email: string;
+    role: string;
+    status: string;
+    isActive: boolean;
+    isEmailVerified: boolean;
+    sessionVersion: number;
+  };
 }
 
 function assignableRoles(actorRole: string) {
@@ -165,7 +207,9 @@ async function updateUser(
 
   const { data: target, error } = await db
     .from("users")
-    .select("id,email,role,status,isActive,isEmailVerified")
+    .select(
+      "id,email,role,status,isActive,isEmailVerified,sessionVersion",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) throw new GatewayError(503, "DATABASE_ERROR", error.message);
@@ -242,12 +286,16 @@ async function updateUser(
       "Requested update does not change the account",
     );
   }
+  update.sessionVersion =
+    (validSessionVersion(target.sessionVersion) ? target.sessionVersion : 0) + 1;
 
   const { data, error: updateError } = await db
     .from("users")
     .update(update)
     .eq("id", target.id)
-    .select("id,email,role,status,isActive,isEmailVerified,updatedAt")
+    .select(
+      "id,email,role,status,isActive,isEmailVerified,sessionVersion,updatedAt",
+    )
     .single();
   if (updateError) {
     throw new GatewayError(503, "DATABASE_ERROR", updateError.message);
@@ -279,6 +327,7 @@ async function updateUser(
         previousIsActive: target.isActive,
         newIsActive: update.isActive,
         reason,
+        targetMustReauthenticate: true,
       },
     });
   }
@@ -286,7 +335,7 @@ async function updateUser(
   return {
     ok: true,
     user: data,
-    reauthenticationRequired: Boolean(update.role),
+    reauthenticationRequired: true,
   };
 }
 
@@ -758,6 +807,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
+
   try {
     const body = (await req.json()) as Record<string, unknown>;
     const actor = await requireAdmin(body.token);
@@ -781,12 +831,34 @@ Deno.serve(async (req) => {
     if (action === "tokmetric_credential_revoke") {
       return json(await revokeTokMetricCredential(actor, body));
     }
+    if (action === "tokmetric_command") {
+      try {
+        const result = await dispatchTokMetricCommand({
+          db,
+          actor,
+          workspaceId: TOKMETRIC_WORKSPACE_ID,
+          body,
+        });
+        const created =
+          body.operation === "create_draft" ||
+          body.operation === "request_approval";
+        return json(result, created ? 201 : 200);
+      } catch (error) {
+        if (error instanceof TokMetricCommandError) {
+          throw new GatewayError(error.status, error.code, error.message);
+        }
+        throw error;
+      }
+    }
     throw new GatewayError(400, "UNKNOWN_ACTION", "Unknown action");
   } catch (error) {
     if (error instanceof GatewayError) {
       return json({ error: error.message, code: error.code }, error.status);
     }
-    console.error(error);
+    console.error(
+      "gem_admin_write_internal_error",
+      error instanceof Error ? error.name : "unknown",
+    );
     return json({ error: "Internal gateway error", code: "INTERNAL_ERROR" }, 500);
   }
 });
