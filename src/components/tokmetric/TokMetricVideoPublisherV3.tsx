@@ -226,7 +226,10 @@ export function TokMetricVideoPublisherV3() {
   const [commercialContent, setCommercialContent] = useState(false);
   const [brandContentToggle, setBrandContentToggle] = useState(false);
   const [brandOrganicToggle, setBrandOrganicToggle] = useState(false);
-  const [isAigc, setIsAigc] = useState(false);
+  // GEM pipeline videos use Kokoro synthetic narration (manifest disclosures.aiGeneratedContent),
+  // so default the AI-content disclosure ON; a human-voice upload can untick it before publishing.
+  // TODO: bind this from the approved render's manifest once ingestion carries the flag onto the asset.
+  const [isAigc, setIsAigc] = useState(true);
   const [consentToUpload, setConsentToUpload] = useState(false);
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [musicRightsConfirmed, setMusicRightsConfirmed] = useState(false);
