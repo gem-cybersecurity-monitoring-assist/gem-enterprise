@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { CommandCenterSocialAccounts } from "@/components/social-media/CommandCenterSocialAccounts";
 import { SocialGatewayDiagnostics } from "@/components/social-media/SocialGatewayDiagnostics";
 import {
   AlertTriangle,
@@ -13,7 +14,7 @@ import {
   Megaphone,
   ShieldCheck,
 } from "lucide-react";
-import { socialAccountsHref, socialChannels } from "@/lib/social-media/channel-routes";
+import { socialAccountsHref, socialChannels, socialWorkspaceId, type SocialWorkspaceSearchParams } from "@/lib/social-media/channel-routes";
 import {
   getSocialMediaProviderReadiness,
   type SocialMediaReadinessState,
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 
 function StatusBadge({ state }: { state: SocialMediaReadinessState }) {
   const configured = state !== "CONFIGURATION_REQUIRED";
-  const label = state.replaceAll("_", " ");
+  const label = state === "AUTHORIZATION_REQUIRED" ? "ACCOUNT CHECK REQUIRED" : state.replaceAll("_", " ");
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
@@ -42,7 +43,8 @@ function StatusBadge({ state }: { state: SocialMediaReadinessState }) {
   );
 }
 
-export default async function SocialMediaCommandCenterPage() {
+export default async function SocialMediaCommandCenterPage({ searchParams }: { searchParams: Promise<SocialWorkspaceSearchParams> }) {
+  const workspaceId = socialWorkspaceId(await searchParams);
   const session = await getSession();
   const providers = getSocialMediaProviderReadiness();
   const configuredCount = providers.filter((provider) => provider.configurationReady).length;
@@ -113,12 +115,15 @@ export default async function SocialMediaCommandCenterPage() {
 
       {session?.role === "super_admin" && <SocialGatewayDiagnostics />}
 
+      <CommandCenterSocialAccounts workspaceId={workspaceId} />
+
       <section aria-label="Social connections" className="rounded-2xl border border-white/10 bg-card/75 p-5">
         <h2 className="text-lg font-semibold text-white">Social connections</h2>
+        <p className="mt-2 text-sm text-slate-400">The cards below describe provider configuration and publishing gates, not the live identity of a saved account.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href={socialAccountsHref()} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">All accounts</Link>
+          <Link href={socialAccountsHref(undefined, workspaceId)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">All accounts</Link>
           {socialChannels.map(({ id, label }) => (
-            <Link key={id} href={socialAccountsHref(id)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">{label}</Link>
+            <Link key={id} href={socialAccountsHref(id, workspaceId)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-cyan-200">{label}</Link>
           ))}
         </div>
       </section>
