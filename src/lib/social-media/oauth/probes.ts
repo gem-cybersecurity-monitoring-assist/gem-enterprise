@@ -83,11 +83,16 @@ function probeTarget(
       };
     }
     case "X": {
+      const accountId = credential.externalAccountId;
+      if (!accountId || !/^\d+$/.test(accountId)) {
+        throw new TokMetricError(503, "SOCIAL_PROBE_ACCOUNT_REQUIRED", "A verified X account ID is required for a live account check.");
+      }
       const url = new URL("https://api.x.com/2/users/me");
       url.searchParams.set("user.fields", "name,username");
       return {
         url,
         accountName: (payload) => stringValue(object(object(payload)?.data)?.name) || null,
+        matchesAccount: (payload) => stringValue(object(object(payload)?.data)?.id) === accountId,
       };
     }
     case "LINKEDIN": {
