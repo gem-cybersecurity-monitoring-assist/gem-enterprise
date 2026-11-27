@@ -252,6 +252,24 @@ export async function getVideoRenderJobById(id: string) {
   }
 }
 
+export async function getVideoRenderJobByIdempotencyKey(input: {
+  workspaceId: string;
+  idempotencyKey: string;
+}) {
+  try {
+    const rows = await db.$queryRaw<VideoRenderJobRow[]>(Prisma.sql`
+      SELECT ${jobSelection}
+      FROM video_render_jobs
+      WHERE workspace_id = ${input.workspaceId}
+        AND idempotency_key = ${input.idempotencyKey}
+      LIMIT 1
+    `);
+    return rows[0] ? job(rows[0]) : null;
+  } catch (error) {
+    return storeUnavailable(error);
+  }
+}
+
 export async function getVideoRenderJobByPromptId(promptId: string) {
   try {
     const rows = await db.$queryRaw<VideoRenderJobRow[]>(Prisma.sql`

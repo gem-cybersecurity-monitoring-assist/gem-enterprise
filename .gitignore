@@ -1,6 +1,7 @@
 # Next.js build output
 .next/
 out/
+.cache/pixabay/
 
 # Vercel local project config (contains orgId/projectId — machine-specific)
 .vercel/

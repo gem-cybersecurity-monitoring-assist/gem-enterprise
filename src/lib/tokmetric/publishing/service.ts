@@ -31,6 +31,21 @@ function toInputJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
 }
 
+function manifestDeclaresAiGeneratedContent(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const root = value as Record<string, unknown>;
+  const manifest = root.manifest && typeof root.manifest === "object" && !Array.isArray(root.manifest)
+    ? root.manifest as Record<string, unknown>
+    : root;
+  const disclosures = manifest.disclosures;
+  return Boolean(
+    disclosures &&
+    typeof disclosures === "object" &&
+    !Array.isArray(disclosures) &&
+    (disclosures as Record<string, unknown>).aiGeneratedContent === true
+  );
+}
+
 async function addJobAttempt(publishJobId: string, state: TokMetricPublishState, metadata: unknown) {
   const attempt = await db.jobAttempt.count({ where: { publishJobId } }) + 1;
   await db.jobAttempt.create({
@@ -124,6 +139,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
           caption: true,
           script: true,
           hashtags: true,
+          settings: true,
           mediaAssetIds: true,
         },
       })
@@ -143,6 +159,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
           fileSize: true,
           checksum: true,
           storageRef: true,
+          metadata: true,
         },
       })
     : [];
@@ -167,6 +184,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
           fileSize: asset.fileSize,
           checksum: asset.checksum,
           storageRef: asset.storageRef,
+          aiGeneratedContent: manifestDeclaresAiGeneratedContent(asset.metadata),
         }];
       });
       if (approvedVideoAssets.length === 0) return [];
@@ -176,6 +194,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
         caption: version.caption,
         script: version.script,
         hashtags: version.hashtags,
+        aiGeneratedContent: manifestDeclaresAiGeneratedContent(version.settings),
         mediaAssets: approvedVideoAssets,
       }];
     }),
@@ -289,6 +308,7 @@ async function assertApprovedContent(
       fileSize: true,
       checksum: true,
       storageRef: true,
+      metadata: true,
     },
   });
   if (!mediaAsset) {
@@ -302,7 +322,7 @@ async function assertApprovedContent(
     content,
     version,
     approval,
-    mediaAsset: mediaAsset as TikTokApprovedVideoAsset,
+    mediaAsset: mediaAsset as TikTokApprovedVideoAsset & { metadata: Prisma.JsonValue },
   };
 }
 
@@ -404,6 +424,7 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     }
   }
 
+  const aiGeneratedContent = input.isAigc || manifestDeclaresAiGeneratedContent(version.settings) || manifestDeclaresAiGeneratedContent(mediaAsset.metadata);
   const requestHash = contentHash({
     contentVersionId: version.id,
     connectorId: input.connectorId,
@@ -415,7 +436,7 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     videoCoverTimestampMs: input.videoCoverTimestampMs,
     brandContentToggle: input.brandContentToggle,
     brandOrganicToggle: input.brandOrganicToggle,
-    isAigc: input.isAigc,
+    isAigc: aiGeneratedContent,
     source: input.source,
     mediaAssetId: mediaAsset.id,
     file: input.file,
@@ -455,7 +476,7 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
     videoCoverTimestampMs: input.videoCoverTimestampMs,
     brandContentToggle: input.brandContentToggle,
     brandOrganicToggle: input.brandOrganicToggle,
-    isAigc: input.isAigc,
+    isAigc: aiGeneratedContent,
     source: input.source,
     chunkPlan,
     videoUrl: verifiedUrl?.toString(),
@@ -476,7 +497,7 @@ export async function initializeVideoPublish(input: InitializeVideoPublishInput)
       titleLength: input.title.length,
       brandContentToggle: input.brandContentToggle,
       brandOrganicToggle: input.brandOrganicToggle,
-      isAigc: input.isAigc,
+      isAigc: aiGeneratedContent,
       chunkPlan,
       fileName: input.file?.name,
       verifiedMediaHost: verifiedUrl?.hostname,

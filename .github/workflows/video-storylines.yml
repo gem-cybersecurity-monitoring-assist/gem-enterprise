@@ -1,0 +1,215 @@
+name: Video Storylines
+
+# Daily render of one GEM storyline into platform-ready MP4s (9:16, 4:5, 16:9).
+# Pixabay is the default stock-video provider; Pexels remains an optional CLI provider.
+# Output is DRAFT: it is uploaded as a workflow artifact for review and then
+# enters Approvals. Nothing here publishes to any social platform.
+
+on:
+  schedule:
+    # 04:39 UTC = 05:39 Africa/Lagos, daily rotation through the library.
+    - cron: "39 4 * * *"
+  workflow_dispatch:
+    inputs:
+      storyline:
+        description: "Storyline id (blank = daily rotation)"
+        required: false
+        default: ""
+      workspace_id:
+        description: "TokMetric workspace ID for governed draft ingestion"
+        required: false
+        default: "ws_60488340ded94dcfab3b875ef9ae591c"
+  pull_request:
+    paths:
+      - "scripts/video-storylines/**"
+      - "content/video-storylines/**"
+      - ".github/workflows/video-storylines.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: video-storylines-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-test:
+    # Exercises the full ffmpeg graph, captions, variants and validation with
+    # generated footage; needs no secrets or network beyond apt.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter espeak-ng python3-venv
+      - name: Validate storyline library
+        run: |
+          python3 -I - <<'PY'
+          import json, sys
+          d = json.load(open("content/video-storylines/gem-storylines.v1.json"))
+          bad = [b["clip"]["url"] for s in d["storylines"] for b in s["beats"] if b["clip"]["source"] != "pexels"]
+          if bad:
+              sys.exit("non-Pexels clips found: " + ", ".join(bad))
+          print("library OK:", sum(len(s["beats"]) for s in d["storylines"]), "beats")
+          PY
+      - name: Test Pixabay provider and 24-hour response cache
+        run: python3 -I scripts/video-storylines/test_pixabay.py
+      - name: Validate storyboard timing and narration pace
+        run: python3 -I scripts/video-storylines/test_storyline_content.py
+
+      - name: Render Week 2 offline QA previews
+        run: |
+          set -euo pipefail
+          for storyline in \
+            gem-cyber-qr-code-trap \
+            gem-cyber-phishing-red-flags \
+            gem-cyber-fake-delivery-text \
+            gem-cyber-password-2fa \
+            gem-cyber-public-wifi \
+            gem-cyber-tech-support-popup; do
+            python3 -I scripts/video-storylines/render.py --storyline "$storyline" --offline --out out
+          done
+
+      - name: Upload non-publishable offline QA previews
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gem-week-2-offline-qa-${{ github.run_id }}
+          path: out/
+          retention-days: 7
+          if-no-files-found: error
+
+  render:
+    # Keep scheduled runs dormant until Pixabay is configured and explicitly enabled.
+    if: github.event_name != 'pull_request' && vars.GEM_STORYLINES_RENDER_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      STOCK_VIDEO_PROVIDER: pixabay
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Restore Pixabay API response cache
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: .cache/pixabay
+          key: pixabay-video-api-v1-${{ github.run_id }}
+          restore-keys: |
+            pixabay-video-api-v1-
+
+      - name: Require Pixabay key
+        run: |
+          if [ -z "$PIXABAY_API_KEY" ]; then
+            echo "::error::Add the PIXABAY_API_KEY repository secret to enable stock-video rendering."
+            exit 1
+          fi
+
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg fonts-inter espeak-ng python3-venv
+
+      - name: Install Kokoro narration dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install kokoro soundfile numpy
+
+      - name: Render storyline
+        env:
+          STORYLINE: ${{ github.event.inputs.storyline }}
+        run: |
+          if [ -n "$STORYLINE" ]; then
+            if ! printf '%s' "$STORYLINE" | grep -Eq '^[a-z0-9-]{1,80}$'; then
+              echo "::error::Invalid storyline id"; exit 1
+            fi
+            .venv/bin/python -I scripts/video-storylines/render.py --storyline "$STORYLINE" --stock-provider pixabay --synthetic-voice --out out
+          else
+            .venv/bin/python -I scripts/video-storylines/render.py --rotate --stock-provider pixabay --synthetic-voice --out out
+          fi
+
+      - name: Upload drafts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gem-video-drafts-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload and ingest the verified Storylines draft into TokMetric
+        if: success() && github.event_name == 'workflow_dispatch' && inputs.storyline != '' && vars.GEM_STORYLINES_INGEST_ENABLED == 'true'
+        env:
+          STORYLINE: ${{ inputs.storyline }}
+          WORKSPACE_ID: ${{ inputs.workspace_id }}
+          GEM_BASE_URL: ${{ vars.GEM_STORYLINES_GEM_BASE_URL || 'https://gemcybersecurityassist.com' }}
+          VIDEO_RENDER_STORAGE_URL: ${{ secrets.VIDEO_RENDER_STORAGE_URL }}
+          VIDEO_RENDER_STORAGE_KEY: ${{ secrets.VIDEO_RENDER_STORAGE_KEY }}
+          VIDEO_RENDER_STORAGE_BUCKET: ${{ vars.VIDEO_RENDER_STORAGE_BUCKET || 'gem-video-renders' }}
+          VIDEO_RENDER_CALLBACK_SECRET: ${{ secrets.VIDEO_RENDER_CALLBACK_SECRET }}
+        run: |
+          set -euo pipefail
+          : "${WORKSPACE_ID:?Set the workspace_id workflow input}"
+          : "${VIDEO_RENDER_STORAGE_URL:?Set the VIDEO_RENDER_STORAGE_URL repository secret}"
+          : "${VIDEO_RENDER_STORAGE_KEY:?Set the VIDEO_RENDER_STORAGE_KEY repository secret}"
+          : "${VIDEO_RENDER_CALLBACK_SECRET:?Set the VIDEO_RENDER_CALLBACK_SECRET repository secret}"
+          [[ "$WORKSPACE_ID" =~ ^ws_[a-f0-9]{32}$ ]] || { echo "::error::Invalid TokMetric workspace ID"; exit 1; }
+          [[ "$STORYLINE" =~ ^gem-cyber-[a-z0-9-]{1,64}$ ]] || { echo "::error::Invalid GEM cybersecurity storyline ID"; exit 1; }
+          [[ "$VIDEO_RENDER_STORAGE_URL" == https://* ]] || { echo "::error::Private storage must use HTTPS"; exit 1; }
+          VIDEO_FILE="out/$STORYLINE/$STORYLINE.vertical_9x16.mp4"
+          MANIFEST_FILE="out/$STORYLINE/manifest.json"
+          test -s "$VIDEO_FILE" || { echo "::error::Validated vertical MP4 was not produced"; exit 1; }
+          test -s "$MANIFEST_FILE" || { echo "::error::Storylines manifest was not produced"; exit 1; }
+          FILE_SIZE=$(stat -c "%s" "$VIDEO_FILE")
+          CHECKSUM=$(sha256sum "$VIDEO_FILE" | awk '{print $1}')
+          BUCKET="${VIDEO_RENDER_STORAGE_BUCKET:-gem-video-renders}"
+          STORAGE_URL="${VIDEO_RENDER_STORAGE_URL%/}"
+          OBJECT_PATH="storylines/$WORKSPACE_ID/$STORYLINE/$CHECKSUM.mp4"
+          STORAGE_REF="$STORAGE_URL/storage/v1/object/authenticated/$BUCKET/$OBJECT_PATH"
+          curl --fail --silent --show-error -X POST "$STORAGE_URL/storage/v1/object/$BUCKET/$OBJECT_PATH" \
+            -H "Authorization: Bearer $VIDEO_RENDER_STORAGE_KEY" \
+            -H "apikey: $VIDEO_RENDER_STORAGE_KEY" \
+            -H "Content-Type: video/mp4" \
+            -H "x-upsert: true" \
+            --data-binary "@$VIDEO_FILE" --output /dev/null
+          python3 - "$MANIFEST_FILE" "$WORKSPACE_ID" "$STORYLINE" "$STORAGE_REF" "$CHECKSUM" "$FILE_SIZE" "$VIDEO_FILE" <<'PY' > storyline-ingest.json
+          import json, sys
+          manifest_path, workspace, storyline, storage_ref, checksum, size, filename = sys.argv[1:]
+          with open(manifest_path, encoding='utf-8') as source:
+              manifest = json.load(source)
+          payload = {
+              'workspaceId': workspace, 'storylineId': storyline,
+              'storageRef': storage_ref, 'fileName': filename.rsplit('/', 1)[-1],
+              'mimeType': 'video/mp4', 'fileSize': int(size),
+              'checksumSha256': checksum, 'manifest': manifest,
+          }
+          print(json.dumps(payload, separators=(',', ':')))
+          PY
+          set +e
+          HTTP_STATUS=$(curl --silent --show-error --output storyline-ingest-response.json --write-out "%{http_code}" -X POST "${GEM_BASE_URL%/}/api/video/storylines/ingest" \
+            -H "Authorization: Bearer $VIDEO_RENDER_CALLBACK_SECRET" \
+            -H "Content-Type: application/json" \
+            --data-binary @storyline-ingest.json)
+          CURL_STATUS=$?
+          set -e
+          if [ "$CURL_STATUS" -ne 0 ] || { [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "201" ]; }; then
+            echo "::error::TokMetric Storylines ingestion failed with HTTP $HTTP_STATUS."
+            cat storyline-ingest-response.json
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          with open("storyline-ingest-response.json", encoding="utf-8") as source:
+              response = json.load(source)
+          if response.get("ok") is not True:
+              raise SystemExit("TokMetric did not confirm successful Storylines ingestion.")
+          data = response.get("data") or {}
+          print(json.dumps({
+              "contentId": data.get("contentId"),
+              "contentVersionId": data.get("contentVersionId"),
+              "approvalRequestId": data.get("approvalRequestId"),
+              "state": data.get("state"),
+              "externalPublicationTaken": data.get("externalPublicationTaken", False),
+          }))
+          PY
