@@ -72,10 +72,17 @@ export function validateVerifiedMediaUrl(rawUrl: string) {
   return url;
 }
 
-export async function getVideoPublishingContext(session: SessionPayload) {
-  const privileged = ["admin", "super_admin", "internal"].includes(session.role);
-  const workspaces = await db.workspace.findMany({
-    where: privileged ? {} : { members: { some: { userId: session.userId, status: "active" } } },
+export async function getVideoPublishingContext(session: SessionPayload, database = db) {
+  const gatewayPreflight = session.authSource === "supabase_gateway";
+  const privileged = !gatewayPreflight && ["admin", "super_admin", "internal"].includes(session.role);
+  const activeMembership = { userId: session.userId, status: "active" };
+  const where: Prisma.WorkspaceWhereInput = gatewayPreflight
+    ? { organization: { status: "active" }, members: { some: {
+        ...activeMembership, role: { permissions: { some: { action: "publish", scope: { in: ["content", "*"] } } } },
+      } } }
+    : privileged ? {} : { members: { some: activeMembership } };
+  const workspaces = await database.workspace.findMany({
+    where,
     orderBy: { updatedAt: "desc" },
     take: 20,
     select: {
@@ -117,10 +124,11 @@ export async function getVideoPublishingContext(session: SessionPayload) {
     ),
   );
   const versions = currentVersionIds.length
-    ? await db.contentVersion.findMany({
+    ? await database.contentVersion.findMany({
         where: { id: { in: currentVersionIds } },
         select: {
           id: true,
+          contentId: true,
           caption: true,
           script: true,
           hashtags: true,
@@ -130,7 +138,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
     : [];
   const mediaAssetIds = [...new Set(versions.flatMap((version) => version.mediaAssetIds))];
   const mediaAssets = mediaAssetIds.length
-    ? await db.mediaAsset.findMany({
+    ? await database.mediaAsset.findMany({
         where: {
           id: { in: mediaAssetIds },
           mimeType: { in: [...TIKTOK_VIDEO_MIME_TYPES] },
@@ -155,7 +163,7 @@ export async function getVideoPublishingContext(session: SessionPayload) {
       const version = content.currentVersionId
         ? versionById.get(content.currentVersionId)
         : undefined;
-      if (!version) return [];
+      if (!version || version.contentId !== content.id) return [];
 
       const approvedVideoAssets = version.mediaAssetIds.flatMap((assetId) => {
         const asset = mediaAssetById.get(assetId);
@@ -182,7 +190,10 @@ export async function getVideoPublishingContext(session: SessionPayload) {
   }));
 
   return {
-    gate: getTokMetricPublishingGate(),
+    gate: gatewayPreflight
+      ? { ...getTokMetricPublishingGate(), enabled: false, productionEnabled: false, sandboxEnabled: false, mode: "disabled" as const }
+      : getTokMetricPublishingGate(),
+    gatewayPreflight,
     verifiedMediaHosts: (process.env.TOKMETRIC_VERIFIED_MEDIA_HOSTS ?? "").split(",").map((value) => value.trim()).filter(Boolean),
     workspaces: publishingWorkspaces,
   };

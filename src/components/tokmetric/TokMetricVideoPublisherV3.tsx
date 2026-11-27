@@ -44,6 +44,7 @@ type WorkspaceContext = {
 };
 
 type PublishingContext = {
+  gatewayPreflight?: boolean;
   gate: {
     environment: "sandbox" | "production";
     enabled: boolean;
@@ -644,6 +645,13 @@ export function TokMetricVideoPublisherV3() {
           {context.gate.mode.toUpperCase()} · {blocked ? "Publishing blocked" : "Publishing enabled"}
         </div>
       </div>
+
+      {context.gatewayPreflight && (
+        <p role="status" className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+          Authorized workspace and creator settings can be checked without rotating credentials or uploading a video.
+          Publishing remains locked until the transactional publishing backend and TikTok production approval are verified.
+        </p>
+      )}
 
       <div className="mt-7 grid gap-4 lg:grid-cols-3">
         <label className="text-sm text-white/65">

@@ -4,11 +4,12 @@ import {
   correlationId,
   parseJson,
   requirePermission,
-  requireActiveTokMetricSession,
   requireSameOriginRequest,
-  requireWorkspaceAccess,
   tokMetricErrorResponse,
 } from "@/lib/tokmetric/security";
+import { db } from "@/lib/db";
+import { requireSocialConnectorSession, requireSocialConnectorWorkspace, tokMetricConnectorDatabase } from "@/lib/social-media/connector-authority";
+import { queryReadOnlyTikTokCreatorSettings } from "@/lib/tokmetric/publishing/preflight";
 import { getCreatorInfoForPublishing } from "@/lib/tokmetric/publishing/service";
 
 const schema = z.object({
@@ -25,16 +26,20 @@ export async function POST(request: NextRequest) {
   const cid = correlationId(request);
   try {
     requireSameOriginRequest(request);
-    const session = await requireActiveTokMetricSession(request);
+    const session = await requireSocialConnectorSession(request, true);
+    const database = tokMetricConnectorDatabase(session) ?? db;
     const input = await parseJson(request, schema) as CreatorInfoPayload;
-    const membership = await requireWorkspaceAccess(input.workspaceId, session);
+    const membership = await requireSocialConnectorWorkspace(input.workspaceId, session, database);
     requirePermission(membership, "publish", "content");
-    const creator = await getCreatorInfoForPublishing({
+    const parameters = {
       workspaceId: input.workspaceId,
       connectorId: input.connectorId,
       actorId: session.userId,
       correlationId: cid,
-    });
+    };
+    const creator = session.authSource === "supabase_gateway"
+      ? await queryReadOnlyTikTokCreatorSettings(parameters, database)
+      : await getCreatorInfoForPublishing(parameters);
     return NextResponse.json({ ok: true, correlationId: cid, data: creator }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return tokMetricErrorResponse(error, cid);
