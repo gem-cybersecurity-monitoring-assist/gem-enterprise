@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SocialConnectorPanel } from "@/components/social-media/SocialConnectorPanel";
 import type { SafeSocialOAuthReadiness } from "@/lib/social-media/oauth/readiness";
@@ -18,19 +18,30 @@ const connector = {
   lastHealthAt: null, disabledAt: null,
 };
 function response(payload: unknown) { return { ok: true, json: async () => payload }; }
-function setup() {
-  const fetchMock = vi.fn().mockResolvedValueOnce(response({ connectors: [connector] }));
+function setup(record = connector) {
+  const fetchMock = vi.fn().mockResolvedValueOnce(response({ connectors: [record] }));
   vi.stubGlobal("fetch", fetchMock);
   render(<SocialConnectorPanel providers={[provider]} workspaceId="workspace-1" />);
   return fetchMock;
 }
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
 describe("social account health controls", () => {
   it("distinguishes past expiry from a saved connected record", async () => {
     setup();
     await screen.findByText("Saved state: Connected");
     expect(screen.getByText("Credential lifecycle: Expired — verification or recovery required")).toBeTruthy();
     expect(screen.queryByText("Credential lifecycle: Healthy")).toBeNull();
+  });
+  it("updates the expiry label when the credential expires while the page stays open", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-27T00:00:00Z"));
+    const record = { ...connector, safeMetadata: { ...connector.safeMetadata, expiresAt: "2026-11-27T00:00:01Z" } };
+    let fetchMock!: ReturnType<typeof setup>;
+    await act(async () => { fetchMock = setup(record); });
+    expect(screen.getByText("Credential lifecycle: Healthy")).toBeTruthy();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(screen.getByText("Credential lifecycle: Expired — verification or recovery required")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("performs an explicit read-only identity check without rotating credentials", async () => {
     const fetchMock = setup();

@@ -113,6 +113,26 @@ export function SocialConnectorPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canLoad, effectiveWorkspaceId]);
 
+  useEffect(() => {
+    const now = Date.now();
+    const nextExpiry = connectors
+      .filter((connector) => connector.workspaceId === effectiveWorkspaceId)
+      .map((connector) => Date.parse(metadataText(connector, "expiresAt") ?? ""))
+      .filter((expiry) => Number.isFinite(expiry) && expiry > observedAt)
+      .reduce((earliest, expiry) => Math.min(earliest, expiry), Infinity);
+    const updateClock = () => setObservedAt(Date.now());
+    const timer = Number.isFinite(nextExpiry)
+      ? window.setTimeout(updateClock, Math.min(2_147_483_647, Math.max(0, nextExpiry - now)))
+      : undefined;
+    window.addEventListener("focus", updateClock);
+    document.addEventListener("visibilitychange", updateClock);
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      window.removeEventListener("focus", updateClock);
+      document.removeEventListener("visibilitychange", updateClock);
+    };
+  }, [connectors, effectiveWorkspaceId, observedAt]);
+
   function connect(provider: SafeSocialOAuthReadiness) {
     if (!canLoad || !provider.readyToAuthorize) return;
     const url = new URL(`/api/social-media/oauth/${provider.provider.toLowerCase()}/start`, window.location.origin);
