@@ -67,11 +67,15 @@ export function SocialConnectorPanel({
   const resolvedWorkspaceId = workspaceId?.trim() || "";
   const effectiveWorkspaceId = resolvedWorkspaceId || manualWorkspaceId.trim();
   const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [observedAt, setObservedAt] = useState(0);
+  const [identityCheck, setIdentityCheck] = useState<{ workspaceId: string; connectorId: string; healthy: boolean; checkedAt: string }>();
+  const [checkingIdentity, setCheckingIdentity] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [disconnecting, setDisconnecting] = useState<string>();
   const [checkingHealth, setCheckingHealth] = useState<string>();
   const canLoad = effectiveWorkspaceId.length > 0;
+  const busy = Boolean(checkingHealth || checkingIdentity || disconnecting);
 
   async function loadConnectors(signal?: AbortSignal) {
     if (!canLoad) return;
@@ -84,9 +88,11 @@ export function SocialConnectorPanel({
       );
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || "Unable to load social connectors.");
+      if (signal?.aborted) return;
+      setObservedAt(Date.now());
       setConnectors(payload.connectors || []);
     } catch (caught) {
-      if (caught instanceof DOMException && caught.name === "AbortError") return;
+      if (signal?.aborted || (caught instanceof DOMException && caught.name === "AbortError")) return;
       setConnectors([]);
       setError(caught instanceof Error ? caught.message : "Unable to load social connectors.");
     } finally {
@@ -120,6 +126,7 @@ export function SocialConnectorPanel({
       `Disconnect ${connector.displayName}? The stored access and refresh credentials will be deleted.`,
     );
     if (!confirmed) return;
+    setIdentityCheck(undefined);
     setDisconnecting(connector.id);
     setError(undefined);
     try {
@@ -138,7 +145,34 @@ export function SocialConnectorPanel({
     }
   }
 
+  async function verifyIdentity(connector: Connector) {
+    setCheckingIdentity(connector.id);
+    setIdentityCheck(undefined);
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/social-media/connectors/${encodeURIComponent(connector.id)}/test?workspaceId=${encodeURIComponent(effectiveWorkspaceId)}`,
+        { cache: "no-store" },
+      );
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || "Unable to verify account identity.");
+      if (payload.readOnlyProbe !== true || payload.connectorId !== connector.id ||
+          typeof payload.healthy !== "boolean" || typeof payload.checkedAt !== "string" ||
+          !Number.isFinite(Date.parse(payload.checkedAt))) {
+        throw new Error("The account identity check returned an invalid result.");
+      }
+      setIdentityCheck({ workspaceId: effectiveWorkspaceId, connectorId: connector.id,
+        healthy: payload.healthy, checkedAt: payload.checkedAt });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to verify account identity.");
+    } finally {
+      setCheckingIdentity(undefined);
+    }
+  }
+
   async function checkCredentialHealth(connector: Connector) {
+    if (!window.confirm("Check credential health? This may refresh and rotate the stored access credential. It does not publish content.")) return;
+    setIdentityCheck(undefined);
     setCheckingHealth(connector.id);
     setError(undefined);
     try {
@@ -165,6 +199,7 @@ export function SocialConnectorPanel({
   const connectorsByProvider = useMemo(() => {
     const grouped = new Map<string, Connector[]>();
     for (const connector of connectors) {
+      if (connector.workspaceId !== effectiveWorkspaceId) continue;
       if (!matchesSocialDestination(connector.provider, connector.safeMetadata, destination)) continue;
       if (connector.disabledAt || connector.state === "DISCONNECTED") continue;
       const existing = grouped.get(connector.provider) || [];
@@ -172,7 +207,7 @@ export function SocialConnectorPanel({
       grouped.set(connector.provider, existing);
     }
     return grouped;
-  }, [connectors, destination]);
+  }, [connectors, destination, effectiveWorkspaceId]);
 
   return (
     <section className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.04] p-5">
@@ -203,6 +238,7 @@ export function SocialConnectorPanel({
         ) : allowManualWorkspaceInput ? (
           <input
             value={manualWorkspaceId}
+            disabled={busy}
             onChange={(event) => setManualWorkspaceId(event.target.value)}
             placeholder="workspace ID"
             autoComplete="off"
@@ -279,6 +315,11 @@ export function SocialConnectorPanel({
                     const username = metadataText(connector, "username");
                     const expiresAt = metadataText(connector, "expiresAt");
                     const refreshTokenPresent = metadataBoolean(connector, "refreshTokenPresent");
+                    const expiryTime = expiresAt ? Date.parse(expiresAt) : Number.NaN;
+                    const expired = Number.isFinite(expiryTime) && expiryTime <= observedAt;
+                    const currentIdentity = identityCheck?.workspaceId === effectiveWorkspaceId &&
+                      identityCheck.connectorId === connector.id ? identityCheck : undefined;
+
                     const liveProbeAt = metadataText(connector, "liveProbeAt");
                     const liveProbeOk = metadataBoolean(connector, "liveProbeOk");
                     return (
@@ -289,7 +330,7 @@ export function SocialConnectorPanel({
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 text-white/80">
-                              {connector.state === "CONNECTED" ? (
+                              {connector.state === "CONNECTED" && !expired ? (
                                 <CircleCheck className="h-4 w-4 text-emerald-300" />
                               ) : (
                                 <TriangleAlert className="h-4 w-4 text-amber-200" />
@@ -298,18 +339,20 @@ export function SocialConnectorPanel({
                             </div>
                             <p className="mt-2">Account ID: {connector.externalAccountId || "discovery incomplete"}</p>
                             {username ? <p className="mt-1">Username: {username}</p> : null}
-                            <p className="mt-1">State: {label(connector.state)}</p>
+                            <p className="mt-1">Saved state: {label(connector.state)}</p>
                             <p className="mt-1">
                               Last live account check: {liveProbeAt && liveProbeOk !== undefined
                                 ? `${liveProbeOk ? "Passed" : "Failed"} · ${new Date(liveProbeAt).toLocaleString()}`
                                 : "Not recorded"}
                             </p>
-                            <p className={`mt-1 ${lifecycleTone(lifecycle)}`}>
-                              Credential lifecycle: {lifecycle ? label(lifecycle) : "Not evaluated"}
+                            <p className={`mt-1 ${expired ? "text-rose-200" : lifecycleTone(lifecycle)}`}>
+                              Credential lifecycle: {expired ? "Expired — verification or recovery required" : lifecycle ? label(lifecycle) : "Not evaluated"}
                             </p>
                             <p className="mt-1">
-                              Expires: {expiresAt ? new Date(expiresAt).toLocaleString() : "provider did not report expiry"}
+                              Expires: {Number.isFinite(expiryTime) ? new Date(expiryTime).toLocaleString() : "provider did not report a valid expiry"}
                             </p>
+                            {expired ? <p className="mt-1 text-amber-100">The saved expiry has passed. A previous connected state or identity check is not evidence of current access.</p> : null}
+                            {currentIdentity ? <p role="status" className="mt-1 text-white/80">Read-only identity check: {currentIdentity.healthy ? "Passed" : "Failed"} · {new Date(currentIdentity.checkedAt).toLocaleString()} — does not certify publishing permission.</p> : null}
                             {lifecycle === "EXPIRY_UNKNOWN" ? (
                               <p className="mt-1 text-amber-100">
                                 Token expiry is unknown. A passing live check confirms current access only.
@@ -326,10 +369,15 @@ export function SocialConnectorPanel({
                             </p>
                           </div>
                           <div className="flex flex-col gap-2">
+                            {(connector.provider === "META" || connector.provider === "X") && <button type="button" onClick={() => void verifyIdentity(connector)}
+                              disabled={busy || loading}
+                              className="rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-100 disabled:opacity-50">
+                              {checkingIdentity === connector.id ? "Verifying identity…" : "Verify identity (read-only)"}
+                            </button>}
                             <button
                               type="button"
                               onClick={() => void checkCredentialHealth(connector)}
-                              disabled={checkingHealth === connector.id}
+                              disabled={busy || loading}
                               className="inline-flex items-center gap-2 rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-300/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {checkingHealth === connector.id ? (
@@ -342,7 +390,7 @@ export function SocialConnectorPanel({
                             <button
                               type="button"
                               onClick={() => void disconnect(connector)}
-                              disabled={disconnecting === connector.id}
+                              disabled={busy || loading}
                               className="inline-flex items-center gap-2 rounded-lg border border-rose-300/20 px-3 py-2 text-xs font-semibold text-rose-200 hover:bg-rose-300/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {disconnecting === connector.id ? (
@@ -363,7 +411,7 @@ export function SocialConnectorPanel({
               <button
                 type="button"
                 onClick={() => connect(provider)}
-                disabled={!canLoad || !provider.readyToAuthorize}
+                disabled={!canLoad || !provider.readyToAuthorize || loading || busy}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-black hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/35"
               >
                 {providerConnectors.length > 0 ? "Authorize another account" : "Authorize account"}
@@ -375,8 +423,8 @@ export function SocialConnectorPanel({
       </div>
 
       <p className="mt-4 text-xs leading-5 text-white/40">
-        Account authorization stores credentials for later approved operations. Credential health checks
-        may rotate an expiring access token, but they do not enable publishing; all global and
+        Account authorization stores credentials for later approved operations. Verify identity performs a read-only account check. Credential health checks
+        may rotate an expiring access token after confirmation, but they do not enable publishing; all global and
         provider-specific live gates remain separate and disabled.
       </p>
     </section>
